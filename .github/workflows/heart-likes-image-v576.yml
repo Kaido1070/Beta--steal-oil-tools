@@ -26,7 +26,7 @@ jobs:
           visuals=Path('js/beta-preset-visuals.js')
           s=visuals.read_text(encoding='utf-8')
           marker="  function decorateLayoutBoost(inputId, petId) {"
-          helper="""  function decorateLayoutDrill(inputId, drillId) {\n    const input = document.getElementById(inputId);\n    if (!input) return;\n    const host = input.closest('label') || input.parentElement;\n    if (!host) return;\n    host.classList.add('v547-pet-boost');\n    let thumb = host.querySelector('.v547-pet-boost-thumb');\n    if (!thumb) {\n      thumb = document.createElement('span');\n      thumb.className = 'v547-pet-boost-thumb';\n      thumb.setAttribute('aria-hidden','true');\n      host.insertBefore(thumb, host.firstChild);\n    }\n    paintAtlas(thumb, 'drill', drillIndex[drillId]);\n  }\n\n"""
+          helper="""  function decorateLayoutDrill(inputId, drillId) {\n    const input = document.getElementById(inputId);\n    if (!input) return;\n    const host = input.closest('.field') || input.closest('label') || input.parentElement;\n    if (!host) return;\n    host.classList.add('v547-pet-boost');\n    let thumb = host.querySelector('.v547-pet-boost-thumb');\n    if (!thumb) {\n      thumb = document.createElement('span');\n      thumb.className = 'v547-pet-boost-thumb';\n      thumb.setAttribute('aria-hidden','true');\n      host.insertBefore(thumb, host.firstChild);\n    }\n    paintAtlas(thumb, 'drill', drillIndex[drillId]);\n  }\n\n"""
           if 'function decorateLayoutDrill(' not in s:
               if marker not in s: raise SystemExit('decorateLayoutBoost marker missing')
               s=s.replace(marker,helper+marker,1)
@@ -54,7 +54,7 @@ jobs:
           t=test.read_text(encoding='utf-8').replace("'5.75'","'5.76'")
           t=t.replace('stot-v5.75-layout-save-v1','stot-v5.76-layout-save-v1')
           anchor="assert.equal(await page.locator('#layoutVisualBuilder .v572-plot-card').count(), 15);\n"
-          checks="""const heartThumb = page.locator('label:has(#layoutLikes) .v547-pet-boost-thumb');\nassert.equal(await heartThumb.count(), 1, 'Heart Likes thumbnail missing');\nassert.ok((await heartThumb.evaluate(el => getComputedStyle(el).backgroundImage)).includes('drills-3.webp'), 'Heart Likes is not using the Heart Drill atlas image');\n"""
+          checks="""const heartThumb = page.locator('.field:has(#layoutLikes) .v547-pet-boost-thumb');\nassert.equal(await heartThumb.count(), 1, 'Heart Likes thumbnail missing');\nassert.ok((await heartThumb.evaluate(el => getComputedStyle(el).backgroundImage)).includes('drills-3.webp'), 'Heart Likes is not using the Heart Drill atlas image');\n"""
           if checks not in t:
               if anchor not in t: raise SystemExit('Smoke anchor missing')
               t=t.replace(anchor,anchor+checks,1)
