@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.58"
+VERSION="5.59"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
 
@@ -40,6 +40,53 @@ PATCH_FILES=(
 for file in "${CSS_FILES[@]}" "${PATCH_FILES[@]}" js/app.js; do
   test -f "$file" || { echo "Missing required file: $file" >&2; exit 1; }
 done
+
+# Step 2: keep mutable game/database values outside the application logic.
+# The first run extracts the seven data collections from the old combined app.js.
+# Later runs are idempotent and simply validate the separated files.
+python3 <<'PY'
+from pathlib import Path
+
+app_path = Path('js/app.js')
+data_path = Path('js/game-data.js')
+app = app_path.read_text(encoding='utf-8')
+marker = 'const slugifyName='
+loader = '''/* STOT core runtime: game values live in js/game-data.js */
+if(!window.STOT_GAME_DATA) throw new Error("STOT game data failed to load");
+const {drills,pets,refineries,solarPanels,totems,decorations,lootboxes}=window.STOT_GAME_DATA;
+
+'''
+keys = ['drills','pets','refineries','solarPanels','totems','decorations','lootboxes']
+
+if app.startswith('const drills=['):
+    if marker not in app:
+        raise SystemExit('Could not locate the end of the game-data block')
+    split_at = app.index(marker)
+    data_block = app[:split_at].rstrip()
+    core = app[split_at:]
+    for key in keys:
+        if f'const {key}=[' not in data_block:
+            raise SystemExit(f'Missing expected data collection: {key}')
+    wrapped = (
+        '/* STEAL THE OIL TYCOON — game/database data */\n'
+        '/* Edit game values here; application logic stays in js/app.js. */\n'
+        'window.STOT_GAME_DATA=(()=>{\n'
+        + data_block + '\n\n'
+        + 'return {drills,pets,refineries,solarPanels,totems,decorations,lootboxes};\n'
+        + '})();\n'
+    )
+    data_path.write_text(wrapped, encoding='utf-8')
+    app_path.write_text(loader + core, encoding='utf-8')
+else:
+    if not data_path.exists():
+        raise SystemExit('js/app.js is already separated but js/game-data.js is missing')
+    if 'window.STOT_GAME_DATA' not in app[:500]:
+        raise SystemExit('js/app.js does not contain the expected game-data loader')
+    data = data_path.read_text(encoding='utf-8')
+    for key in keys:
+        if f'const {key}=[' not in data:
+            raise SystemExit(f'js/game-data.js is missing: {key}')
+PY
 
 # Fix a stale startup call left in the pinned core. calcProduction no longer exists;
 # leaving the call unguarded aborts the remaining initial renders.
@@ -88,10 +135,7 @@ import re, sys
 version, source_commit = sys.argv[1:3]
 html = Path('/tmp/stot-base-index.html').read_text(encoding='utf-8')
 
-# Stable terminology already used by the Beta UI.
 html = html.replace('Weekend x2 Lobby', 'Admin Event Lobby')
-
-# One CSS request: base styles + the current Beta cascade in exact order.
 html = re.sub(
     r'<link\s+rel=["\']stylesheet["\']\s+href=["\']css/main\.css(?:\?[^"\']*)?["\']\s*/?>',
     f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">',
@@ -100,8 +144,6 @@ html = re.sub(
     flags=re.I,
 )
 
-# Remove the old script entry points. The original public quick-compare path was
-# repurposed as a Beta patch loader, so it must not run in the consolidated page.
 html = re.sub(r'\s*<script\s+src=["\']js/app\.js(?:\?[^"\']*)?["\']\s*></script>', '', html, flags=re.I)
 html = re.sub(r'\s*<script\s+src=["\']js/layout-quick-compare\.js(?:\?[^"\']*)?["\']\s*></script>', '', html, flags=re.I)
 
@@ -115,22 +157,27 @@ meta = (
 html = html.replace('<head>', '<head>\n' + meta, 1)
 
 scripts = (
-    f'\n<script defer src="js/app.js?v={version}"></script>\n'
+    f'\n<script defer src="js/game-data.js?v={version}"></script>\n'
+    f'<script defer src="js/app.js?v={version}"></script>\n'
     f'<script defer src="js/beta-patches.bundle.js?v={version}"></script>\n'
 )
 html = html.replace('</body>', scripts + '</body>', 1)
-
 Path('index.html').write_text(html, encoding='utf-8')
 PY
 
 # Static safety checks for the generated runtime.
+node --check js/game-data.js
 node --check js/app.js
 node --check js/beta-patches.bundle.js
 ! grep -q 'raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools' index.html
 ! grep -q 'document.write' index.html
+! grep -q '^const drills=' js/app.js
+grep -q '^window.STOT_GAME_DATA=' js/game-data.js
 ! grep -q '^calcProduction();$' js/app.js
-grep -q 'css/app.bundle.css?v=5.58' index.html
-grep -q 'js/beta-patches.bundle.js?v=5.58' index.html
-grep -q 'stot-local-version" content="5.58' index.html
+grep -q "css/app.bundle.css?v=${VERSION}" index.html
+grep -q "js/game-data.js?v=${VERSION}" index.html
+grep -q "js/app.js?v=${VERSION}" index.html
+grep -q "js/beta-patches.bundle.js?v=${VERSION}" index.html
+grep -q "stot-local-version\" content=\"${VERSION}" index.html
 
-echo "Consolidated Beta v${VERSION}: generated index.html, css/app.bundle.css, js/app.js, js/beta-patches.bundle.js"
+echo "Consolidated Beta v${VERSION}: game data separated from application logic"
