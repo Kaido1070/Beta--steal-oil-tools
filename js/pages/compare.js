@@ -1,4 +1,4 @@
-/* STOT Drill Compare page runtime v5.67 — extracted from js/app.js */
+/* STOT Drill Compare page runtime v5.68 — extracted from js/app.js */
 let compareA="demonic",compareB="angel";
 const compareState={tier:1,area:1,mole:0,fruit:0,countA:1,countB:1,hours:5,likes:0};
 function compareValue(d,key){
@@ -115,4 +115,4 @@ $("#compareShare").onclick=()=>{const a=drills.find(d=>d.id===compareA)||drills[
 
 /* Initial Drill Compare render now belongs to this page module. */
 renderCompare();
-document.documentElement.dataset.stotComparePage="5.67";
+document.documentElement.dataset.stotComparePage="5.68";

@@ -1,4 +1,4 @@
-/* STOT Sale page runtime v5.67 — extracted from js/app.js */
+/* STOT Sale page runtime v5.68 — extracted from js/app.js */
 let saleUnit=1,friendBoost=50;
 function calcSale(){
   const oil=finiteNonNegative($("#saleOil").value)*saleUnit;
@@ -29,4 +29,4 @@ $("#saleShare").onclick=()=>{const oilText=escapeHTML(saleOilDisplay()),priceTex
 
 /* Initial Sale render now belongs to this page module. */
 calcSale();
-document.documentElement.dataset.stotSalePage="5.67";
+document.documentElement.dataset.stotSalePage="5.68";

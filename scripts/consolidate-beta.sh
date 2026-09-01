@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.67"
+VERSION="5.68"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
 
@@ -438,6 +438,41 @@ else:
         raise SystemExit('Sale runtime still remains in js/app.js')
 PY_SALE
 
+# Step 9: move Oil / Hour layout calculator out of the shared core.
+# Historical Oil presentation patches still live in the consolidated patch bundle for now;
+# this step gives the base Oil calculator/runtime a single page owner without changing UX.
+python3 <<'PY_OIL'
+from pathlib import Path
+
+app_path=Path('js/app.js')
+oil_path=Path('js/pages/oil.js')
+oil_path.parent.mkdir(parents=True,exist_ok=True)
+app=app_path.read_text(encoding='utf-8')
+start_marker='/* oil layout */'
+end_marker='/* shared drill/catalog helpers */'
+
+if start_marker in app:
+    start=app.index(start_marker)
+    end=app.index(end_marker,start)
+    block=app[start:end].strip()
+    oil_path.write_text(
+        '/* STOT Oil / Hour page runtime v5.68 — extracted from js/app.js */\n'
+        + block + '\n\n'
+        + 'document.documentElement.dataset.stotOilPage="5.68";\n',
+        encoding='utf-8'
+    )
+    app=app[:start]+app[end:]
+    stale='if(typeof calcProduction==="function")calcProduction();'
+    if stale in app:
+        app=app.replace(stale,'',1)
+    app_path.write_text(app,encoding='utf-8')
+else:
+    if not oil_path.exists():
+        raise SystemExit('Oil already removed from app.js but js/pages/oil.js is missing')
+    if 'const LAYOUT_AREAS=' in app or 'function renderLayout()' in app or 'function calcLayout()' in app:
+        raise SystemExit('Oil runtime still remains in js/app.js')
+PY_OIL
+
 # Keep already-separated page module version markers aligned with this build.
 python3 - "$VERSION" <<'PY_PAGE_VERSIONS'
 from pathlib import Path
@@ -449,6 +484,7 @@ for path,attr,label in [
     ('js/pages/compare.js','stotComparePage','Compare'),
     ('js/pages/drills.js','stotDrillsPage','Drills'),
     ('js/pages/sale.js','stotSalePage','Sale'),
+    ('js/pages/oil.js','stotOilPage','Oil'),
 ]:
     p=Path(path)
     text=p.read_text(encoding='utf-8')
@@ -468,6 +504,8 @@ safe_without_drill = 'calcSale();\nif(typeof calcProduction==="function")calcPro
 if old in s:
     s = s.replace(old, safe_with_drill, 1)
 elif safe_with_drill in s or safe_without_drill in s or 'if(typeof calcProduction==="function")calcProduction();' in s:
+    pass
+elif 'const viewBadges=' in s:
     pass
 else:
     raise SystemExit('Could not locate expected startup sequence in js/app.js')
@@ -554,6 +592,7 @@ scripts = (
     f'\n<script defer src="js/game-data.js?v={version}"></script>\n'
     f'<script defer src="js/app.js?v={version}"></script>\n'
     f'<script defer src="js/pages/sale.js?v={version}"></script>\n'
+    f'<script defer src="js/pages/oil.js?v={version}"></script>\n'
     f'<script defer src="js/pages/drills.js?v={version}"></script>\n'
     f'<script defer src="js/pages/compare.js?v={version}"></script>\n'
     f'<script defer src="js/pages/database.js?v={version}"></script>\n'
@@ -569,6 +608,7 @@ PY
 node --check js/game-data.js
 node --check js/app.js
 node --check js/pages/sale.js
+node --check js/pages/oil.js
 node --check js/pages/database-core.js
 node --check js/pages/database.js
 node --check js/pages/events.js
@@ -590,6 +630,9 @@ grep -q '^window.STOT_GAME_DATA=' js/game-data.js
 ! grep -q 'let compareA=' js/app.js
 ! grep -q 'function calcDrill()' js/app.js
 ! grep -q 'function calcSale()' js/app.js
+! grep -q 'const LAYOUT_AREAS=' js/app.js
+! grep -q 'function renderLayout()' js/app.js
+! grep -q 'function calcLayout()' js/app.js
 ! grep -q 'let saleUnit=' js/app.js
 ! grep -q 'function saleSummaryText()' js/app.js
 ! grep -q 'function renderPicker()' js/app.js
@@ -603,6 +646,9 @@ grep -q 'function renderCompare()' js/pages/compare.js
 grep -q 'let compareA=' js/pages/compare.js
 grep -q 'function calcDrill()' js/pages/drills.js
 grep -q 'function calcSale()' js/pages/sale.js
+grep -q 'const LAYOUT_AREAS=' js/pages/oil.js
+grep -q 'function renderLayout()' js/pages/oil.js
+grep -q 'function calcLayout()' js/pages/oil.js
 grep -q 'let saleUnit=' js/pages/sale.js
 grep -q 'function saleSummaryText()' js/pages/sale.js
 grep -q 'function renderPicker()' js/pages/drills.js
@@ -620,6 +666,7 @@ grep -q "css/pages/drills.css?v=${VERSION}" index.html
 grep -q "js/game-data.js?v=${VERSION}" index.html
 grep -q "js/app.js?v=${VERSION}" index.html
 grep -q "js/pages/sale.js?v=${VERSION}" index.html
+grep -q "js/pages/oil.js?v=${VERSION}" index.html
 grep -q "js/pages/database.js?v=${VERSION}" index.html
 grep -q "js/pages/events.js?v=${VERSION}" index.html
 grep -q "js/pages/codes.js?v=${VERSION}" index.html
@@ -628,4 +675,4 @@ grep -q "js/pages/drills.js?v=${VERSION}" index.html
 grep -q "js/beta-patches.bundle.js?v=${VERSION}" index.html
 grep -q "stot-local-version\" content=\"${VERSION}" index.html
 
-echo "Consolidated Beta v${VERSION}: Database, Events, Codes, Drill Compare, Drills and Sale separated into page modules"
+echo "Consolidated Beta v${VERSION}: Database, Events, Codes, Drill Compare, Drills, Sale and Oil separated into page modules"

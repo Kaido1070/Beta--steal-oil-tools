@@ -1,4 +1,4 @@
-/* STOT Drills page runtime v5.67 — extracted from js/app.js */
+/* STOT Drills page runtime v5.68 — extracted from js/app.js */
 /* drills */
 const ds={id:"basic",tier:1,area:1,hacker:550};
 const getDrill=()=>drills.find(d=>d.id===ds.id)||drills[0];
@@ -52,4 +52,4 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#pickerBackdrop")
 
 /* Initial Drills render now belongs to this page module. */
 calcDrill();
-document.documentElement.dataset.stotDrillsPage="5.67";
+document.documentElement.dataset.stotDrillsPage="5.68";

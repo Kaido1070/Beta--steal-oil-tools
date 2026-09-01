@@ -1,4 +1,4 @@
-/* STOT Database page CSS v5.67 */
+/* STOT Database page CSS v5.68 */
 
 /* ===== css/beta-database-images.css ===== */
 .v556-db-logo{width:56px!important;height:56px!important;display:grid!important;place-items:center!important;overflow:hidden!important;border-radius:12px!important;background:#101621!important;border:1px solid #364158!important;padding:3px!important;box-sizing:border-box!important}.v556-db-image{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important}.drill-head:has(.v556-db-logo){grid-template-columns:56px minmax(0,1fr) auto!important;align-items:center!important}.v556-lootbox-logo{padding:1px!important}.v556-decoration-logo,.v556-refinery-logo,.v556-solar-logo{padding:2px!important}@media(max-width:620px){.v556-db-logo{width:50px!important;height:50px!important;border-radius:11px!important}.drill-head:has(.v556-db-logo){grid-template-columns:50px minmax(0,1fr) auto!important;gap:8px!important}}
