@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.61"
+VERSION="5.62"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
 
@@ -159,6 +159,57 @@ else:
         raise SystemExit('Database functions still remain in js/app.js')
 PY
 
+# Step 4: move Events behavior and styles out of the shared core.
+python3 <<'PY_EVENTS'
+from pathlib import Path
+
+app_path = Path('js/app.js')
+events_path = Path('js/pages/events.js')
+events_path.parent.mkdir(parents=True, exist_ok=True)
+app = app_path.read_text(encoding='utf-8')
+start_marker = 'const mapEvents=['
+end_marker = '\nconst GAME_CODES=['
+
+if start_marker in app:
+    start = app.index(start_marker)
+    end = app.index(end_marker, start)
+    block = app[start:end].strip()
+    events_path.write_text(
+        '/* STOT Events page runtime v5.62 — extracted from js/app.js */\n'
+        + block
+        + '\n\n/* Initial Events render now belongs to this page module. */\n'
+        + 'renderEvents();\n'
+        + 'document.documentElement.dataset.stotEventsPage="5.62";\n',
+        encoding='utf-8'
+    )
+    app = app[:start] + app[end+1:]
+    startup = 'renderCodes();\nrenderCompare();\nrenderEvents();'
+    if startup not in app:
+        raise SystemExit('Could not locate Events startup call in js/app.js')
+    app = app.replace(startup, 'renderCodes();\nrenderCompare();', 1)
+    app_path.write_text(app, encoding='utf-8')
+else:
+    if not events_path.exists():
+        raise SystemExit('Events already removed from app.js but js/pages/events.js is missing')
+    if 'function renderEvents()' in app or 'const mapEvents=[' in app:
+        raise SystemExit('Events runtime still remains in js/app.js')
+
+css_path = Path('css/main.css')
+page_css = Path('css/pages/events.css')
+css = css_path.read_text(encoding='utf-8')
+css_start = '/* Events */'
+css_end = '\n.codes-toolbar'
+if css_start in css:
+    start = css.index(css_start)
+    end = css.index(css_end, start)
+    block = css[start:end].strip()
+    page_css.parent.mkdir(parents=True, exist_ok=True)
+    page_css.write_text('/* STOT Events page CSS v5.62 */\n' + block + '\n', encoding='utf-8')
+    css_path.write_text(css[:start] + css[end+1:], encoding='utf-8')
+elif not page_css.exists():
+    raise SystemExit('Events CSS already removed from css/main.css but css/pages/events.css is missing')
+PY_EVENTS
+
 # Fix a stale startup call left in the pinned core.
 python3 <<'PY'
 from pathlib import Path
@@ -232,7 +283,7 @@ html = Path('/tmp/stot-base-index.html').read_text(encoding='utf-8')
 html = html.replace('Weekend x2 Lobby', 'Admin Event Lobby')
 html = re.sub(
     r'<link\s+rel=["\']stylesheet["\']\s+href=["\']css/main\.css(?:\?[^"\']*)?["\']\s*/?>',
-    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">',
+    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">\n<link rel="stylesheet" href="css/pages/events.css?v={version}">',
     html,
     count=1,
     flags=re.I,
@@ -253,6 +304,7 @@ scripts = (
     f'\n<script defer src="js/game-data.js?v={version}"></script>\n'
     f'<script defer src="js/app.js?v={version}"></script>\n'
     f'<script defer src="js/pages/database.js?v={version}"></script>\n'
+    f'<script defer src="js/pages/events.js?v={version}"></script>\n'
     f'<script defer src="js/beta-patches.bundle.js?v={version}"></script>\n'
 )
 html = html.replace('</body>', scripts + '</body>', 1)
@@ -264,6 +316,7 @@ node --check js/game-data.js
 node --check js/app.js
 node --check js/pages/database-core.js
 node --check js/pages/database.js
+node --check js/pages/events.js
 node --check js/beta-patches.bundle.js
 ! grep -q 'raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools' index.html
 ! grep -q 'document.write' index.html
@@ -271,17 +324,23 @@ node --check js/beta-patches.bundle.js
 grep -q '^window.STOT_GAME_DATA=' js/game-data.js
 ! grep -q '^calcProduction();$' js/app.js
 ! grep -q 'function renderDb()' js/app.js
+! grep -q 'function renderEvents()' js/app.js
+! grep -q 'const mapEvents=\[' js/app.js
 grep -q 'function renderDb()' js/pages/database-core.js
+grep -q 'function renderEvents()' js/pages/events.js
+grep -q 'const mapEvents=\[' js/pages/events.js
 grep -q 'beta-database-images.js' js/pages/database.js
 grep -q 'beta-database-redesign.js' js/pages/database.js
 ! grep -q 'beta-database-images.js' js/beta-patches.bundle.js
 ! grep -q 'beta-database-redesign.js' js/beta-patches.bundle.js
 grep -q "css/app.bundle.css?v=${VERSION}" index.html
 grep -q "css/pages/database.css?v=${VERSION}" index.html
+grep -q "css/pages/events.css?v=${VERSION}" index.html
 grep -q "js/game-data.js?v=${VERSION}" index.html
 grep -q "js/app.js?v=${VERSION}" index.html
 grep -q "js/pages/database.js?v=${VERSION}" index.html
+grep -q "js/pages/events.js?v=${VERSION}" index.html
 grep -q "js/beta-patches.bundle.js?v=${VERSION}" index.html
 grep -q "stot-local-version\" content=\"${VERSION}" index.html
 
-echo "Consolidated Beta v${VERSION}: Database separated into js/pages/database.js"
+echo "Consolidated Beta v${VERSION}: Database and Events separated into page modules"
