@@ -20,6 +20,7 @@
   function cardCount(root){return root?.querySelectorAll('.drill-card').length||0}
   function enhanceList(key){
     const cfg=config[key];
+    if(!cfg) return;
     const root=document.querySelector(cfg.root);
     if(!root) return;
     root.classList.add('v557-db-list',`v557-${key}-list`);
@@ -48,9 +49,11 @@
     if(!tabs) return;
     tabs.querySelectorAll('[data-dbview]').forEach(btn=>{
       const key=btn.dataset.dbview;
-      const root=document.querySelector(config[key]?.root||'');
+      const cfg=config[key];
+      if(!cfg) return;
+      const root=document.querySelector(cfg.root);
       btn.dataset.v557Count=String(cardCount(root));
-      if(!btn.dataset.v557Label){btn.dataset.v557Label='1';btn.title=config[key]?.label||key}
+      if(!btn.dataset.v557Label){btn.dataset.v557Label='1';btn.title=cfg.label||key}
     });
   }
 
@@ -67,7 +70,7 @@
     const key=activeKey(),cfg=config[key];
     const title=document.getElementById('v557DbTitle');
     const visible=document.getElementById('v557DbVisible');
-    const root=document.querySelector(cfg?.root||'');
+    const root=cfg?document.querySelector(cfg.root):null;
     if(title) title.textContent=cfg?.label||'Database';
     if(visible) visible.textContent=`${cardCount(root)} shown`;
   }
