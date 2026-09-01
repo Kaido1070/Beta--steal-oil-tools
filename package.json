@@ -19,5 +19,10 @@
   "bugs": {
     "url": "https://github.com/Kaido1070/Beta--steal-oil-tools/issues"
   },
-  "homepage": "https://github.com/Kaido1070/Beta--steal-oil-tools#readme"
+  "homepage": "https://github.com/Kaido1070/Beta--steal-oil-tools#readme",
+  "dependencies": {
+    "playwright": "^1.55.0",
+    "playwright-core": "^1.55.0"
+  },
+  "devDependencies": {}
 }

@@ -1,6 +1,6 @@
 /* STEAL THE OIL TYCOON — central site settings */
 window.STOT_CONFIG=Object.freeze({
-  version:"5.72",
+  version:"5.73",
   sourceCommit:"aec48cd084062e3791d523b72cb65618948508c7",
   lastUpdated:"Sep 2 2026",
   storageNamespace:"stot",
@@ -18,4 +18,3 @@ window.STOT_CONFIG=Object.freeze({
   }),
   storageKey(scope,suffix="v1"){return `${this.storageNamespace}-v${this.version}-${scope}-${suffix}`;}
 });
-/* v5.72 visual builder smoke sync */
