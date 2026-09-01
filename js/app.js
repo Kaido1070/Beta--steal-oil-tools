@@ -1,6 +1,7 @@
 /* STOT core runtime: shared settings + game values */
 if(!window.STOT_CONFIG) throw new Error("STOT site config failed to load");
 const STOT_CONFIG=window.STOT_CONFIG;
+document.addEventListener("DOMContentLoaded",()=>{const footer=document.querySelector(".footer");if(footer)footer.textContent=`Community tool • Game values may change with updates • Last updated ${STOT_CONFIG.lastUpdated}`;},{once:true});
 if(!window.STOT_GAME_DATA) throw new Error("STOT game data failed to load");
 const {drills,pets,refineries,solarPanels,totems,decorations,lootboxes}=window.STOT_GAME_DATA;
 

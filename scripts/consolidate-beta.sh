@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.69"
+VERSION="5.70"
+LAST_UPDATED="Sep 2 2026"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
 
@@ -474,15 +475,16 @@ else:
 PY_OIL
 
 # Step 10: centralize runtime site settings/version/storage namespace.
-python3 - "$VERSION" "$SOURCE_COMMIT" <<'PY_CONFIG'
+python3 - "$VERSION" "$SOURCE_COMMIT" "$LAST_UPDATED" <<'PY_CONFIG'
 from pathlib import Path
 import re, sys
 
-version, source_commit = sys.argv[1:3]
+version, source_commit, last_updated = sys.argv[1:4]
 config = f'''/* STEAL THE OIL TYCOON — central site settings */
 window.STOT_CONFIG=Object.freeze({{
   version:"{version}",
   sourceCommit:"{source_commit}",
+  lastUpdated:"{last_updated}",
   storageNamespace:"stot",
   storageSchema:1,
   defaultLanguage:"en",
@@ -515,6 +517,8 @@ if loader in app:
     app=app.replace(loader,replacement,1)
 elif 'const STOT_CONFIG=window.STOT_CONFIG;' not in app:
     raise SystemExit('Could not centralize app config loader')
+if 'STOT_CONFIG.lastUpdated' not in app:
+    app=app.replace('const STOT_CONFIG=window.STOT_CONFIG;','const STOT_CONFIG=window.STOT_CONFIG;\ndocument.addEventListener("DOMContentLoaded",()=>{const footer=document.querySelector(".footer");if(footer)footer.textContent=`Community tool • Game values may change with updates • Last updated ${STOT_CONFIG.lastUpdated}`;},{once:true});',1)
 old='const viewBadges={sale:"Sale Calculator",oil:"Oil Layout",drills:"Drill Calculator",compare:"Drill Compare",database:"Game Database",events:"Events",codes:"Codes"};'
 if old in app:
     app=app.replace(old,'const viewBadges={...STOT_CONFIG.pageBadges};',1)

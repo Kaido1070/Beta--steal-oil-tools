@@ -20,21 +20,23 @@ page.on('request', request => {
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
 
-assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-oil-page'), '5.69');
+assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-oil-page'), '5.70');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
+assert.equal((await page.locator('.footer').textContent())?.trim(), 'Community tool • Game values may change with updates • Last updated Sep 2 2026');
 
 const configSnapshot = await page.evaluate(() => ({
   version: window.STOT_CONFIG?.version,
   sourceCommit: window.STOT_CONFIG?.sourceCommit,
+            lastUpdated: window.STOT_CONFIG?.lastUpdated,
   storageNamespace: window.STOT_CONFIG?.storageNamespace,
   storageSchema: window.STOT_CONFIG?.storageSchema,
   defaultLanguage: window.STOT_CONFIG?.defaultLanguage,
@@ -43,14 +45,15 @@ const configSnapshot = await page.evaluate(() => ({
   storageKey: window.STOT_CONFIG?.storageKey?.('layout-save'),
 }));
 assert.deepEqual(configSnapshot, {
-  version: '5.69',
+  version: '5.70',
   sourceCommit: 'aec48cd084062e3791d523b72cb65618948508c7',
+            lastUpdated: 'Sep 2 2026',
   storageNamespace: 'stot',
   storageSchema: 1,
   defaultLanguage: 'en',
   saleBadge: 'Sale Calculator',
   oilBadge: 'Oil Layout',
-  storageKey: 'stot-v5.69-layout-save-v1',
+  storageKey: 'stot-v5.70-layout-save-v1',
 });
 
 
@@ -233,19 +236,19 @@ assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
 
 await page.reload({ waitUntil: 'networkidle' });
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.69');
-assert.equal(await page.locator('html').getAttribute('data-stot-oil-page'), '5.69');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-oil-page'), '5.70');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
 const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed') || x.includes('STOT Database patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log('SMOKE PASS: v5.69 Central config + separated page modules, pet images, calculators, Preset UI, filters, reload');
+console.log('SMOKE PASS: v5.70 Central config + separated page modules, pet images, calculators, Preset UI, filters, reload');
 await browser.close();
