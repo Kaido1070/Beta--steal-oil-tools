@@ -20,9 +20,9 @@ page.on('request', request => {
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
 
-assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.60');
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.60');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.60');
+assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.61');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.61');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.61');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
 
@@ -115,13 +115,13 @@ assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
 
 await page.reload({ waitUntil: 'networkidle' });
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.60');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.60');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.61');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.61');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
 const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed') || x.includes('STOT Database patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log('SMOKE PASS: v5.60 Database page separated, calculators, Preset UI, images, filters, reload');
+console.log('SMOKE PASS: v5.61 Database page separated, calculators, Preset UI, images, filters, reload');
 await browser.close();
