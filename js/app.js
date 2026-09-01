@@ -472,40 +472,6 @@ $("#swapCompare").onclick=()=>{[compareA,compareB]=[compareB,compareA];renderCom
 [["#compareCountA","countA"],["#compareCountB","countB"],["#compareHours","hours"],["#compareLikes","likes"]].forEach(([sel,key])=>$(sel).addEventListener("input",e=>{let raw=Number(e.target.value);if(!Number.isFinite(raw))raw=0;let v=Math.max(0,raw);if(key==="countA"||key==="countB")v=Math.max(1,Math.floor(v));if(key==="hours")v=Math.min(20,v);compareState[key]=v;if(String(e.target.value)!==String(v))e.target.value=v;renderCompare()}));
 $("#compareShare").onclick=()=>{const a=drills.find(d=>d.id===compareA)||drills[0],b=drills.find(d=>d.id===compareB)||drills[1];const sa=compareStats(a,"A"),sb=compareStats(b,"B");const tierName={1:"Basic",2:"Gold",3:"Diamond",5:"Rainbow",10:"Galaxy"}[compareState.tier]||`×${compareState.tier}`;const crossover=crossoverText(a,b,sa,sb);const lines=["Drill Compare",`${I18N.itemName(a)} ×${sa.count} vs ${I18N.itemName(b)} ×${sb.count}`,`Tier: ${tierName}`,`Production Area: ×${compareState.area}`,`Mole: ${compareState.mole||"None"}`,`Fruit: ${compareState.fruit||"None"}`,`Run Time: ${fmt(compareState.hours)}h`,`${I18N.itemName(a)} — Start ${fmt(sa.start)}/s • End ${fmt(sa.end)}/s • Total ${fmt(sa.total)} • Space ${compareSpace(a,sa.count)}`,`${I18N.itemName(b)} — Start ${fmt(sb.start)}/s • End ${fmt(sb.end)}/s • Total ${fmt(sb.total)} • Space ${compareSpace(b,sb.count)}`,crossover?`Crossover: ${crossover}`:""] .filter(Boolean);const html=`<div class="share-section"><div class="share-section-title">Comparison Setup</div><div class="share-setup-grid"><div class="share-setup-item"><span>Drill Tier</span><strong>${tierName}</strong></div><div class="share-setup-item"><span>Production Area</span><strong>×${compareState.area}</strong></div><div class="share-setup-item"><span>Mole</span><strong>${compareState.mole||"None"}</strong></div><div class="share-setup-item"><span>Fruit</span><strong>${compareState.fruit||"None"}</strong></div><div class="share-setup-item"><span>Run Time</span><strong>${fmt(compareState.hours)}h</strong></div></div></div><div class="share-drill-columns"><div class="share-drill-card"><div class="share-drill-title">${I18N.itemName(a)} ×${sa.count}</div><div class="share-line"><span>Start Oil/s</span><strong>${fmt(sa.start)}/s</strong></div><div class="share-line"><span>After Time</span><strong>${fmt(sa.end)}/s</strong></div><div class="share-line"><span>Total Oil</span><strong>${fmt(sa.total)}</strong></div><div class="share-line"><span>Total Space</span><strong>${compareSpace(a,sa.count)}</strong></div></div><div class="share-drill-card"><div class="share-drill-title">${I18N.itemName(b)} ×${sb.count}</div><div class="share-line"><span>Start Oil/s</span><strong>${fmt(sb.start)}/s</strong></div><div class="share-line"><span>After Time</span><strong>${fmt(sb.end)}/s</strong></div><div class="share-line"><span>Total Oil</span><strong>${fmt(sb.total)}</strong></div><div class="share-line"><span>Total Space</span><strong>${compareSpace(b,sb.count)}</strong></div></div></div>${crossover?`<div class="share-section share-crossover"><strong>${crossover}</strong></div>`:""}`;openSharePreview("Drill Comparison",html,lines.join("\n"))};
 
-const GAME_CODES=[
-  {code:"8962",type:"cash",reward:"10,000 Cash"},
-  {code:"5219",type:"cash",reward:"75,000 Cash"},
-  {code:"24",type:"cash",reward:"50,000 Cash",daily:true},
-  {code:"6743",type:"cash",reward:"50,000 Cash"},
-  {code:"1586",type:"cash",reward:"25,000 Cash"},
-  {code:"7485",type:"cash",reward:"20,000 Cash"},
-  {code:"6158",type:"gasoline",reward:"50,000 Gasoline"},
-  {code:"6904",type:"gasoline",reward:"50,000 Gasoline"},
-  {code:"3472",type:"gasoline",reward:"25,000 Gasoline"},
-  {code:"7823",type:"gasoline",reward:"20,000 Gasoline"},
-  {code:"8195",type:"gasoline",reward:"10,000 Gasoline"},
-  {code:"1234",type:"gasoline",reward:"1,234 Gasoline"},
-  {code:"9274",type:"energy",reward:"10,000 Energy"},
-  {code:"67",type:"items",reward:"Industrial Refinery"},
-  {code:"2828",type:"items",reward:"Wooden Wind"},
-  {code:"4627",type:"items",reward:"Nuclear Reactor Refinery"},
-  {code:"9351",type:"items",reward:"Super Rocket Drill"},
-  {code:"2849",type:"items",reward:"Rocket Drill"},
-  {code:"2026",type:"items",reward:"Hell Drill",expires:"Jan 1 2027"},
-  {code:"7164",type:"items",reward:"Hell Drill"},
-  {code:"5938",type:"items",reward:"Ice Drill"}
-];
-let codeFilter="all";
-function renderCodes(){
-  const q=(document.querySelector("#codesSearch")?.value||"").trim().toLowerCase();
-  const rows=GAME_CODES.filter(x=>(codeFilter==="all"||x.type===codeFilter)&&(!q||x.code.includes(q)||x.reward.toLowerCase().includes(q)));
-  document.querySelector("#codesCount").textContent=`${rows.length} ${rows.length===1?"code":"codes"}`;
-  document.querySelector("#codesList").innerHTML=rows.map(x=>`<article class="panel code-card"><div class="code-main"><div class="code-top"><span class="code-value">${x.code}</span></div><div class="code-reward">${x.reward}</div><div class="code-tags"><span class="code-tag">${x.type==="items"?"Item":x.type[0].toUpperCase()+x.type.slice(1)}</span>${x.daily?'<span class="code-tag daily">Daily</span>':''}${x.expires?`<span class="code-tag expiry">Expires ${x.expires}</span>`:''}</div></div><button class="code-copy" data-copy-code="${x.code}">Copy</button></article>`).join("");
-  document.querySelectorAll("[data-copy-code]").forEach(btn=>btn.onclick=async()=>{try{await navigator.clipboard.writeText(btn.dataset.copyCode)}catch(e){const t=document.createElement("textarea");t.value=btn.dataset.copyCode;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove()}btn.textContent="Copied";btn.classList.add("copied");setTimeout(()=>{btn.textContent="Copy";btn.classList.remove("copied")},1200)});
-}
-document.querySelector("#codesSearch")?.addEventListener("input",renderCodes);
-document.querySelectorAll("[data-code-filter]").forEach(b=>b.onclick=()=>{codeFilter=b.dataset.codeFilter;document.querySelectorAll("[data-code-filter]").forEach(x=>x.classList.toggle("active",x===b));renderCodes()});
-
 const viewBadges={sale:"Sale Calculator",oil:"Oil Layout",drills:"Drill Calculator",compare:"Drill Compare",database:"Game Database",events:"Events",codes:"Codes"};
 function openView(key){
   currentView=key;
@@ -524,5 +490,4 @@ I18N.setLanguage("en");
 calcSale();
 if(typeof calcProduction==="function")calcProduction();
 calcDrill();
-renderCodes();
 renderCompare();

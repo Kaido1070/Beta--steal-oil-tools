@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.62"
+VERSION="5.63"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
 
@@ -210,6 +210,66 @@ elif not page_css.exists():
     raise SystemExit('Events CSS already removed from css/main.css but css/pages/events.css is missing')
 PY_EVENTS
 
+# Step 5: move Codes behavior and styles out of the shared core.
+python3 <<'PY_CODES'
+from pathlib import Path
+
+app_path = Path('js/app.js')
+codes_path = Path('js/pages/codes.js')
+codes_path.parent.mkdir(parents=True, exist_ok=True)
+app = app_path.read_text(encoding='utf-8')
+start_marker = 'const GAME_CODES=['
+end_marker = '\nconst viewBadges='
+
+if start_marker in app:
+    start = app.index(start_marker)
+    end = app.index(end_marker, start)
+    block = app[start:end].strip()
+    codes_path.write_text(
+        '/* STOT Codes page runtime v5.63 — extracted from js/app.js */\n'
+        + block
+        + '\n\n/* Initial Codes render now belongs to this page module. */\n'
+        + 'renderCodes();\n'
+        + 'document.documentElement.dataset.stotCodesPage="5.63";\n',
+        encoding='utf-8'
+    )
+    app = app[:start] + app[end+1:]
+    startup = 'calcDrill();\nrenderCodes();\nrenderCompare();'
+    if startup not in app:
+        raise SystemExit('Could not locate Codes startup call in js/app.js')
+    app = app.replace(startup, 'calcDrill();\nrenderCompare();', 1)
+    app_path.write_text(app, encoding='utf-8')
+else:
+    if not codes_path.exists():
+        raise SystemExit('Codes already removed from app.js but js/pages/codes.js is missing')
+    if 'function renderCodes()' in app or 'const GAME_CODES=[' in app:
+        raise SystemExit('Codes runtime still remains in js/app.js')
+
+css_path = Path('css/main.css')
+page_css = Path('css/pages/codes.css')
+css = css_path.read_text(encoding='utf-8')
+css_start = '.codes-toolbar'
+css_end = '\n\n@media(min-width:700px)'
+if css_start in css:
+    start = css.index(css_start)
+    end = css.index(css_end, start)
+    block = css[start:end].strip()
+    page_css.parent.mkdir(parents=True, exist_ok=True)
+    page_css.write_text('/* STOT Codes page CSS v5.63 */\n' + block + '\n', encoding='utf-8')
+    css_path.write_text(css[:start] + css[end:], encoding='utf-8')
+elif not page_css.exists():
+    raise SystemExit('Codes CSS already removed from css/main.css but css/pages/codes.css is missing')
+PY_CODES
+
+# Keep already-separated page module version markers aligned with this build.
+python3 <<'PY_PAGE_VERSIONS'
+from pathlib import Path
+p = Path('js/pages/events.js')
+text = p.read_text(encoding='utf-8')
+text = text.replace('v5.62', 'v5.63').replace('stotEventsPage="5.62"', 'stotEventsPage="5.63"')
+p.write_text(text, encoding='utf-8')
+PY_PAGE_VERSIONS
+
 # Fix a stale startup call left in the pinned core.
 python3 <<'PY'
 from pathlib import Path
@@ -283,7 +343,7 @@ html = Path('/tmp/stot-base-index.html').read_text(encoding='utf-8')
 html = html.replace('Weekend x2 Lobby', 'Admin Event Lobby')
 html = re.sub(
     r'<link\s+rel=["\']stylesheet["\']\s+href=["\']css/main\.css(?:\?[^"\']*)?["\']\s*/?>',
-    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">\n<link rel="stylesheet" href="css/pages/events.css?v={version}">',
+    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">\n<link rel="stylesheet" href="css/pages/events.css?v={version}">\n<link rel="stylesheet" href="css/pages/codes.css?v={version}">',
     html,
     count=1,
     flags=re.I,
@@ -305,6 +365,7 @@ scripts = (
     f'<script defer src="js/app.js?v={version}"></script>\n'
     f'<script defer src="js/pages/database.js?v={version}"></script>\n'
     f'<script defer src="js/pages/events.js?v={version}"></script>\n'
+    f'<script defer src="js/pages/codes.js?v={version}"></script>\n'
     f'<script defer src="js/beta-patches.bundle.js?v={version}"></script>\n'
 )
 html = html.replace('</body>', scripts + '</body>', 1)
@@ -317,6 +378,7 @@ node --check js/app.js
 node --check js/pages/database-core.js
 node --check js/pages/database.js
 node --check js/pages/events.js
+node --check js/pages/codes.js
 node --check js/beta-patches.bundle.js
 ! grep -q 'raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools' index.html
 ! grep -q 'document.write' index.html
@@ -326,9 +388,13 @@ grep -q '^window.STOT_GAME_DATA=' js/game-data.js
 ! grep -q 'function renderDb()' js/app.js
 ! grep -q 'function renderEvents()' js/app.js
 ! grep -q 'const mapEvents=\[' js/app.js
+! grep -q 'function renderCodes()' js/app.js
+! grep -q 'const GAME_CODES=\[' js/app.js
 grep -q 'function renderDb()' js/pages/database-core.js
 grep -q 'function renderEvents()' js/pages/events.js
 grep -q 'const mapEvents=\[' js/pages/events.js
+grep -q 'function renderCodes()' js/pages/codes.js
+grep -q 'const GAME_CODES=\[' js/pages/codes.js
 grep -q 'beta-database-images.js' js/pages/database.js
 grep -q 'beta-database-redesign.js' js/pages/database.js
 ! grep -q 'beta-database-images.js' js/beta-patches.bundle.js
@@ -336,11 +402,13 @@ grep -q 'beta-database-redesign.js' js/pages/database.js
 grep -q "css/app.bundle.css?v=${VERSION}" index.html
 grep -q "css/pages/database.css?v=${VERSION}" index.html
 grep -q "css/pages/events.css?v=${VERSION}" index.html
+grep -q "css/pages/codes.css?v=${VERSION}" index.html
 grep -q "js/game-data.js?v=${VERSION}" index.html
 grep -q "js/app.js?v=${VERSION}" index.html
 grep -q "js/pages/database.js?v=${VERSION}" index.html
 grep -q "js/pages/events.js?v=${VERSION}" index.html
+grep -q "js/pages/codes.js?v=${VERSION}" index.html
 grep -q "js/beta-patches.bundle.js?v=${VERSION}" index.html
 grep -q "stot-local-version\" content=\"${VERSION}" index.html
 
-echo "Consolidated Beta v${VERSION}: Database and Events separated into page modules"
+echo "Consolidated Beta v${VERSION}: Database, Events and Codes separated into page modules"

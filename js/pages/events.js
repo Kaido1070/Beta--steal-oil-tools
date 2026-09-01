@@ -1,4 +1,4 @@
-/* STOT Events page runtime v5.62 — extracted from js/app.js */
+/* STOT Events page runtime v5.63 — extracted from js/app.js */
 const mapEvents=[
   {id:"candy",name:"Candy Event",schedule:[{h:3,m:0},{h:9,m:0},{h:15,m:0},{h:21,m:0}],objective:"Collect candies that spawn across the map.",unlock:"Candy Drill • 67/s • Cost: 50 Candy",effect:"Gasoline market price is locked at $15."},
   {id:"lava",name:"Lava Event",schedule:[{h:4,m:0},{h:10,m:0},{h:16,m:0},{h:22,m:0}],objective:"Collect Lava Crystals that spawn across the map.",unlock:"Volcano Drill • 83/s • Cost: 62 Lava Crystals",effect:"Fusion Machine processing timers are reduced by half."},
@@ -82,4 +82,4 @@ setInterval(updateEventCountdown,1000);
 
 /* Initial Events render now belongs to this page module. */
 renderEvents();
-document.documentElement.dataset.stotEventsPage="5.62";
+document.documentElement.dataset.stotEventsPage="5.63";

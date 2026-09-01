@@ -20,17 +20,18 @@ page.on('request', request => {
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
 
-assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.62');
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.62');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.62');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.62');
+assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.63');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.63');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.63');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.63');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.63');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
 
 const scriptSrcs = await page.locator('script[src]').evaluateAll(nodes => nodes.map(n => new URL(n.src).pathname));
-assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/database.js', '/js/pages/events.js', '/js/beta-patches.bundle.js']);
+assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);
 const styleHrefs = await page.locator('link[rel="stylesheet"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname));
-assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/database.css', '/css/pages/events.css']);
+assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);
 
 const dataCounts = await page.evaluate(() => {
   const d = window.STOT_GAME_DATA;
@@ -96,6 +97,23 @@ assert.notEqual((await page.locator('#nextEventName').textContent())?.trim(), 'â
 assert.ok(await page.locator('#eventList .event-card').count() >= 4, 'Events cards did not render');
 assert.ok(await page.locator('#adminTimes .admin-day').count() > 0, 'Admin event times did not render');
 
+
+assert.equal(await page.evaluate(() => typeof renderCodes), 'function');
+await page.locator('.tabs button[data-view="codes"]').click();
+await page.waitForTimeout(120);
+assert.ok(await page.locator('#codesView').evaluate(el => el.classList.contains('active')));
+assert.ok(await page.locator('#codesList .code-card').count() > 0, 'Codes cards did not render');
+assert.match((await page.locator('#codesCount').textContent()) || '', /code/i, 'Codes count did not render');
+await page.locator('#codesSearch').fill('2026');
+await page.waitForTimeout(90);
+assert.equal(await page.locator('#codesList .code-card').count(), 1, 'Codes search did not narrow to one result');
+assert.match((await page.locator('#codesList .code-card').textContent()) || '', /2026/);
+assert.match((await page.locator('#codesList .code-card').textContent()) || '', /Hell Drill/i);
+await page.locator('#codesSearch').fill('');
+await page.locator('[data-code-filter="cash"]').click();
+await page.waitForTimeout(90);
+assert.ok(await page.locator('#codesList .code-card').count() > 0, 'Cash code filter returned no cards');
+
 await page.locator('.tabs button[data-view="database"]').click();
 await page.waitForTimeout(140);
 assert.ok(await page.locator('#databaseView').evaluate(el => el.classList.contains('active')));
@@ -126,14 +144,15 @@ assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
 
 await page.reload({ waitUntil: 'networkidle' });
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.62');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.62');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.62');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.63');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.63');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.63');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.63');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
 const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed') || x.includes('STOT Database patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log('SMOKE PASS: v5.62 Database + Events separated, calculators, Preset UI, images, filters, reload');
+console.log('SMOKE PASS: v5.63 Database + Events + Codes separated, calculators, Preset UI, images, filters, reload');
 await browser.close();
