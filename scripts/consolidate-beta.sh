@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.71"
+VERSION="5.72"
 LAST_UPDATED="Sep 2 2026"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
@@ -634,7 +634,7 @@ html = Path('/tmp/stot-base-index.html').read_text(encoding='utf-8')
 html = html.replace('Weekend x2 Lobby', 'Admin Event Lobby')
 html = re.sub(
     r'<link\s+rel=["\']stylesheet["\']\s+href=["\']css/main\.css(?:\?[^"\']*)?["\']\s*/?>',
-    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/drills.css?v={version}">\n<link rel="stylesheet" href="css/pages/compare.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">\n<link rel="stylesheet" href="css/pages/events.css?v={version}">\n<link rel="stylesheet" href="css/pages/codes.css?v={version}">',
+    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/oil-visual-builder.css?v={version}">\n<link rel="stylesheet" href="css/pages/drills.css?v={version}">\n<link rel="stylesheet" href="css/pages/compare.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">\n<link rel="stylesheet" href="css/pages/events.css?v={version}">\n<link rel="stylesheet" href="css/pages/codes.css?v={version}">',
     html,
     count=1,
     flags=re.I,
@@ -658,6 +658,7 @@ scripts = (
     f'<script defer src="js/app.js?v={version}"></script>\n'
     f'<script defer src="js/pages/sale.js?v={version}"></script>\n'
     f'<script defer src="js/pages/oil.js?v={version}"></script>\n'
+    f'<script defer src="js/pages/oil-visual-builder.js?v={version}"></script>\n'
     f'<script defer src="js/pages/drills.js?v={version}"></script>\n'
     f'<script defer src="js/pages/compare.js?v={version}"></script>\n'
     f'<script defer src="js/pages/database.js?v={version}"></script>\n'
@@ -676,6 +677,7 @@ node --check js/game-data.js
 node --check js/app.js
 node --check js/pages/sale.js
 node --check js/pages/oil.js
+node --check js/pages/oil-visual-builder.js
 node --check js/pages/database-core.js
 node --check js/pages/database.js
 node --check js/pages/events.js
@@ -747,6 +749,8 @@ grep -q "css/pages/compare.css?v=${VERSION}" index.html
 grep -q "css/pages/drills.css?v=${VERSION}" index.html
 grep -q "js/site-config.js?v=${VERSION}" index.html
 grep -q "js/changelog.js?v=${VERSION}" index.html
+grep -q "js/pages/oil-visual-builder.js?v=${VERSION}" index.html
+grep -q "css/pages/oil-visual-builder.css?v=${VERSION}" index.html
 grep -q "js/game-data.js?v=${VERSION}" index.html
 grep -q "js/app.js?v=${VERSION}" index.html
 grep -q "js/pages/sale.js?v=${VERSION}" index.html

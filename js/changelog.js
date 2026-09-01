@@ -1,6 +1,11 @@
 /* STEAL THE OIL TYCOON — internal release changelog */
 /* Newest release must stay first. Dates are null where an exact historical release date was not recorded here. */
 window.STOT_CHANGELOG=Object.freeze([
+  Object.freeze({version:"5.72",date:"Sep 2 2026",changes:Object.freeze([
+    "Added a visual 2D 5×5 plot builder for all 15 Oil plots",
+    "Plot colors now match Forest, Desert, Volcano and Mountain areas",
+    "Tapping a plot opens a compact editor and placed drills are drawn with their footprint and name"
+  ])}),
   Object.freeze({version:"5.71",date:"Sep 2 2026",changes:Object.freeze([
     "Added a centralized release changelog",
     "Added build and browser checks that require the changelog version and date to match STOT_CONFIG",
