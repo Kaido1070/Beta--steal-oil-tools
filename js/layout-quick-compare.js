@@ -1,6 +1,6 @@
 (() => {
-  const VERSION = "5.43";
-  const styles = ["css/v539-01.css", "css/v539-02.css", "css/v539-03.css", "css/beta-first-visit.css"];
+  const VERSION = "5.44";
+  const styles = ["css/v539-01.css", "css/v539-02.css", "css/v539-03.css", "css/beta-first-visit.css", "css/beta-drill-images.css"];
   for (const href of styles) {
     const link = document.createElement("link");
     link.rel = "stylesheet";
@@ -12,7 +12,8 @@
     ...Array.from({length: 10}, (_, i) => `js/v539-${String(i + 1).padStart(2, "0")}.js`),
     "js/v539-11.js",
     "js/beta-oil-order.js",
-    "js/beta-first-visit.js"
+    "js/beta-first-visit.js",
+    "js/beta-drill-images.js"
   ];
   let index = 0;
   const loadNext = () => {
