@@ -3,8 +3,12 @@ name: Build image atlases
 on:
   push:
     paths:
-      - 'tmp/pet-atlas-base64.txt'
-      - 'tmp/drill-atlas-base64.txt'
+      - 'tmp/pet0.b64'
+      - 'tmp/pet1.b64'
+      - 'tmp/drill0.b64'
+      - 'tmp/drill1.b64'
+      - 'tmp/drill2.b64'
+      - 'tmp/drill3.b64'
       - '.github/workflows/build-image-atlases.yml'
   workflow_dispatch:
 
@@ -16,29 +20,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Decode and verify atlases
+      - name: Decode and verify image groups
         shell: bash
         run: |
           set -euo pipefail
-          test -s tmp/pet-atlas-base64.txt
-          test -s tmp/drill-atlas-base64.txt
-          wc -c tmp/pet-atlas-base64.txt tmp/drill-atlas-base64.txt
+          for f in tmp/pet0.b64 tmp/pet1.b64 tmp/drill0.b64 tmp/drill1.b64 tmp/drill2.b64 tmp/drill3.b64; do test -s "$f"; done
           mkdir -p assets/images/pets assets/images/drills
-          tr -d '\r\n\t ' < tmp/pet-atlas-base64.txt | base64 -d > assets/images/pets/pets-atlas.webp
-          tr -d '\r\n\t ' < tmp/drill-atlas-base64.txt | base64 -d > assets/images/drills/drills-atlas.webp
-          file assets/images/pets/pets-atlas.webp
-          file assets/images/drills/drills-atlas.webp
-          grep -q 'Web/P image' <(file assets/images/pets/pets-atlas.webp)
-          grep -q 'Web/P image' <(file assets/images/drills/drills-atlas.webp)
-          test $(stat -c%s assets/images/pets/pets-atlas.webp) -gt 30000
-          test $(stat -c%s assets/images/drills/drills-atlas.webp) -gt 70000
-          rm -f tmp/pet-atlas-base64.txt tmp/drill-atlas-base64.txt
+          base64 -d tmp/pet0.b64 > assets/images/pets/pets-0.webp
+          base64 -d tmp/pet1.b64 > assets/images/pets/pets-1.webp
+          base64 -d tmp/drill0.b64 > assets/images/drills/drills-0.webp
+          base64 -d tmp/drill1.b64 > assets/images/drills/drills-1.webp
+          base64 -d tmp/drill2.b64 > assets/images/drills/drills-2.webp
+          base64 -d tmp/drill3.b64 > assets/images/drills/drills-3.webp
+          for f in assets/images/pets/pets-{0,1}.webp assets/images/drills/drills-{0,1,2,3}.webp; do
+            file "$f"
+            file "$f" | grep -q 'Web/P image'
+            test $(stat -c%s "$f") -gt 5000
+          done
+          rm -f tmp/pet0.b64 tmp/pet1.b64 tmp/drill0.b64 tmp/drill1.b64 tmp/drill2.b64 tmp/drill3.b64
       - name: Commit decoded images
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/images/pets/pets-atlas.webp assets/images/drills/drills-atlas.webp tmp
+          git add assets/images/pets/pets-0.webp assets/images/pets/pets-1.webp assets/images/drills/drills-0.webp assets/images/drills/drills-1.webp assets/images/drills/drills-2.webp assets/images/drills/drills-3.webp tmp
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Install real drill and pet image atlases'
+          git commit -m 'Install real drill and pet image groups'
           git push
