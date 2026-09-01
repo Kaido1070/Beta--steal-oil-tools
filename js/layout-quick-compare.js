@@ -1,6 +1,6 @@
 (() => {
-  const VERSION = "5.56";
-  const styles = ["css/v539-01.css", "css/v539-02.css", "css/v539-03.css", "css/beta-first-visit.css", "css/beta-image-atlas-fix.css", "css/beta-preset-visuals.css", "css/beta-database-images.css"];
+  const VERSION = "5.57";
+  const styles = ["css/v539-01.css", "css/v539-02.css", "css/v539-03.css", "css/beta-first-visit.css", "css/beta-image-atlas-fix.css", "css/beta-preset-visuals.css", "css/beta-database-images.css", "css/beta-database-redesign.css"];
   for (const href of styles) {
     const link = document.createElement("link");
     link.rel = "stylesheet";
@@ -15,7 +15,8 @@
     "js/beta-first-visit.js",
     "js/beta-image-atlas-fix.js",
     "js/beta-preset-visuals.js",
-    "js/beta-database-images.js"
+    "js/beta-database-images.js",
+    "js/beta-database-redesign.js"
   ];
   let index = 0;
   const loadNext = () => {
