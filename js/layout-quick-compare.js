@@ -1,9 +1,10 @@
 (() => {
+  const VERSION = "5.41";
   const styles = ["css/v539-01.css", "css/v539-02.css", "css/v539-03.css"];
   for (const href of styles) {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = href;
+    link.href = `${href}?v=${VERSION}`;
     document.head.appendChild(link);
   }
 
@@ -15,12 +16,12 @@
   let index = 0;
   const loadNext = () => {
     if (index >= scripts.length) {
-      document.documentElement.dataset.stotBetaReady = "5.39";
-      console.info("STOT Beta v5.39 loaded");
+      document.documentElement.dataset.stotBetaReady = VERSION;
+      console.info(`STOT Beta v${VERSION} loaded`);
       return;
     }
     const script = document.createElement("script");
-    script.src = scripts[index++];
+    script.src = `${scripts[index++]}?v=${VERSION}`;
     script.onload = loadNext;
     script.onerror = () => console.error("Failed to load STOT beta update:", script.src);
     document.body.appendChild(script);
