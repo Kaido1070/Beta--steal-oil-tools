@@ -6,14 +6,23 @@
   const later = fn => {
     setTimeout(fn, 0);
     setTimeout(fn, 60);
+    setTimeout(fn, 180);
     requestAnimationFrame(() => requestAnimationFrame(fn));
   };
 
-  function findSummary(oil) {
-    const headings = [...oil.querySelectorAll('h1,h2,h3,h4,strong')];
-    const heading = headings.find(el => /Preset Summary|Layout Summary/i.test((el.textContent || '').trim()));
-    if (!heading) return null;
-    return heading.closest('.panel,.layout-summary,.v519-result,.v539-summary') || heading.parentElement;
+  function getSummary() {
+    return document.querySelector('.v519-combined-summary');
+  }
+
+  function separateSummary(oil) {
+    const summary = getSummary();
+    if (!summary) return null;
+
+    // v5.19 merged the result into the calculator card. v5.41 deliberately
+    // reverses that merge so the result is its own final section.
+    summary.classList.add('panel', 'v541-summary-panel');
+    if (summary.parentElement !== oil) oil.appendChild(summary);
+    return summary;
   }
 
   function applyOilOrder() {
@@ -23,32 +32,36 @@
     const introPanel = oil.querySelector(':scope > .panel.step');
     const modeTabs = byId('layoutModeTabs');
     const calc = modeTabs?.closest('.layout-control-card');
-    const boosts = oil.querySelector('.v520-boosts');
+    const boosts = document.querySelector('.v520-boosts');
     const controls = oil.querySelector('.layout-controls');
     const quick = byId('v536QuickFill');
     const advanced = byId('v536AdvancedTools');
     const areas = byId('layoutAreas');
     const note = oil.querySelector('.layout-note');
-    const summary = findSummary(oil);
 
     if (!introPanel || !calc) return;
 
-    // Start with the user's goal: Time -> Oil or Oil -> Time.
+    const summary = separateSummary(oil);
+
+    // 1) Calculation choice and its relevant input first.
     introPanel.insertAdjacentElement('afterend', calc);
     let anchor = calc;
 
-    // Then conditions/boosts, followed by the preset-building tools.
+    // 2) Boosts, preset controls and building tools.
     for (const el of [boosts, controls, quick, advanced, areas, note]) {
       if (!el || el === calc || el === summary) continue;
       anchor.insertAdjacentElement('afterend', el);
       anchor = el;
     }
 
-    // Final result belongs at the very bottom of Oil / Hour.
+    // 3) Preset Summary is a completely separate final section.
     if (summary) oil.appendChild(summary);
   }
 
-  document.querySelectorAll('.tabs button').forEach(btn => btn.addEventListener('click', () => later(applyOilOrder)));
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => later(applyOilOrder));
+  });
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => later(applyOilOrder), { once: true });
   } else {
