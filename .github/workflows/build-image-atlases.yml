@@ -16,14 +16,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Decode atlases
+      - name: Decode and verify atlases
         shell: bash
         run: |
+          set -euo pipefail
+          test -s tmp/pet-atlas-base64.txt
+          test -s tmp/drill-atlas-base64.txt
+          wc -c tmp/pet-atlas-base64.txt tmp/drill-atlas-base64.txt
           mkdir -p assets/images/pets assets/images/drills
-          base64 -d tmp/pet-atlas-base64.txt > assets/images/pets/pets-atlas.webp
-          base64 -d tmp/drill-atlas-base64.txt > assets/images/drills/drills-atlas.webp
+          tr -d '\r\n\t ' < tmp/pet-atlas-base64.txt | base64 -d > assets/images/pets/pets-atlas.webp
+          tr -d '\r\n\t ' < tmp/drill-atlas-base64.txt | base64 -d > assets/images/drills/drills-atlas.webp
           file assets/images/pets/pets-atlas.webp
           file assets/images/drills/drills-atlas.webp
+          grep -q 'Web/P image' <(file assets/images/pets/pets-atlas.webp)
+          grep -q 'Web/P image' <(file assets/images/drills/drills-atlas.webp)
+          test $(stat -c%s assets/images/pets/pets-atlas.webp) -gt 30000
+          test $(stat -c%s assets/images/drills/drills-atlas.webp) -gt 70000
           rm -f tmp/pet-atlas-base64.txt tmp/drill-atlas-base64.txt
       - name: Commit decoded images
         shell: bash
