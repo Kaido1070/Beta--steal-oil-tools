@@ -2,7 +2,7 @@
   if (window.__STOT_BETA_IMAGE_ATLAS_FIX__) return;
   window.__STOT_BETA_IMAGE_ATLAS_FIX__ = true;
 
-  const VERSION = '5.46';
+  const VERSION = '5.55';
   const DRILL_IDS = [
     'basic','strong','enhanced','speed','reinforced','industrial','double-industrial','turbo','mega','ice','lava','rocket','mega-laser','scifi-double','scifi-quad','lunar','alien-tech','ufo','solar','antimatter','black-hole','angel','demonic','candy','volcano','disco','hacker','super-rocket','pagoda','drake','ketchup-mustard','heart','clock','banana'
   ];
@@ -101,12 +101,32 @@
     });
   }
 
+  function decoratePetChecker() {
+    const select = document.getElementById('petSelect');
+    if (!select) return;
+    const field = select.closest('.field');
+    const icon = field?.querySelector('.field-head .icon');
+    const name = select.options?.[select.selectedIndex]?.textContent?.trim()?.toLowerCase();
+    const idx = petIndex[name];
+    if (icon && Number.isInteger(idx)) {
+      icon.classList.add('v555-pet-checker-icon');
+      setAtlas(icon, 'pet', idx);
+    }
+    const levelIcon = document.getElementById('petLevel')?.closest('.field')?.querySelector('.field-head .icon');
+    if (levelIcon?.classList.contains('v546-atlas-thumb')) {
+      levelIcon.className = 'icon';
+      levelIcon.removeAttribute('style');
+      levelIcon.textContent = 'L';
+    }
+  }
+
   function refresh() {
     decorateDrillDatabase();
     decorateDrillPicker();
     decoratePresetRows();
     decorateCompare();
     decoratePets();
+    decoratePetChecker();
   }
 
   let queued = false;
@@ -116,6 +136,11 @@
     requestAnimationFrame(() => { queued = false; refresh(); });
   });
   observer.observe(document.body, {childList:true, subtree:true});
+
+  document.addEventListener('change', e => {
+    if (e.target?.id === 'petSelect') requestAnimationFrame(decoratePetChecker);
+  });
+  document.addEventListener('click', () => setTimeout(decoratePetChecker, 0));
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refresh, {once:true});
   else refresh();
