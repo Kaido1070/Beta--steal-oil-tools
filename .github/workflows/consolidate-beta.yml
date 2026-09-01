@@ -42,37 +42,50 @@ jobs:
         run: bash scripts/consolidate-beta.sh
 
       - name: Validate generated files
+        shell: bash
         run: |
+          VERSION="$(sed -n 's/^VERSION="\([^"]*\)"/\1/p' scripts/consolidate-beta.sh | head -n1)"
+          test -n "$VERSION"
           test -s index.html
           test -s css/app.bundle.css
           test -s css/pages/database.css
+          test -s css/pages/events.css
           test -s js/game-data.js
           test -s js/app.js
           test -s js/pages/database-core.js
           test -s js/pages/database.js
+          test -s js/pages/events.js
           test -s js/beta-patches.bundle.js
-          test "$(grep -c 'js/game-data.js?v=5.60' index.html)" -eq 1
-          test "$(grep -c 'js/app.js?v=5.60' index.html)" -eq 1
-          test "$(grep -c 'js/pages/database.js?v=5.60' index.html)" -eq 1
-          test "$(grep -c 'js/beta-patches.bundle.js?v=5.60' index.html)" -eq 1
-          test "$(grep -c 'css/app.bundle.css?v=5.60' index.html)" -eq 1
-          test "$(grep -c 'css/pages/database.css?v=5.60' index.html)" -eq 1
+          test "$(grep -c "js/game-data.js?v=${VERSION}" index.html)" -eq 1
+          test "$(grep -c "js/app.js?v=${VERSION}" index.html)" -eq 1
+          test "$(grep -c "js/pages/database.js?v=${VERSION}" index.html)" -eq 1
+          test "$(grep -c "js/pages/events.js?v=${VERSION}" index.html)" -eq 1
+          test "$(grep -c "js/beta-patches.bundle.js?v=${VERSION}" index.html)" -eq 1
+          test "$(grep -c "css/app.bundle.css?v=${VERSION}" index.html)" -eq 1
+          test "$(grep -c "css/pages/database.css?v=${VERSION}" index.html)" -eq 1
+          test "$(grep -c "css/pages/events.css?v=${VERSION}" index.html)" -eq 1
           grep -q '^window.STOT_GAME_DATA=' js/game-data.js
           ! grep -q '^const drills=' js/app.js
           ! grep -q 'function renderDb()' js/app.js
+          ! grep -q 'function renderEvents()' js/app.js
+          ! grep -q 'const mapEvents=\[' js/app.js
           grep -q 'function renderDb()' js/pages/database-core.js
           grep -q 'beta-database-images.js' js/pages/database.js
           grep -q 'beta-database-redesign.js' js/pages/database.js
+          grep -q 'function renderEvents()' js/pages/events.js
+          grep -q 'const mapEvents=\[' js/pages/events.js
           ! grep -q '^calcProduction();$' js/app.js
 
       - name: Commit generated runtime
+        shell: bash
         run: |
+          VERSION="$(sed -n 's/^VERSION="\([^"]*\)"/\1/p' scripts/consolidate-beta.sh | head -n1)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html css/app.bundle.css css/pages/database.css js/game-data.js js/app.js js/pages/database-core.js js/pages/database.js js/beta-patches.bundle.js
+          git add index.html css/main.css css/app.bundle.css css/pages/database.css css/pages/events.css js/game-data.js js/app.js js/pages/database-core.js js/pages/database.js js/pages/events.js js/beta-patches.bundle.js
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Build separated Database runtime v5.60"
+            git commit -m "Build separated page runtime v${VERSION}"
             git push origin HEAD:consolidation-work
           fi
