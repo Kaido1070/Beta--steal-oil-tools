@@ -1,0 +1,99 @@
+name: Heart Likes Image v5.76
+
+on:
+  push:
+    paths:
+      - '.github/workflows/heart-likes-image-v576.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  heart_image:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Add Heart Drill thumbnail
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          visuals=Path('js/beta-preset-visuals.js')
+          s=visuals.read_text(encoding='utf-8')
+          marker="  function decorateLayoutBoost(inputId, petId) {"
+          helper="""  function decorateLayoutDrill(inputId, drillId) {\n    const input = document.getElementById(inputId);\n    if (!input) return;\n    const host = input.closest('label') || input.parentElement;\n    if (!host) return;\n    host.classList.add('v547-pet-boost');\n    let thumb = host.querySelector('.v547-pet-boost-thumb');\n    if (!thumb) {\n      thumb = document.createElement('span');\n      thumb.className = 'v547-pet-boost-thumb';\n      thumb.setAttribute('aria-hidden','true');\n      host.insertBefore(thumb, host.firstChild);\n    }\n    paintAtlas(thumb, 'drill', drillIndex[drillId]);\n  }\n\n"""
+          if 'function decorateLayoutDrill(' not in s:
+              if marker not in s: raise SystemExit('decorateLayoutBoost marker missing')
+              s=s.replace(marker,helper+marker,1)
+          refresh="""    decorateLayoutBoost('layoutMole', 'mole');\n    decorateLayoutBoost('layoutFruit', 'fruit');\n"""
+          replacement="""    decorateLayoutBoost('layoutMole', 'mole');\n    decorateLayoutBoost('layoutFruit', 'fruit');\n    decorateLayoutDrill('layoutLikes', 'heart');\n"""
+          if "decorateLayoutDrill('layoutLikes', 'heart')" not in s:
+              if refresh not in s: raise SystemExit('refresh marker missing')
+              s=s.replace(refresh,replacement,1)
+          visuals.write_text(s,encoding='utf-8')
+
+          build=Path('scripts/consolidate-beta.sh')
+          b=build.read_text(encoding='utf-8')
+          if 'VERSION="5.75"' not in b: raise SystemExit('Expected v5.75 build')
+          build.write_text(b.replace('VERSION="5.75"','VERSION="5.76"',1),encoding='utf-8')
+
+          ch=Path('js/changelog.js')
+          c=ch.read_text(encoding='utf-8')
+          marker='window.STOT_CHANGELOG=Object.freeze([\n'
+          entry='''  Object.freeze({version:"5.76",date:"Sep 2 2026",changes:Object.freeze([\n    "Added the Heart Drill thumbnail beside Heart Likes in Oil / Hour",\n    "Heart Likes now uses the existing drill image atlas instead of an empty placeholder"\n  ])}),\n'''
+          if 'version:"5.76"' not in c:
+              c=c.replace(marker,marker+entry,1)
+          ch.write_text(c,encoding='utf-8')
+
+          test=Path('tests/smoke-beta.mjs')
+          t=test.read_text(encoding='utf-8').replace("'5.75'","'5.76'")
+          t=t.replace('stot-v5.75-layout-save-v1','stot-v5.76-layout-save-v1')
+          anchor="assert.equal(await page.locator('#layoutVisualBuilder .v572-plot-card').count(), 15);\n"
+          checks="""const heartThumb = page.locator('#layoutLikes').closest('label').locator('.v547-pet-boost-thumb');\nassert.equal(await heartThumb.count(), 1, 'Heart Likes thumbnail missing');\nassert.ok((await heartThumb.evaluate(el => getComputedStyle(el).backgroundImage)).includes('drills-3.webp'), 'Heart Likes is not using the Heart Drill atlas image');\n"""
+          if checks not in t:
+              if anchor not in t: raise SystemExit('Smoke anchor missing')
+              t=t.replace(anchor,anchor+checks,1)
+          test.write_text(t,encoding='utf-8')
+          PY
+
+      - name: Build v5.76
+        run: bash scripts/consolidate-beta.sh
+
+      - name: Verify source
+        run: |
+          node --check js/beta-preset-visuals.js
+          grep -q "decorateLayoutDrill('layoutLikes', 'heart')" js/beta-preset-visuals.js
+          grep -q 'version:"5.76"' js/site-config.js
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/stot-http.log
+          exit 1
+
+      - name: Run full browser smoke suite
+        run: node tests/smoke-beta.mjs
+
+      - name: Commit tested Heart image
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Show Heart Drill image by Heart Likes v5.76'
+          git push origin HEAD:main
