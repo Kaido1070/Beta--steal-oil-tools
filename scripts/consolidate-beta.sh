@@ -41,6 +41,21 @@ for file in "${CSS_FILES[@]}" "${PATCH_FILES[@]}" js/app.js; do
   test -f "$file" || { echo "Missing required file: $file" >&2; exit 1; }
 done
 
+# Fix a stale startup call left in the pinned core. calcProduction no longer exists;
+# leaving the call unguarded aborts the remaining initial renders.
+python3 <<'PY'
+from pathlib import Path
+p = Path('js/app.js')
+s = p.read_text(encoding='utf-8')
+old = 'calcSale();\ncalcProduction();\ncalcDrill();'
+new = 'calcSale();\nif(typeof calcProduction==="function")calcProduction();\ncalcDrill();'
+if old in s:
+    s = s.replace(old, new, 1)
+elif new not in s:
+    raise SystemExit('Could not locate expected startup sequence in js/app.js')
+p.write_text(s, encoding='utf-8')
+PY
+
 # Keep the exact CSS cascade that v5.57 used, but serve it as one local file.
 {
   echo "/* STOT Beta consolidated CSS v${VERSION} */"
@@ -113,8 +128,9 @@ node --check js/app.js
 node --check js/beta-patches.bundle.js
 ! grep -q 'raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools' index.html
 ! grep -q 'document.write' index.html
+! grep -q '^calcProduction();$' js/app.js
 grep -q 'css/app.bundle.css?v=5.58' index.html
 grep -q 'js/beta-patches.bundle.js?v=5.58' index.html
 grep -q 'stot-local-version" content="5.58' index.html
 
-echo "Consolidated Beta v${VERSION}: generated index.html, css/app.bundle.css, js/beta-patches.bundle.js"
+echo "Consolidated Beta v${VERSION}: generated index.html, css/app.bundle.css, js/app.js, js/beta-patches.bundle.js"
