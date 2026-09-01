@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.64"
+VERSION="5.65"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
 
@@ -261,13 +261,85 @@ elif not page_css.exists():
     raise SystemExit('Codes CSS already removed from css/main.css but css/pages/codes.css is missing')
 PY_CODES
 
-# Keep already-separated page module version markers aligned with this build.
-python3 <<'PY_PAGE_VERSIONS'
+# Step 6: move Drill Compare behavior and styles out of the shared core.
+python3 <<'PY_COMPARE'
 from pathlib import Path
-p = Path('js/pages/events.js')
-text = p.read_text(encoding='utf-8')
-text = text.replace('v5.62', 'v5.63').replace('stotEventsPage="5.62"', 'stotEventsPage="5.63"')
-p.write_text(text, encoding='utf-8')
+import re
+
+app_path=Path('js/app.js')
+compare_path=Path('js/pages/compare.js')
+compare_path.parent.mkdir(parents=True,exist_ok=True)
+app=app_path.read_text(encoding='utf-8')
+start_marker='let compareA='
+end_marker='\nconst viewBadges='
+
+if start_marker in app:
+    start=app.index(start_marker)
+    end=app.index(end_marker,start)
+    block=app[start:end].strip()
+    compare_path.write_text(
+        '/* STOT Drill Compare page runtime v5.65 — extracted from js/app.js */\n'
+        + block
+        + '\n\n/* Initial Drill Compare render now belongs to this page module. */\n'
+        + 'renderCompare();\n'
+        + 'document.documentElement.dataset.stotComparePage="5.65";\n',
+        encoding='utf-8'
+    )
+    app=app[:start]+app[end+1:]
+    startup='calcDrill();\nrenderCompare();'
+    if startup not in app:
+        raise SystemExit('Could not locate Compare startup call in js/app.js')
+    app=app.replace(startup,'calcDrill();',1)
+    app_path.write_text(app,encoding='utf-8')
+else:
+    if not compare_path.exists():
+        raise SystemExit('Compare already removed from app.js but js/pages/compare.js is missing')
+    if 'function renderCompare()' in app or 'let compareA=' in app:
+        raise SystemExit('Compare runtime still remains in js/app.js')
+
+css_path=Path('css/main.css')
+page_css=Path('css/pages/compare.css')
+css=css_path.read_text(encoding='utf-8')
+css_start='/* Compare */'
+css_end='\n\n@media(min-width:700px)'
+if css_start in css:
+    start=css.index(css_start)
+    end=css.index(css_end,start)
+    block=css[start:end].strip()
+    page_css.parent.mkdir(parents=True,exist_ok=True)
+    page_css.write_text(
+        '/* STOT Drill Compare page CSS v5.65 */\n'
+        + block
+        + '\n@media(min-width:700px){.compare-setup-grid{grid-template-columns:repeat(4,1fr)}.compare-card{padding:16px}.compare-logo{width:58px;height:58px}}\n',
+        encoding='utf-8'
+    )
+    css=css[:start]+css[end:]
+    old='@media(min-width:700px){.drill-list{grid-template-columns:1fr 1fr}.drill-card.open{grid-column:span 1}.compare-setup-grid{grid-template-columns:repeat(4,1fr)}.compare-card{padding:16px}.compare-logo{width:58px;height:58px}.event-list{grid-template-columns:1fr 1fr}.admin-card{margin-top:8px}}'
+    new='@media(min-width:700px){.drill-list{grid-template-columns:1fr 1fr}.drill-card.open{grid-column:span 1}.event-list{grid-template-columns:1fr 1fr}.admin-card{margin-top:8px}}'
+    if old in css:
+        css=css.replace(old,new,1)
+    elif '.compare-setup-grid{grid-template-columns:repeat(4,1fr)}' in css:
+        raise SystemExit('Compare media rules still remain in css/main.css')
+    css_path.write_text(css,encoding='utf-8')
+elif not page_css.exists():
+    raise SystemExit('Compare CSS already removed from css/main.css but css/pages/compare.css is missing')
+PY_COMPARE
+
+# Keep already-separated page module version markers aligned with this build.
+python3 - "$VERSION" <<'PY_PAGE_VERSIONS'
+from pathlib import Path
+import re, sys
+version=sys.argv[1]
+for path,attr,label in [
+    ('js/pages/events.js','stotEventsPage','Events'),
+    ('js/pages/codes.js','stotCodesPage','Codes'),
+    ('js/pages/compare.js','stotComparePage','Compare'),
+]:
+    p=Path(path)
+    text=p.read_text(encoding='utf-8')
+    text=re.sub(r'v5\.\d+',f'v{version}',text,count=1)
+    text=re.sub(rf'{attr}="5\.\d+"',f'{attr}="{version}"',text)
+    p.write_text(text,encoding='utf-8')
 PY_PAGE_VERSIONS
 
 # Fix a stale startup call left in the pinned core.
@@ -343,7 +415,7 @@ html = Path('/tmp/stot-base-index.html').read_text(encoding='utf-8')
 html = html.replace('Weekend x2 Lobby', 'Admin Event Lobby')
 html = re.sub(
     r'<link\s+rel=["\']stylesheet["\']\s+href=["\']css/main\.css(?:\?[^"\']*)?["\']\s*/?>',
-    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">\n<link rel="stylesheet" href="css/pages/events.css?v={version}">\n<link rel="stylesheet" href="css/pages/codes.css?v={version}">',
+    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/compare.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">\n<link rel="stylesheet" href="css/pages/events.css?v={version}">\n<link rel="stylesheet" href="css/pages/codes.css?v={version}">',
     html,
     count=1,
     flags=re.I,
@@ -363,6 +435,7 @@ html = html.replace('<head>', '<head>\n' + meta, 1)
 scripts = (
     f'\n<script defer src="js/game-data.js?v={version}"></script>\n'
     f'<script defer src="js/app.js?v={version}"></script>\n'
+    f'<script defer src="js/pages/compare.js?v={version}"></script>\n'
     f'<script defer src="js/pages/database.js?v={version}"></script>\n'
     f'<script defer src="js/pages/events.js?v={version}"></script>\n'
     f'<script defer src="js/pages/codes.js?v={version}"></script>\n'
@@ -379,6 +452,7 @@ node --check js/pages/database-core.js
 node --check js/pages/database.js
 node --check js/pages/events.js
 node --check js/pages/codes.js
+node --check js/pages/compare.js
 node --check js/beta-patches.bundle.js
 ! grep -q 'raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools' index.html
 ! grep -q 'document.write' index.html
@@ -390,11 +464,15 @@ grep -q '^window.STOT_GAME_DATA=' js/game-data.js
 ! grep -q 'const mapEvents=\[' js/app.js
 ! grep -q 'function renderCodes()' js/app.js
 ! grep -q 'const GAME_CODES=\[' js/app.js
+! grep -q 'function renderCompare()' js/app.js
+! grep -q 'let compareA=' js/app.js
 grep -q 'function renderDb()' js/pages/database-core.js
 grep -q 'function renderEvents()' js/pages/events.js
 grep -q 'const mapEvents=\[' js/pages/events.js
 grep -q 'function renderCodes()' js/pages/codes.js
 grep -q 'const GAME_CODES=\[' js/pages/codes.js
+grep -q 'function renderCompare()' js/pages/compare.js
+grep -q 'let compareA=' js/pages/compare.js
 grep -q 'beta-database-images.js' js/pages/database.js
 grep -q 'beta-database-redesign.js' js/pages/database.js
 ! grep -q 'beta-database-images.js' js/beta-patches.bundle.js
@@ -403,12 +481,14 @@ grep -q "css/app.bundle.css?v=${VERSION}" index.html
 grep -q "css/pages/database.css?v=${VERSION}" index.html
 grep -q "css/pages/events.css?v=${VERSION}" index.html
 grep -q "css/pages/codes.css?v=${VERSION}" index.html
+grep -q "css/pages/compare.css?v=${VERSION}" index.html
 grep -q "js/game-data.js?v=${VERSION}" index.html
 grep -q "js/app.js?v=${VERSION}" index.html
 grep -q "js/pages/database.js?v=${VERSION}" index.html
 grep -q "js/pages/events.js?v=${VERSION}" index.html
 grep -q "js/pages/codes.js?v=${VERSION}" index.html
+grep -q "js/pages/compare.js?v=${VERSION}" index.html
 grep -q "js/beta-patches.bundle.js?v=${VERSION}" index.html
 grep -q "stot-local-version\" content=\"${VERSION}" index.html
 
-echo "Consolidated Beta v${VERSION}: Database, Events and Codes separated into page modules"
+echo "Consolidated Beta v${VERSION}: Database, Events, Codes and Drill Compare separated into page modules"

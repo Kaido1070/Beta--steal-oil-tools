@@ -1,0 +1,23 @@
+{
+  "name": "beta--steal-oil-tools",
+  "version": "1.0.0",
+  "description": "Private staging repository for testing **STOT Tools v5.39** before anything is promoted to the public site.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kaido1070/Beta--steal-oil-tools.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Kaido1070/Beta--steal-oil-tools/issues"
+  },
+  "homepage": "https://github.com/Kaido1070/Beta--steal-oil-tools#readme"
+}

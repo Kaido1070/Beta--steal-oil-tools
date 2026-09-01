@@ -1,4 +1,4 @@
-/* STOT Codes page runtime v5.63 — extracted from js/app.js */
+/* STOT Codes page runtime v5.65 — extracted from js/app.js */
 const GAME_CODES=[
   {code:"8962",type:"cash",reward:"10,000 Cash"},
   {code:"5219",type:"cash",reward:"75,000 Cash"},
@@ -35,4 +35,4 @@ document.querySelectorAll("[data-code-filter]").forEach(b=>b.onclick=()=>{codeFi
 
 /* Initial Codes render now belongs to this page module. */
 renderCodes();
-document.documentElement.dataset.stotCodesPage="5.63";
+document.documentElement.dataset.stotCodesPage="5.65";

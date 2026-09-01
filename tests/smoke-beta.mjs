@@ -20,18 +20,19 @@ page.on('request', request => {
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
 
-assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.63');
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.63');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.63');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.63');
-assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.63');
+assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.65');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.65');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.65');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.65');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.65');
+assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.65');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
 
 const scriptSrcs = await page.locator('script[src]').evaluateAll(nodes => nodes.map(n => new URL(n.src).pathname));
-assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);
+assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);
 const styleHrefs = await page.locator('link[rel="stylesheet"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname));
-assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);
+assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/compare.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);
 
 const dataCounts = await page.evaluate(() => {
   const d = window.STOT_GAME_DATA;
@@ -114,6 +115,18 @@ await page.locator('[data-code-filter="cash"]').click();
 await page.waitForTimeout(90);
 assert.ok(await page.locator('#codesList .code-card').count() > 0, 'Cash code filter returned no cards');
 
+
+assert.equal(await page.evaluate(() => typeof renderCompare), 'function');
+await page.locator('.tabs button[data-view="compare"]').click();
+await page.waitForTimeout(120);
+assert.ok(await page.locator('#compareView').evaluate(el => el.classList.contains('active')));
+assert.equal(await page.locator('#compareCards .compare-card').count(), 2, 'Drill Compare cards did not render');
+assert.ok(await page.locator('#compareTable .compare-row').count() >= 8, 'Drill Compare table did not render');
+await page.locator('#compareA').selectOption('clock');
+await page.waitForTimeout(80);
+assert.match((await page.locator('#compareCards').textContent()) || '', /Clock/i, 'Clock Drill did not render in Compare');
+assert.match((await page.locator('#compareInsight').textContent()) || '', /Result:/i, 'Compare insight did not render');
+
 await page.locator('.tabs button[data-view="database"]').click();
 await page.waitForTimeout(140);
 assert.ok(await page.locator('#databaseView').evaluate(el => el.classList.contains('active')));
@@ -137,6 +150,13 @@ for (const [tab, root] of [
   assert.ok(await image.evaluate(img => img.complete && img.naturalWidth > 0), `${tab}: image failed to load`);
 }
 
+
+await page.locator('#databaseTabs [data-dbview="pets"]').click();
+await page.waitForTimeout(120);
+const petLogo = page.locator('#petList .drill-card').first().locator('.drill-logo');
+assert.ok(await petLogo.evaluate(el => el.classList.contains('v546-atlas-thumb')), 'Pet atlas class missing');
+assert.match(await petLogo.evaluate(el => getComputedStyle(el).backgroundImage), /pets-0\.webp/, 'Pet atlas background image is hidden or missing');
+
 await page.locator('#databaseTabs [data-dbview="refineries"]').click();
 await page.locator('#refinerySearch').fill('Infinity');
 await page.waitForTimeout(90);
@@ -144,15 +164,16 @@ assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
 
 await page.reload({ waitUntil: 'networkidle' });
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.63');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.63');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.63');
-assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.63');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.65');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.65');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.65');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.65');
+assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.65');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
 const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed') || x.includes('STOT Database patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log('SMOKE PASS: v5.63 Database + Events + Codes separated, calculators, Preset UI, images, filters, reload');
+console.log('SMOKE PASS: v5.65 Database + Events + Codes + Drill Compare separated, pet images, calculators, Preset UI, filters, reload');
 await browser.close();
