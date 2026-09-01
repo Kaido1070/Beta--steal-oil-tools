@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.65"
+VERSION="5.66"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
 
@@ -325,6 +325,71 @@ elif not page_css.exists():
     raise SystemExit('Compare CSS already removed from css/main.css but css/pages/compare.css is missing')
 PY_COMPARE
 
+# Step 7: move Drills calculator and picker out of the shared core.
+python3 <<'PY_DRILLS'
+from pathlib import Path
+
+app_path=Path('js/app.js')
+drills_path=Path('js/pages/drills.js')
+drills_path.parent.mkdir(parents=True,exist_ok=True)
+app=app_path.read_text(encoding='utf-8')
+start_marker='/* drills */'
+picker_marker='/* picker */'
+shared_marker='/* shared visual helper used by Compare and Database */'
+
+if start_marker in app:
+    start=app.index(start_marker)
+    picker=app.index(picker_marker,start)
+    shared=app.index(shared_marker,picker)
+    render_picker=app.index('function renderPicker()',picker)
+    calc_block=app[start:picker].strip()
+    helper_block=app[picker+len(picker_marker):render_picker].strip()
+    picker_block=app[render_picker:shared].strip()
+    drills_path.write_text(
+        '/* STOT Drills page runtime v5.66 — extracted from js/app.js */\n'
+        + calc_block + '\n\n/* picker */\n' + picker_block
+        + '\n\n/* Initial Drills render now belongs to this page module. */\n'
+        + 'calcDrill();\n'
+        + 'document.documentElement.dataset.stotDrillsPage="5.66";\n',
+        encoding='utf-8'
+    )
+    shared_helpers='/* shared drill/catalog helpers */\n'+helper_block+'\n\n'
+    app=app[:start]+shared_helpers+app[shared:]
+    startup='if(typeof calcProduction==="function")calcProduction();\ncalcDrill();'
+    if startup not in app:
+        raise SystemExit('Could not locate Drills startup call in js/app.js')
+    app=app.replace(startup,'if(typeof calcProduction==="function")calcProduction();',1)
+    app_path.write_text(app,encoding='utf-8')
+else:
+    if not drills_path.exists():
+        raise SystemExit('Drills already removed from app.js but js/pages/drills.js is missing')
+    if 'function calcDrill()' in app or 'const ds=' in app or 'function renderPicker()' in app:
+        raise SystemExit('Drills runtime still remains in js/app.js')
+
+css_path=Path('css/main.css')
+page_css=Path('css/pages/drills.css')
+css=css_path.read_text(encoding='utf-8')
+chunks=[]
+a='.picker-btn{'; b='.db-category-tabs{'
+if a in css:
+    start=css.index(a); end=css.index(b,start)
+    chunks.append(css[start:end].strip()); css=css[:start]+css[end:]
+a='.picker-backdrop{'; b='.footer{'
+if a in css:
+    start=css.index(a); end=css.index(b,start)
+    chunks.append(css[start:end].strip()); css=css[:start]+css[end:]
+desktop='@media(min-width:700px){\n  body{padding-top:18px}.picker{border-radius:22px;max-height:75vh;margin:20px}.picker-backdrop{align-items:center}\n}'
+if desktop in css:
+    css=css.replace(desktop,'@media(min-width:700px){\n  body{padding-top:18px}\n}',1)
+    chunks.append('@media(min-width:700px){.picker{border-radius:22px;max-height:75vh;margin:20px}.picker-backdrop{align-items:center}}')
+if chunks:
+    page_css.parent.mkdir(parents=True,exist_ok=True)
+    page_css.write_text('/* STOT Drills page CSS v5.66 */\n'+'\n'.join(chunks)+'\n',encoding='utf-8')
+    css_path.write_text(css,encoding='utf-8')
+elif not page_css.exists():
+    raise SystemExit('Drills CSS already removed from css/main.css but css/pages/drills.css is missing')
+PY_DRILLS
+
 # Keep already-separated page module version markers aligned with this build.
 python3 - "$VERSION" <<'PY_PAGE_VERSIONS'
 from pathlib import Path
@@ -334,6 +399,7 @@ for path,attr,label in [
     ('js/pages/events.js','stotEventsPage','Events'),
     ('js/pages/codes.js','stotCodesPage','Codes'),
     ('js/pages/compare.js','stotComparePage','Compare'),
+    ('js/pages/drills.js','stotDrillsPage','Drills'),
 ]:
     p=Path(path)
     text=p.read_text(encoding='utf-8')
@@ -348,10 +414,13 @@ from pathlib import Path
 p = Path('js/app.js')
 s = p.read_text(encoding='utf-8')
 old = 'calcSale();\ncalcProduction();\ncalcDrill();'
-new = 'calcSale();\nif(typeof calcProduction==="function")calcProduction();\ncalcDrill();'
+safe_with_drill = 'calcSale();\nif(typeof calcProduction==="function")calcProduction();\ncalcDrill();'
+safe_without_drill = 'calcSale();\nif(typeof calcProduction==="function")calcProduction();'
 if old in s:
-    s = s.replace(old, new, 1)
-elif new not in s:
+    s = s.replace(old, safe_with_drill, 1)
+elif safe_with_drill in s or safe_without_drill in s:
+    pass
+else:
     raise SystemExit('Could not locate expected startup sequence in js/app.js')
 p.write_text(s, encoding='utf-8')
 PY
@@ -415,7 +484,7 @@ html = Path('/tmp/stot-base-index.html').read_text(encoding='utf-8')
 html = html.replace('Weekend x2 Lobby', 'Admin Event Lobby')
 html = re.sub(
     r'<link\s+rel=["\']stylesheet["\']\s+href=["\']css/main\.css(?:\?[^"\']*)?["\']\s*/?>',
-    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/compare.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">\n<link rel="stylesheet" href="css/pages/events.css?v={version}">\n<link rel="stylesheet" href="css/pages/codes.css?v={version}">',
+    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/drills.css?v={version}">\n<link rel="stylesheet" href="css/pages/compare.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">\n<link rel="stylesheet" href="css/pages/events.css?v={version}">\n<link rel="stylesheet" href="css/pages/codes.css?v={version}">',
     html,
     count=1,
     flags=re.I,
@@ -435,6 +504,7 @@ html = html.replace('<head>', '<head>\n' + meta, 1)
 scripts = (
     f'\n<script defer src="js/game-data.js?v={version}"></script>\n'
     f'<script defer src="js/app.js?v={version}"></script>\n'
+    f'<script defer src="js/pages/drills.js?v={version}"></script>\n'
     f'<script defer src="js/pages/compare.js?v={version}"></script>\n'
     f'<script defer src="js/pages/database.js?v={version}"></script>\n'
     f'<script defer src="js/pages/events.js?v={version}"></script>\n'
@@ -453,6 +523,7 @@ node --check js/pages/database.js
 node --check js/pages/events.js
 node --check js/pages/codes.js
 node --check js/pages/compare.js
+node --check js/pages/drills.js
 node --check js/beta-patches.bundle.js
 ! grep -q 'raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools' index.html
 ! grep -q 'document.write' index.html
@@ -466,6 +537,9 @@ grep -q '^window.STOT_GAME_DATA=' js/game-data.js
 ! grep -q 'const GAME_CODES=\[' js/app.js
 ! grep -q 'function renderCompare()' js/app.js
 ! grep -q 'let compareA=' js/app.js
+! grep -q 'function calcDrill()' js/app.js
+! grep -q 'function renderPicker()' js/app.js
+! grep -q 'const ds=' js/app.js
 grep -q 'function renderDb()' js/pages/database-core.js
 grep -q 'function renderEvents()' js/pages/events.js
 grep -q 'const mapEvents=\[' js/pages/events.js
@@ -473,6 +547,9 @@ grep -q 'function renderCodes()' js/pages/codes.js
 grep -q 'const GAME_CODES=\[' js/pages/codes.js
 grep -q 'function renderCompare()' js/pages/compare.js
 grep -q 'let compareA=' js/pages/compare.js
+grep -q 'function calcDrill()' js/pages/drills.js
+grep -q 'function renderPicker()' js/pages/drills.js
+grep -q 'const ds=' js/pages/drills.js
 grep -q 'beta-database-images.js' js/pages/database.js
 grep -q 'beta-database-redesign.js' js/pages/database.js
 ! grep -q 'beta-database-images.js' js/beta-patches.bundle.js
@@ -482,13 +559,15 @@ grep -q "css/pages/database.css?v=${VERSION}" index.html
 grep -q "css/pages/events.css?v=${VERSION}" index.html
 grep -q "css/pages/codes.css?v=${VERSION}" index.html
 grep -q "css/pages/compare.css?v=${VERSION}" index.html
+grep -q "css/pages/drills.css?v=${VERSION}" index.html
 grep -q "js/game-data.js?v=${VERSION}" index.html
 grep -q "js/app.js?v=${VERSION}" index.html
 grep -q "js/pages/database.js?v=${VERSION}" index.html
 grep -q "js/pages/events.js?v=${VERSION}" index.html
 grep -q "js/pages/codes.js?v=${VERSION}" index.html
 grep -q "js/pages/compare.js?v=${VERSION}" index.html
+grep -q "js/pages/drills.js?v=${VERSION}" index.html
 grep -q "js/beta-patches.bundle.js?v=${VERSION}" index.html
 grep -q "stot-local-version\" content=\"${VERSION}" index.html
 
-echo "Consolidated Beta v${VERSION}: Database, Events, Codes and Drill Compare separated into page modules"
+echo "Consolidated Beta v${VERSION}: Database, Events, Codes, Drill Compare and Drills separated into page modules"

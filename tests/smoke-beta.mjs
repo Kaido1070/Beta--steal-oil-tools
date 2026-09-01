@@ -20,19 +20,20 @@ page.on('request', request => {
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
 
-assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.65');
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.65');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.65');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.65');
-assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.65');
-assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.65');
+assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.66');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
 
 const scriptSrcs = await page.locator('script[src]').evaluateAll(nodes => nodes.map(n => new URL(n.src).pathname));
-assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);
+assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/drills.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);
 const styleHrefs = await page.locator('link[rel="stylesheet"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname));
-assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/compare.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);
+assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/drills.css', '/css/pages/compare.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);
 
 const dataCounts = await page.evaluate(() => {
   const d = window.STOT_GAME_DATA;
@@ -71,6 +72,25 @@ assert.equal((await page.locator('#saleValue').textContent())?.trim(), '$11.8K')
 assert.equal((await page.locator('#saleOil').inputValue()).trim(), '50');
 assert.equal((await page.locator('#sellPrice').inputValue()).trim(), '50');
 assert.ok(((await page.locator('#drillMainRate').textContent()) || '').trim().length > 0, 'Drill calculator did not initialize');
+
+
+assert.equal(await page.evaluate(() => typeof calcDrill), 'function');
+assert.equal(await page.evaluate(() => typeof renderPicker), 'function');
+await page.locator('.tabs button[data-view="drills"]').click();
+await page.waitForTimeout(100);
+assert.ok(await page.locator('#drillsView').evaluate(el => el.classList.contains('active')));
+await page.locator('#drillPickerBtn').click();
+await page.waitForTimeout(80);
+assert.ok(await page.locator('#pickerBackdrop').evaluate(el => el.classList.contains('show')));
+await page.locator('#pickerSearch').fill('Clock');
+await page.waitForTimeout(70);
+assert.ok(await page.locator('#pickerList [data-pick="clock"]').count(), 'Clock Drill missing from picker');
+await page.locator('#pickerList [data-pick="clock"]').click();
+await page.locator('#drillHours').fill('1');
+await page.waitForTimeout(80);
+assert.match((await page.locator('#drillPickerBtn').textContent()) || '', /Clock/i);
+assert.match((await page.locator('#drillMainLabel').textContent()) || '', /Rate After/i);
+assert.notEqual((await page.locator('#drillMainRate').textContent())?.trim(), '0/s');
 
 await page.locator('.tabs button[data-view="oil"]').click();
 await page.waitForTimeout(100);
@@ -164,16 +184,17 @@ assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
 
 await page.reload({ waitUntil: 'networkidle' });
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.65');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.65');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.65');
-assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.65');
-assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.65');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.66');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
 const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed') || x.includes('STOT Database patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log('SMOKE PASS: v5.65 Database + Events + Codes + Drill Compare separated, pet images, calculators, Preset UI, filters, reload');
+console.log('SMOKE PASS: v5.66 Database + Events + Codes + Drill Compare + Drills separated, pet images, calculators, Preset UI, filters, reload');
 await browser.close();
