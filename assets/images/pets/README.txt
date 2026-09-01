@@ -1,0 +1,1 @@
+Pet images are stored in pets-atlas.webp and displayed through css/beta-pet-images.css.
