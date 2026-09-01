@@ -17,6 +17,9 @@
     let html=await fetch(base,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.text()});
     html=html.replace("<head>",`<head>\n<meta name="stot-local-version" content="5.40">\n<meta name="stot-source-commit" content="aec48cd084062e3791d523b72cb65618948508c7">`);
     html=html.replaceAll("Weekend x2 Lobby","Admin Event Lobby");
+    html=html.replaceAll('js/layout-quick-compare.js','js/layout-quick-compare.js?v=5.40');
+    html=html.replaceAll('js/app.js','js/app.js?v=5.40');
+    html=html.replaceAll('css/main.css','css/main.css?v=5.40');
     document.open();
     document.write(html);
     document.close();
