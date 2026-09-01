@@ -6,6 +6,7 @@ const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 const pageErrors = [];
 const consoleErrors = [];
 const legacyRequests = [];
+const localRequests = [];
 
 page.on('pageerror', error => pageErrors.push(String(error)));
 page.on('console', message => {
@@ -14,6 +15,7 @@ page.on('console', message => {
 page.on('request', request => {
   const url = request.url();
   if (url.includes('raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools')) legacyRequests.push(url);
+  if (url.startsWith('http://127.0.0.1:4173/')) localRequests.push(url);
 });
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
@@ -22,6 +24,16 @@ assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute(
 assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.58');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
+
+// The page must load the consolidated runtime directly, not the old sequential patch waterfall.
+const scriptSrcs = await page.locator('script[src]').evaluateAll(nodes => nodes.map(n => new URL(n.src).pathname));
+assert.deepEqual(scriptSrcs, ['/js/app.js', '/js/beta-patches.bundle.js']);
+const styleHrefs = await page.locator('link[rel="stylesheet"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname));
+assert.deepEqual(styleHrefs, ['/css/app.bundle.css']);
+const requestedPaths = localRequests.map(url => new URL(url).pathname);
+assert.equal(requestedPaths.filter(path => path.startsWith('/js/v539-')).length, 0, 'Standalone historical patch JS was requested');
+assert.equal(requestedPaths.filter(path => path.startsWith('/css/v539-')).length, 0, 'Standalone historical patch CSS was requested');
+assert.equal(requestedPaths.filter(path => path === '/js/layout-quick-compare.js').length, 0, 'Obsolete sequential loader was requested');
 
 // Current formatter rounds 11,750 to one decimal place at K scale.
 assert.equal((await page.locator('#saleValue').textContent())?.trim(), '$11.8K');
@@ -33,13 +45,23 @@ assert.equal((await page.locator('#sellPrice').inputValue()).trim(), '50');
 assert.ok(((await page.locator('#drillMainRate').textContent()) || '').trim().length > 0, 'Drill calculator did not initialize');
 
 await page.locator('.tabs button[data-view="oil"]').click();
-await page.waitForTimeout(80);
+await page.waitForTimeout(100);
 assert.ok(await page.locator('#oilView').evaluate(el => el.classList.contains('active')));
 assert.ok((await page.locator('#oilView').textContent())?.includes('What do you want to know?'));
 assert.ok(await page.locator('#layoutAreas').count());
 
-await page.locator('.tabs button[data-view="database"]').click();
+const compareTab = page.locator('.tabs button[data-view="layoutcompare"]');
+assert.ok(await compareTab.count(), 'Compare Presets tab missing');
 await page.waitForTimeout(120);
+assert.match((await compareTab.textContent()) || '', /Preset/i, 'Visible terminology did not migrate from Layout to Preset');
+await compareTab.click();
+await page.waitForTimeout(140);
+assert.ok(await page.locator('#layoutcompareView').evaluate(el => el.classList.contains('active')));
+assert.match((await compareTab.textContent()) || '', /Preset/i);
+assert.match((await page.locator('#layoutcompareView').textContent()) || '', /Preset A|Preset B|Presets/i, 'Compare page terminology did not stay on Preset wording');
+
+await page.locator('.tabs button[data-view="database"]').click();
+await page.waitForTimeout(140);
 assert.ok(await page.locator('#databaseView').evaluate(el => el.classList.contains('active')));
 assert.ok(await page.locator('#databaseTabs [data-dbview="refineries"]').count());
 assert.ok(await page.locator('#databaseTabs [data-dbview="solar"]').count());
@@ -53,7 +75,7 @@ for (const [tab, root] of [
   ['lootboxes', '#lootboxList'],
 ]) {
   await page.locator(`#databaseTabs [data-dbview="${tab}"]`).click();
-  await page.waitForTimeout(80);
+  await page.waitForTimeout(90);
   const cards = page.locator(`${root} .drill-card`);
   assert.ok(await cards.count() > 0, `${tab}: no cards rendered`);
   const image = cards.first().locator('.drill-logo img');
@@ -63,11 +85,9 @@ for (const [tab, root] of [
 
 await page.locator('#databaseTabs [data-dbview="refineries"]').click();
 await page.locator('#refinerySearch').fill('Infinity');
-await page.waitForTimeout(80);
+await page.waitForTimeout(90);
 assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
-
-assert.ok(await page.locator('.tabs button[data-view="layoutcompare"]').count(), 'Compare Presets/Layout comparison tab missing');
 
 await page.reload({ waitUntil: 'networkidle' });
 assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.58');
@@ -77,5 +97,5 @@ assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
 const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log('SMOKE PASS: v5.58 local runtime, calculators, Oil UI, database images, filters, reload');
+console.log('SMOKE PASS: v5.58 direct local runtime, no patch waterfall, calculators, Preset UI, database images, filters, reload');
 await browser.close();
