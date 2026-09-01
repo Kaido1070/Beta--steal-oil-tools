@@ -1,0 +1,113 @@
+name: Centralize Footer Date v5.70
+
+on:
+  push:
+    branches: [consolidation-work]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-footer:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: consolidation-work
+          fetch-depth: 0
+
+      - name: Centralize footer update date
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          build=Path('scripts/consolidate-beta.sh')
+          s=build.read_text(encoding='utf-8')
+          if 'VERSION="5.69"' not in s:
+              raise SystemExit('Expected v5.69 build pipeline')
+          s=s.replace('VERSION="5.69"','VERSION="5.70"',1)
+
+          # Pass the release date into the central config generator.
+          if 'LAST_UPDATED="Sep 2 2026"' not in s:
+              s=s.replace('VERSION="5.70"\n','VERSION="5.70"\nLAST_UPDATED="Sep 2 2026"\n',1)
+          s=s.replace('python3 - "$VERSION" "$SOURCE_COMMIT" <<\'PY_CONFIG\'','python3 - "$VERSION" "$SOURCE_COMMIT" "$LAST_UPDATED" <<\'PY_CONFIG\'',1)
+          s=s.replace('version, source_commit = sys.argv[1:3]','version, source_commit, last_updated = sys.argv[1:4]',1)
+          config_marker='  sourceCommit:"{source_commit}",\n'
+          if config_marker in s and 'lastUpdated:"{last_updated}"' not in s:
+              s=s.replace(config_marker,config_marker+'  lastUpdated:"{last_updated}",\n',1)
+
+          # Make the visible footer read from STOT_CONFIG instead of a hard-coded date.
+          app_marker='const STOT_CONFIG=window.STOT_CONFIG;\n'
+          footer_code='''const STOT_CONFIG=window.STOT_CONFIG;\ndocument.addEventListener("DOMContentLoaded",()=>{const footer=document.querySelector(".footer");if(footer)footer.textContent=`Community tool • Game values may change with updates • Last updated ${STOT_CONFIG.lastUpdated}`;},{once:true});\n'''
+          # Patch source app during the build so regenerated output always keeps this behavior.
+          central_loader="const STOT_CONFIG=window.STOT_CONFIG;"
+          if 'STOT_CONFIG.lastUpdated' not in s:
+              needle="elif 'const STOT_CONFIG=window.STOT_CONFIG;' not in app:\n              raise SystemExit('Could not centralize app config loader')\n"
+              insert="""elif 'const STOT_CONFIG=window.STOT_CONFIG;' not in app:\n              raise SystemExit('Could not centralize app config loader')\n          if 'STOT_CONFIG.lastUpdated' not in app:\n              app=app.replace('const STOT_CONFIG=window.STOT_CONFIG;','const STOT_CONFIG=window.STOT_CONFIG;\\ndocument.addEventListener(\"DOMContentLoaded\",()=>{const footer=document.querySelector(\".footer\");if(footer)footer.textContent=`Community tool • Game values may change with updates • Last updated ${STOT_CONFIG.lastUpdated}`;},{once:true});',1)\n"""
+              if needle not in s:
+                  raise SystemExit('Could not locate central app loader guard')
+              s=s.replace(needle,insert,1)
+
+          # Build-time assertions for footer centralization.
+          if "grep -q 'lastUpdated:\"'" not in s:
+              s=s.replace("grep -q 'version:\"'\"'${VERSION}'\"'\"'"' js/site-config.js", "grep -q 'version:\"'\"'${VERSION}'\"'\"'"' js/site-config.js\ngrep -q 'lastUpdated:\"'\"'${LAST_UPDATED}'\"'\"'"' js/site-config.js\ngrep -q 'STOT_CONFIG.lastUpdated' js/app.js",1)
+          build.write_text(s,encoding='utf-8')
+
+          # Update smoke test version and explicitly verify the visible footer.
+          t=Path('tests/smoke-beta.mjs')
+          test=t.read_text(encoding='utf-8').replace('5.69','5.70')
+          if "lastUpdated: window.STOT_CONFIG?.lastUpdated" not in test:
+              test=test.replace("sourceCommit: window.STOT_CONFIG?.sourceCommit,", "sourceCommit: window.STOT_CONFIG?.sourceCommit,\n            lastUpdated: window.STOT_CONFIG?.lastUpdated,",1)
+              test=test.replace("sourceCommit: 'aec48cd084062e3791d523b72cb65618948508c7',", "sourceCommit: 'aec48cd084062e3791d523b72cb65618948508c7',\n            lastUpdated: 'Sep 2 2026',",1)
+          footer_assert="assert.equal((await page.locator('.footer').textContent())?.trim(), 'Community tool • Game values may change with updates • Last updated Sep 2 2026');"
+          if footer_assert not in test:
+              marker="assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);"
+              if marker not in test:
+                  raise SystemExit('Could not locate smoke insertion marker')
+              test=test.replace(marker,marker+'\n'+footer_assert,1)
+          t.write_text(test,encoding='utf-8')
+          PY
+
+      - name: Build v5.70 runtime
+        run: bash scripts/consolidate-beta.sh
+
+      - name: Verify footer config
+        shell: bash
+        run: |
+          grep -q 'version:"5.70"' js/site-config.js
+          grep -q 'lastUpdated:"Sep 2 2026"' js/site-config.js
+          grep -q 'STOT_CONFIG.lastUpdated' js/app.js
+          grep -q 'js/site-config.js?v=5.70' index.html
+          node --check js/site-config.js
+          node --check js/app.js
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/stot-http.log
+          exit 1
+
+      - name: Run full browser smoke suite
+        run: node tests/smoke-beta.mjs
+
+      - name: Commit tested footer centralization
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/consolidate-beta.sh js/site-config.js js/app.js js/pages js/beta-patches.bundle.js index.html tests/smoke-beta.mjs css/app.bundle.css css/pages
+          git commit -m 'Centralize footer update date v5.70'
+          git push origin HEAD:consolidation-work
