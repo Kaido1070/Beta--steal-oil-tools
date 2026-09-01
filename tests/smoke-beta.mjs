@@ -28,6 +28,10 @@ assert.equal((await page.locator('#saleValue').textContent())?.trim(), '$11.8K')
 assert.equal((await page.locator('#saleOil').inputValue()).trim(), '50');
 assert.equal((await page.locator('#sellPrice').inputValue()).trim(), '50');
 
+// This value is initialized after the old stale calcProduction call. If it is
+// populated, the core startup sequence completed rather than aborting midway.
+assert.ok(((await page.locator('#drillMainRate').textContent()) || '').trim().length > 0, 'Drill calculator did not initialize');
+
 await page.locator('.tabs button[data-view="oil"]').click();
 await page.waitForTimeout(80);
 assert.ok(await page.locator('#oilView').evaluate(el => el.classList.contains('active')));
