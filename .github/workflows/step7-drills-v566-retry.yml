@@ -1,0 +1,231 @@
+name: Step 7 Separate Drills Retry
+
+on:
+  push:
+    branches: [consolidation-work]
+
+permissions:
+  contents: write
+
+jobs:
+  split-drills:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: consolidation-work
+          fetch-depth: 0
+
+      - name: Patch build pipeline for Drills page
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('scripts/consolidate-beta.sh')
+          s=p.read_text(encoding='utf-8')
+          if 'VERSION="5.65"' not in s:
+              raise SystemExit('Expected v5.65 build pipeline')
+          s=s.replace('VERSION="5.65"','VERSION="5.66"',1)
+
+          anchor='# Keep already-separated page module version markers aligned with this build.'
+          if '# Step 7: move Drills calculator and picker out of the shared core.' not in s:
+              step=r'''# Step 7: move Drills calculator and picker out of the shared core.
+          python3 <<'PY_DRILLS'
+          from pathlib import Path
+
+          app_path=Path('js/app.js')
+          drills_path=Path('js/pages/drills.js')
+          drills_path.parent.mkdir(parents=True,exist_ok=True)
+          app=app_path.read_text(encoding='utf-8')
+          start_marker='/* drills */'
+          picker_marker='/* picker */'
+          shared_marker='/* shared visual helper used by Compare and Database */'
+
+          if start_marker in app:
+              start=app.index(start_marker)
+              picker=app.index(picker_marker,start)
+              shared=app.index(shared_marker,picker)
+              render_picker=app.index('function renderPicker()',picker)
+              calc_block=app[start:picker].strip()
+              helper_block=app[picker+len(picker_marker):render_picker].strip()
+              picker_block=app[render_picker:shared].strip()
+              drills_path.write_text(
+                  '/* STOT Drills page runtime v5.66 — extracted from js/app.js */\n'
+                  + calc_block + '\n\n/* picker */\n' + picker_block
+                  + '\n\n/* Initial Drills render now belongs to this page module. */\n'
+                  + 'calcDrill();\n'
+                  + 'document.documentElement.dataset.stotDrillsPage="5.66";\n',
+                  encoding='utf-8'
+              )
+              shared_helpers='/* shared drill/catalog helpers */\n'+helper_block+'\n\n'
+              app=app[:start]+shared_helpers+app[shared:]
+              startup='if(typeof calcProduction==="function")calcProduction();\ncalcDrill();'
+              if startup not in app:
+                  raise SystemExit('Could not locate Drills startup call in js/app.js')
+              app=app.replace(startup,'if(typeof calcProduction==="function")calcProduction();',1)
+              app_path.write_text(app,encoding='utf-8')
+          else:
+              if not drills_path.exists():
+                  raise SystemExit('Drills already removed from app.js but js/pages/drills.js is missing')
+              if 'function calcDrill()' in app or 'const ds=' in app or 'function renderPicker()' in app:
+                  raise SystemExit('Drills runtime still remains in js/app.js')
+
+          css_path=Path('css/main.css')
+          page_css=Path('css/pages/drills.css')
+          css=css_path.read_text(encoding='utf-8')
+          chunks=[]
+
+          a='.picker-btn{'; b='.db-category-tabs{'
+          if a in css:
+              start=css.index(a); end=css.index(b,start)
+              chunks.append(css[start:end].strip())
+              css=css[:start]+css[end:]
+
+          a='.picker-backdrop{'; b='.footer{'
+          if a in css:
+              start=css.index(a); end=css.index(b,start)
+              chunks.append(css[start:end].strip())
+              css=css[:start]+css[end:]
+
+          desktop='@media(min-width:700px){\n  body{padding-top:18px}.picker{border-radius:22px;max-height:75vh;margin:20px}.picker-backdrop{align-items:center}\n}'
+          if desktop in css:
+              css=css.replace(desktop,'@media(min-width:700px){\n  body{padding-top:18px}\n}',1)
+              chunks.append('@media(min-width:700px){.picker{border-radius:22px;max-height:75vh;margin:20px}.picker-backdrop{align-items:center}}')
+
+          if chunks:
+              page_css.parent.mkdir(parents=True,exist_ok=True)
+              page_css.write_text('/* STOT Drills page CSS v5.66 */\n'+'\n'.join(chunks)+'\n',encoding='utf-8')
+              css_path.write_text(css,encoding='utf-8')
+          elif not page_css.exists():
+              raise SystemExit('Drills CSS already removed from css/main.css but css/pages/drills.css is missing')
+          PY_DRILLS
+
+          '''
+              if anchor not in s:
+                  raise SystemExit('Could not locate Drills insertion point')
+              s=s.replace(anchor,step+anchor,1)
+
+          old="    ('js/pages/compare.js','stotComparePage','Compare'),\n]"
+          new="    ('js/pages/compare.js','stotComparePage','Compare'),\n    ('js/pages/drills.js','stotDrillsPage','Drills'),\n]"
+          if old not in s:
+              raise SystemExit('Could not add Drills to page version sync')
+          s=s.replace(old,new,1)
+
+          style_needle=r'\n<link rel=\"stylesheet\" href=\"css/pages/compare.css?v={version}\">'
+          style_repl=r'\n<link rel=\"stylesheet\" href=\"css/pages/drills.css?v={version}\">\n<link rel=\"stylesheet\" href=\"css/pages/compare.css?v={version}\">'
+          if style_needle not in s:
+              raise SystemExit('Could not locate Compare stylesheet in index generator')
+          s=s.replace(style_needle,style_repl,1)
+
+          script_needle="    f'<script defer src=\"js/pages/compare.js?v={version}\"></script>\\n'\n"
+          script_repl="    f'<script defer src=\"js/pages/drills.js?v={version}\"></script>\\n'\n"+script_needle
+          if script_needle not in s:
+              raise SystemExit('Could not locate Compare script in index generator')
+          s=s.replace(script_needle,script_repl,1)
+
+          s=s.replace('node --check js/pages/compare.js\nnode --check js/beta-patches.bundle.js','node --check js/pages/compare.js\nnode --check js/pages/drills.js\nnode --check js/beta-patches.bundle.js',1)
+          s=s.replace("! grep -q 'let compareA=' js/app.js","! grep -q 'let compareA=' js/app.js\n! grep -q 'function calcDrill()' js/app.js\n! grep -q 'function renderPicker()' js/app.js\n! grep -q 'const ds=' js/app.js",1)
+          s=s.replace("grep -q 'let compareA=' js/pages/compare.js","grep -q 'let compareA=' js/pages/compare.js\ngrep -q 'function calcDrill()' js/pages/drills.js\ngrep -q 'function renderPicker()' js/pages/drills.js\ngrep -q 'const ds=' js/pages/drills.js",1)
+          s=s.replace('grep -q "css/pages/compare.css?v=${VERSION}" index.html','grep -q "css/pages/compare.css?v=${VERSION}" index.html\ngrep -q "css/pages/drills.css?v=${VERSION}" index.html',1)
+          s=s.replace('grep -q "js/pages/compare.js?v=${VERSION}" index.html','grep -q "js/pages/compare.js?v=${VERSION}" index.html\ngrep -q "js/pages/drills.js?v=${VERSION}" index.html',1)
+          s=s.replace('Database, Events, Codes and Drill Compare separated into page modules','Database, Events, Codes, Drill Compare and Drills separated into page modules',1)
+          p.write_text(s,encoding='utf-8')
+
+          t=Path('tests/smoke-beta.mjs')
+          test=t.read_text(encoding='utf-8')
+          test=test.replace("'5.65'","'5.66'").replace('v5.65','v5.66')
+          first="assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.66');"
+          if first not in test:
+              raise SystemExit('Could not locate Compare version assertion')
+          test=test.replace(first,first+"\nassert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.66');",1)
+          old_scripts="assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);"
+          new_scripts="assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/drills.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);"
+          if old_scripts not in test: raise SystemExit('Could not update script list')
+          test=test.replace(old_scripts,new_scripts,1)
+          old_styles="assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/compare.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);"
+          new_styles="assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/drills.css', '/css/pages/compare.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);"
+          if old_styles not in test: raise SystemExit('Could not update stylesheet list')
+          test=test.replace(old_styles,new_styles,1)
+
+          drill_test=r'''
+          assert.equal(await page.evaluate(() => typeof calcDrill), 'function');
+          assert.equal(await page.evaluate(() => typeof renderPicker), 'function');
+          await page.locator('.tabs button[data-view="drills"]').click();
+          await page.waitForTimeout(100);
+          assert.ok(await page.locator('#drillsView').evaluate(el => el.classList.contains('active')));
+          await page.locator('#drillPickerBtn').click();
+          await page.waitForTimeout(80);
+          assert.ok(await page.locator('#pickerBackdrop').evaluate(el => el.classList.contains('show')));
+          await page.locator('#pickerSearch').fill('Clock');
+          await page.waitForTimeout(70);
+          assert.ok(await page.locator('#pickerList [data-pick="clock"]').count(), 'Clock Drill missing from picker');
+          await page.locator('#pickerList [data-pick="clock"]').click();
+          await page.locator('#drillHours').fill('1');
+          await page.waitForTimeout(80);
+          assert.match((await page.locator('#drillPickerBtn').textContent()) || '', /Clock/i);
+          assert.match((await page.locator('#drillMainLabel').textContent()) || '', /Rate After/i);
+          assert.notEqual((await page.locator('#drillMainRate').textContent())?.trim(), '0/s');
+          '''
+          oil_anchor='await page.locator(\'.tabs button[data-view="oil"]\').click();'
+          if oil_anchor not in test: raise SystemExit('Could not locate Oil test anchor')
+          test=test.replace(oil_anchor,drill_test+'\n'+oil_anchor,1)
+
+          reload_marker="assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.66');\nassert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');"
+          reload_repl="assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.66');\nassert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.66');\nassert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');"
+          if reload_marker in test:
+              test=test.replace(reload_marker,reload_repl,1)
+          test=test.replace('Database + Events + Codes + Drill Compare separated','Database + Events + Codes + Drill Compare + Drills separated')
+          t.write_text(test,encoding='utf-8')
+          PY
+
+      - name: Build v5.66 runtime
+        run: bash scripts/consolidate-beta.sh
+
+      - name: Verify Drills extraction statically
+        shell: bash
+        run: |
+          test -s js/pages/drills.js
+          test -s css/pages/drills.css
+          ! grep -q 'function calcDrill()' js/app.js
+          ! grep -q 'function renderPicker()' js/app.js
+          ! grep -q 'const ds=' js/app.js
+          grep -q 'function calcDrill()' js/pages/drills.js
+          grep -q 'function renderPicker()' js/pages/drills.js
+          grep -q 'stotDrillsPage="5.66"' js/pages/drills.js
+          grep -q 'css/pages/drills.css?v=5.66' index.html
+          grep -q 'js/pages/drills.js?v=5.66' index.html
+          grep -q 'stot-local-version" content="5.66"' index.html
+          node --check js/app.js
+          node --check js/pages/drills.js
+          node --check js/pages/compare.js
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/stot-http.log
+          exit 1
+
+      - name: Run full browser smoke suite
+        run: node tests/smoke-beta.mjs
+
+      - name: Commit tested Drills separation
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/consolidate-beta.sh js/app.js js/pages/drills.js js/pages/compare.js js/pages/events.js js/pages/codes.js css/main.css css/app.bundle.css css/pages/drills.css css/pages/compare.css index.html tests/smoke-beta.mjs
+          git commit -m 'Separate Drills page runtime v5.66'
+          git push origin HEAD:consolidation-work
