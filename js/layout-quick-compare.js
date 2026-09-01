@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = "5.41";
+  const VERSION = "5.42";
   const styles = ["css/v539-01.css", "css/v539-02.css", "css/v539-03.css"];
   for (const href of styles) {
     const link = document.createElement("link");
