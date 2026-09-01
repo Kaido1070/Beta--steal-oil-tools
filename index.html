@@ -1,33 +1,436 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
+<meta name="stot-local-version" content="5.58">
+<meta name="stot-source-commit" content="aec48cd084062e3791d523b72cb65618948508c7">
+<style id="stot-first-paint">html,body{background:#0b0d14}body{visibility:hidden}</style>
+<noscript><style>body{visibility:visible!important}</style></noscript>
+<script>document.addEventListener("DOMContentLoaded",()=>requestAnimationFrame(()=>{document.body.style.visibility="visible";document.getElementById("stot-first-paint")?.remove()}),{once:true});</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0d14">
-<meta name="stot-local-version" content="5.57">
-<meta name="stot-source-commit" content="aec48cd084062e3791d523b72cb65618948508c7">
 <title>STEAL THE OIL TYCOON — Community Tools</title>
-<style>html,body{margin:0;min-height:100%;background:#0b0d14}</style>
+
+
+<link rel="stylesheet" href="css/app.bundle.css?v=5.58">
 </head>
 <body>
-<script>
-(async()=>{
-  const base="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/aec48cd084062e3791d523b72cb65618948508c7/index.html";
-  try{
-    let html=await fetch(base,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.text()});
-    html=html.replace("<head>",`<head>\n<meta name="stot-local-version" content="5.57">\n<meta name="stot-source-commit" content="aec48cd084062e3791d523b72cb65618948508c7">`);
-    html=html.replaceAll("Weekend x2 Lobby","Admin Event Lobby");
-    html=html.replaceAll('js/layout-quick-compare.js','js/layout-quick-compare.js?v=5.57');
-    html=html.replaceAll('js/app.js','js/app.js?v=5.57');
-    html=html.replaceAll('css/main.css','css/main.css?v=5.57');
-    document.open();
-    document.write(html);
-    document.close();
-  }catch(err){
-    document.body.innerHTML="";
-    console.error(err);
-  }
-})();
-</script>
+<div class="app">
+<header class="header">
+  <div class="header-main">
+    <div class="title-row"><h1>STEAL THE OIL TYCOON</h1><span id="badge" class="calc-badge">Sale Calculator</span></div>
+    <p>Created by 1yono</p>
+
+  </div>
+  <button id="helpBtn" class="header-help" type="button" aria-label="Help">?</button>
+</header>
+
+<nav class="panel tabs">
+  <button class="active" data-view="sale">Sale</button>
+  <button data-view="oil">Oil / Hour</button>
+  <button data-view="drills" data-i18n="nav.drills">Drills</button>
+  <button data-view="compare" data-i18n="nav.compare">Compare</button>
+  <button data-view="database" data-i18n="nav.database">Database</button>
+  <button data-view="events" data-i18n="nav.events">Events</button>
+  <button data-view="codes">Codes</button>
+</nav>
+
+<main>
+<section id="saleView" class="view active">
+  <div class="panel step">
+    <div class="step-head"><h2>Your Oil</h2><span>Sale setup</span></div>
+    <div class="field">
+      <div class="field-head"><div class="icon">O</div><div class="labels"><strong>Oil Amount</strong><small>Amount you want to sell</small></div></div>
+      <input id="saleOil" type="number" inputmode="decimal" min="0" step="any" value="50">
+      <div id="saleUnits" class="presets units">
+        <button class="chip active" data-unit="1">×1</button><button class="chip" data-unit="1000">K</button><button class="chip" data-unit="1000000">M</button><button class="chip" data-unit="1000000000">B</button><button class="chip" data-unit="1000000000000">T</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel step">
+    <div class="step-head"><h2>Boosts</h2><span>Cash bonuses</span></div>
+    <div class="field">
+      <div class="field-head"><div class="icon">%</div><div class="labels"><strong>Cash Boost</strong><small>100% is the normal baseline</small></div></div>
+      <input id="cashBoost" type="number" inputmode="decimal" min="0" step="any" value="420">
+    </div>
+    <div class="field">
+      <div class="field-head"><div class="icon">F</div><div class="labels"><strong>Friend Boost</strong><small>Choose the active friend bonus</small></div></div>
+      <div id="friendBoosts" class="presets percent">
+        <button class="chip" data-friend="0">0%</button><button class="chip" data-friend="10">10%</button><button class="chip" data-friend="20">20%</button><button class="chip" data-friend="30">30%</button><button class="chip" data-friend="40">40%</button><button class="chip active" data-friend="50">50%</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel step">
+    <div class="step-head"><h2>Sell Price</h2><span>Market value</span></div>
+    <div class="field">
+      <div class="field-head"><div class="icon">$</div><div class="labels"><strong>Sell Price</strong><small>Cash per Oil before boosts</small></div></div>
+      <input id="sellPrice" type="number" inputmode="decimal" min="0" step="any" value="50">
+      <div id="sellPrices" class="presets prices">
+        <button class="chip" data-price="15">$15</button><button class="chip" data-price="20">$20</button><button class="chip active" data-price="50">$50</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel result">
+    <div class="result-main"><span>Sale Value</span><strong id="saleValue">$11.75K</strong></div>
+    <div class="result-mini">
+      <div class="metric"><span>Cash per Oil</span><strong id="cashPerOil">$235</strong></div>
+      <div class="metric"><span>Total Boost</span><strong id="totalBoost">470%</strong></div>
+    </div>
+    <div class="actions"><button id="saleShare" class="action primary">Share Result</button><button id="saleCopy" class="action">Copy Summary</button><button id="saleReset" class="action">Reset</button></div>
+  </div>
+</section>
+
+<section id="oilView" class="view">
+  <div class="panel step">
+    <div class="oil-layout-intro">
+      <div>
+        <h2 style="margin:0">Oil Layout</h2>
+        <p>Build your drill layout and calculate your total oil production.</p>
+      </div>
+      <span class="layout-badge">1 Layout</span>
+    </div>
+  </div>
+
+  <div class="panel layout-controls">
+    <div class="layout-control-card"><div class="layout-control-head"><strong>Pet Boosts</strong><small>Whole layout</small></div><div class="layout-two">
+      <label class="field"><div class="field-head"><div class="labels"><strong>Mole Level</strong><small>All drills</small></div></div><input id="layoutMole" type="number" min="0" max="100" step="1" value="0" inputmode="numeric" placeholder="0 - 100"></label>
+      <label class="field"><div class="field-head"><div class="labels"><strong>Fruit Level</strong><small>Banana Drill only</small></div></div><input id="layoutFruit" type="number" min="0" max="100" step="1" value="0" inputmode="numeric" placeholder="0 - 100"></label>
+    </div><label class="field" style="margin-top:9px"><div class="field-head"><div class="labels"><strong>Heart Drill Likes</strong><small>Used for all Heart Drills</small></div></div><input id="layoutLikes" type="number" min="0" step="any" inputmode="numeric" value="0"></label></div>
+    <div class="layout-control-card layout-x2"><div class="layout-x2-copy"><strong>Admin Event Lobby</strong><small>Enable only while you are still in an x2 lobby.</small></div><div id="layoutX2" class="layout-toggle"><button class="active" data-layoutx2="1">Off</button><button data-layoutx2="2">x2</button></div></div>
+    <div class="layout-control-card"><div class="layout-control-head"><strong>Oil Calculator</strong><small>Dynamic drills included</small></div><div id="layoutModeTabs" class="layout-mode-tabs"><button class="active" data-layoutmode="time">Time → Oil</button><button data-layoutmode="target">Oil → Time</button></div>
+      <div id="layoutTimePane" class="layout-mode-pane active"><label class="field"><div class="field-head"><div class="labels"><strong>Run Time</strong><small>Hours</small></div></div><input id="layoutHours" inputmode="decimal" value="1"></label><div class="layout-time-result"><div class="metric"><span>Oil/s at Start</span><strong id="layoutTimeStart">0/s</strong></div><div class="metric"><span>Oil/s at End</span><strong id="layoutTimeEnd">0/s</strong></div><div class="metric"><span>Oil Gained</span><strong id="layoutTimeOil">0</strong></div></div></div>
+      <div id="layoutTargetPane" class="layout-mode-pane"><div class="target-box" style="margin-top:0"><div class="field"><div class="field-head"><div class="icon">T</div><div class="labels"><strong>Target Oil</strong><small>Time needed to reach target</small></div></div><input id="layoutTarget" inputmode="decimal" value="1"></div><div id="layoutTargetUnits" class="target-units presets units"><button class="chip" data-layouttarget="1000">K</button><button class="chip" data-layouttarget="1000000">M</button><button class="chip active" data-layouttarget="1000000000">B</button><button class="chip" data-layouttarget="1000000000000">T</button></div></div><div class="result-mini" style="margin-top:9px"><div class="metric"><span>Time Needed</span><strong id="layoutTargetTime">—</strong></div><div class="metric"><span>Target</span><strong id="layoutTargetDisplay">1B</strong></div></div></div>
+    </div>
+  </div>
+  <div class="panel result"><div class="result-main"><span>Current Oil / Second</span><strong id="layoutNowRate">0/s</strong></div><div class="layout-summary"><div class="metric"><span>After 1 Hour</span><strong id="layoutHourRate">0/s</strong></div><div class="metric"><span>Oil in 1 Hour</span><strong id="layoutHourOil">0</strong></div><div class="metric"><span>Plots Used</span><strong id="layoutPlotsUsed">0 / 15</strong></div></div><div class="result-mini" style="margin-top:9px"><div class="metric"><span>Cells Used</span><strong id="layoutCellsUsed">0 / 375</strong></div><div class="metric"><span>Lobby Multiplier</span><strong id="layoutLobbyMult">×1</strong></div></div><div class="actions"><button id="layoutShare" class="action primary">Share Layout</button></div><div id="layoutError" class="layout-error">One or more plots are over capacity. Fix the highlighted plots to calculate the full layout.</div></div>
+
+  <div id="layoutCopyBar" class="panel layout-copy-bar"><div><strong>Plot Copy</strong><small id="layoutCopyStatus">Copy a plot to reuse its drill setup.</small></div><button id="layoutPasteEmpty" type="button" disabled>Paste to All Empty</button></div>
+  <div id="layoutAreas"></div>
+  <div class="layout-note">Only drills are included. Every large plot has its own 5×5 boundary, so unused space cannot be borrowed from another plot.</div>
+</section>
+
+<section id="drillsView" class="view">
+  <div class="panel step">
+    <div class="step-head"><h2>Drill Setup</h2><span>Any drill, any area</span></div>
+
+    <div class="field">
+      <div class="field-head"><div class="icon">D</div><div class="labels"><strong>Drill</strong><small>Choose from the game database</small></div></div>
+      <button id="drillPickerBtn" class="picker-btn" type="button">Basic Drill</button>
+    </div>
+
+    <div class="field">
+      <div class="field-head"><div class="icon">T</div><div class="labels"><strong>Drill Tier</strong><small>Basic to Galaxy</small></div></div>
+      <div id="tierButtons" class="presets tiers">
+        <button class="chip active" data-tier="1">Basic</button><button class="chip" data-tier="2">Gold</button><button class="chip" data-tier="3">Diamond</button><button class="chip" data-tier="5">Rainbow</button><button class="chip" data-tier="10">Galaxy</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-head"><div class="icon">×</div><div class="labels"><strong>Production Area</strong><small>Where the drill is placed</small></div></div>
+      <div id="areaButtons" class="presets areas">
+        <button class="chip active" data-area="1">×1</button><button class="chip" data-area="2">×2</button><button class="chip" data-area="3">×3</button><button class="chip" data-area="5">×5</button><button class="chip" data-area="6">×6</button><button class="chip" data-area="10">×10</button>
+      </div>
+    </div>
+
+    <div id="heartControl" class="field dynamic">
+      <div class="field-head"><div class="icon">♥</div><div class="labels"><strong>Current Likes</strong><small>Heart Drill = 1 Oil/s per Like</small></div></div>
+      <input id="likesInput" type="number" min="0" step="1" value="100">
+    </div>
+
+    <div id="hackerControl" class="field dynamic">
+      <div class="field-head"><div class="icon">H</div><div class="labels"><strong>Hacker Rate</strong><small>Random each second</small></div></div>
+      <div id="hackerButtons" class="presets prices">
+        <button class="chip" data-hacker="100">Min 100</button><button class="chip active" data-hacker="550">Avg 550</button><button class="chip" data-hacker="1000">Max 1K</button>
+      </div>
+    </div>
+
+    <div class="field setup-pack">
+      <div class="field-head" style="grid-column:1/-1">
+        <div class="icon">+</div>
+        <div class="labels"><strong>Boosts & Setup</strong><small>Pets, drill count, and run time</small></div>
+      </div>
+
+      <div class="compact-row" style="grid-column:1/-1">
+        <div class="compact-label">
+          <strong>Mole</strong>
+          <small>0 = no pet</small>
+        </div>
+        <input id="moleLevel" class="compact-input" type="number" min="0" max="100" step="1" value="0">
+        <div id="moleLevels" class="compact-presets">
+          <button class="chip active" data-molelevel="0">0</button><button class="chip" data-molelevel="20">20</button><button class="chip" data-molelevel="40">40</button><button class="chip" data-molelevel="60">60</button><button class="chip" data-molelevel="80">80</button><button class="chip" data-molelevel="100">100</button>
+        </div>
+      </div>
+
+      <div id="fruitLevelField" class="compact-row" style="grid-column:1/-1;display:none">
+        <div class="compact-label">
+          <strong>Fruit</strong>
+          <small>Banana Drill only</small>
+        </div>
+        <input id="fruitLevel" class="compact-input" type="number" min="0" max="100" step="1" value="0">
+        <div id="fruitLevels" class="compact-presets">
+          <button class="chip active" data-fruitlevel="0">0</button><button class="chip" data-fruitlevel="20">20</button><button class="chip" data-fruitlevel="40">40</button><button class="chip" data-fruitlevel="60">60</button><button class="chip" data-fruitlevel="80">80</button><button class="chip" data-fruitlevel="100">100</button>
+        </div>
+      </div>
+
+      <div class="compact-row two-col" style="grid-column:1/-1">
+        <div class="compact-label">
+          <strong>Number of Drills</strong>
+          <small>Identical drills</small>
+        </div>
+        <input id="drillCount" class="compact-input" type="number" min="1" step="1" value="1">
+      </div>
+
+      <div class="compact-row" style="grid-column:1/-1">
+        <div class="compact-label">
+          <strong>Run Time</strong>
+          <small>Hours</small>
+        </div>
+        <input id="drillHours" class="compact-input" type="number" min="0" step="0.1" value="1">
+        <div id="drillTimes" class="compact-presets compact-time">
+          <button class="chip active" data-drilltime="1">1H</button><button class="chip" data-drilltime="3">3H</button><button class="chip" data-drilltime="5">5H</button><button class="chip" data-drilltime="10">10H</button><button class="chip" data-drilltime="20">20H</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel result">
+    <div class="result-main"><span id="drillMainLabel">Production Rate</span><strong id="drillMainRate">1/s</strong></div>
+    <div class="result-mini">
+      <div class="metric"><span>Oil / Hour</span><strong id="drillPerHour">3.6K</strong></div>
+      <div class="metric"><span>Total Oil</span><strong id="drillTotal">3.6K</strong></div>
+      <div class="metric"><span>Base Drill</span><strong id="drillBase">1/s</strong></div>
+      <div class="metric"><span>Combined Multiplier</span><strong id="drillMultiplier">×1</strong></div>
+    </div>
+  </div>
+</section>
+
+
+<section id="compareView" class="view">
+  <div class="panel section-intro">
+    <div><h2>Drill Compare</h2><p>Compare production now, after time, and total oil using the same setup.</p></div><span class="section-tag">Drills only</span>
+  </div>
+  <div class="panel compare-selects">
+    <label>Drill A<select id="compareA"></select></label>
+    <button id="swapCompare" class="swap-btn" type="button" aria-label="Swap drills">⇄</button>
+    <label>Drill B<select id="compareB"></select></label>
+  </div>
+  <div class="panel compare-setup">
+    <div class="compare-setup-head"><strong>Production Setup</strong><span>Shared by both drills</span></div>
+    <div class="compare-setup-grid">
+      <label class="compare-control"><span>Drill Tier</span><select id="compareTier"><option value="1">Basic ×1</option><option value="2">Gold ×2</option><option value="3">Diamond ×3</option><option value="5">Rainbow ×5</option><option value="10">Galaxy ×10</option></select></label>
+      <label class="compare-control"><span>Production Area</span><select id="compareArea"><option value="1">×1</option><option value="2">×2</option><option value="3">×3</option><option value="5">×5</option><option value="6">×6</option><option value="10">×10</option></select></label>
+      <label class="compare-control"><span>Mole Level</span><input id="compareMole" type="number" min="0" max="100" step="1" value="0" inputmode="numeric" placeholder="0 - 100"></label>
+      <label class="compare-control"><span>Fruit Level</span><input id="compareFruit" type="number" min="0" max="100" step="1" value="0" inputmode="numeric" placeholder="0 - 100"></label>
+    </div>
+    <label id="compareHeartField" class="compare-control compare-heart" style="margin-top:8px"><span>Heart Drill Likes</span><input id="compareLikes" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
+  </div>
+
+  <div class="panel compare-count-panel">
+    <div class="compare-setup-head"><strong>Drill Counts</strong><span>Set each side separately</span></div>
+    <div class="compare-count-grid">
+      <label class="compare-control count-control"><span>Drill A</span><input id="compareCountA" type="number" min="1" step="1" value="1" inputmode="numeric"></label>
+      <label class="compare-control count-control"><span>Drill B</span><input id="compareCountB" type="number" min="1" step="1" value="1" inputmode="numeric"></label>
+    </div>
+  </div>
+
+  <div class="panel compare-time-panel">
+    <div class="compare-time-copy"><strong>Comparison Time</strong><span>Used for both drills</span></div>
+    <label class="compare-control compare-time-control"><span>Run Time (hours)</span><input id="compareHours" type="number" min="0" max="20" step="0.25" value="5" inputmode="decimal"></label>
+  </div>
+  <div id="compareCards" class="compare-cards"></div>
+  <div id="compareTable" class="panel compare-table"></div>
+  <div id="compareInsight" class="panel compare-insight"></div>
+  <div class="actions compare-actions"><button id="compareShare" class="action primary">Share Comparison</button></div>
+</section>
+
+<section id="databaseView" class="view">
+  <div class="panel section-intro">
+    <div><h2>Game Database</h2><p>Browse items, search quickly, and open a card for the full details.</p></div><span class="section-tag">Game data</span>
+  </div>
+  <div class="panel db-category-tabs" id="databaseTabs">
+    <button class="active" data-dbview="pets">Pets</button>
+    <button data-dbview="drills">Drills</button>
+    <button data-dbview="decorations">Decorations</button>
+    <button data-dbview="solar">Solar</button>
+    <button data-dbview="refineries">Refineries</button>
+    <button data-dbview="totems">Totems</button>
+    <button data-dbview="lootboxes">Lootboxes</button>
+  </div>
+
+  <div id="drillDbPane" style="display:none">
+    <div class="panel db-tools">
+      <div class="search-wrap"><input id="dbSearch" type="search" placeholder="Search drills..." autocomplete="off"></div>
+      <div class="filters">
+        <select id="categoryFilter">
+          <option value="all">All Categories</option><option value="regular">Regular Shop</option><option value="event">Event</option><option value="special">Special & Legacy</option>
+        </select>
+        <select id="rarityFilter">
+          <option value="all">All Rarities</option><option>Common</option><option>Uncommon</option><option>Rare</option><option>Legendary</option><option>Mythical</option><option>Divine</option><option>Prismatic</option><option>Special</option>
+        </select>
+        <select id="sortFilter">
+          <option value="default">Game Order</option><option value="oil-desc">Oil/s High</option><option value="oil-asc">Oil/s Low</option><option value="name">Name A–Z</option>
+        </select>
+      </div>
+      <div class="db-meta"><span id="dbCount">34 drills</span><span>Tap for details</span></div>
+    </div>
+    <div id="drillList" class="drill-list"></div>
+  </div>
+
+
+  <div id="refineriesDbPane" style="display:none">
+    <div class="panel db-tools">
+      <div class="search-wrap"><input id="refinerySearch" type="search" placeholder="Search refineries..." autocomplete="off"></div>
+      <div class="filters" style="grid-template-columns:1fr 1fr">
+        <select id="refineryTypeFilter"><option value="all">All Types</option><option value="regular">Regular Shop</option><option value="special">Special</option></select>
+        <select id="refineryRarityFilter"><option value="all">All Rarities</option><option>Common</option><option>Uncommon</option><option>Rare</option><option>Legendary</option><option>Mythical</option><option>Divine</option><option>Prismatic</option><option>Special</option></select>
+      </div>
+      <div class="db-meta"><span id="refineryCount">26 refineries</span><span>Tap for details</span></div>
+    </div>
+    <div id="refineryList" class="drill-list"></div>
+  </div>
+
+  <div id="solarDbPane" style="display:none">
+    <div class="panel db-tools">
+      <div class="search-wrap"><input id="solarSearch" type="search" placeholder="Search solar panels..." autocomplete="off"></div>
+      <div class="db-meta"><span id="solarCount">4 solar panels</span><span>Tap for details</span></div>
+    </div>
+    <div id="solarList" class="drill-list"></div>
+  </div>
+
+  <div id="totemsDbPane" style="display:none">
+    <div class="panel db-tools">
+      <div class="search-wrap"><input id="totemSearch" type="search" placeholder="Search totems..." autocomplete="off"></div>
+      <div class="filters" style="grid-template-columns:1fr">
+        <select id="totemTypeFilter"><option value="all">All Totems</option><option value="cash">Cash</option><option value="afk">AFK</option><option value="special">Event & Special</option></select>
+      </div>
+      <div class="db-meta"><span id="totemCount">15 totems</span><span>Tap for details</span></div>
+    </div>
+    <div id="totemList" class="drill-list"></div>
+  </div>
+
+  <div id="decorationsDbPane" style="display:none">
+    <div class="panel db-tools">
+      <div class="search-wrap"><input id="decorationSearch" type="search" placeholder="Search structures..." autocomplete="off"></div>
+      <div class="filters" style="grid-template-columns:1fr">
+        <select id="decorationTypeFilter"><option value="all">All Structures</option><option value="utility">Utility & Info</option><option value="turbine">Wind Turbines</option><option value="pet">Pet Structures</option></select>
+      </div>
+      <div class="db-meta"><span id="decorationCount">12 structures</span><span>Tap for details</span></div>
+    </div>
+    <div id="decorationList" class="drill-list"></div>
+  </div>
+
+  <div id="lootboxesDbPane" style="display:none">
+    <div class="panel db-tools">
+      <div class="search-wrap"><input id="lootboxSearch" type="search" placeholder="Search lootboxes or drops..." autocomplete="off"></div>
+      <div class="filters" style="grid-template-columns:1fr">
+        <select id="lootboxTypeFilter"><option value="all">All Lootboxes</option><option value="drill">Drill Lootboxes</option><option value="refinery">Refinery Lootboxes</option></select>
+      </div>
+      <div class="db-meta"><span id="lootboxCount">13 lootboxes</span><span>Tap for drop chances</span></div>
+    </div>
+    <div id="lootboxList" class="drill-list"></div>
+  </div>
+
+  <div id="petDbPane">
+    <div class="panel step">
+      <div class="step-head"><h2>Pet Bonus Checker</h2><span>Level 1–100</span></div>
+      <div class="field">
+        <div class="field-head"><div class="icon">P</div><div class="labels"><strong>Pet</strong><small>Choose any pet</small></div></div>
+        <select id="petSelect"></select>
+      </div>
+      <div class="field">
+        <div class="field-head"><div class="icon">L</div><div class="labels"><strong>Pet Level</strong><small>Enter a level from 1 to 100</small></div></div>
+        <input id="petLevel" type="number" min="1" max="100" step="1" value="100">
+      </div>
+    </div>
+
+    <div class="panel result">
+      <div class="result-main"><span id="petResultLabel">Pet Bonus</span><strong id="petResultValue">—</strong></div>
+      <div class="result-mini">
+        <div class="metric"><span>Pet</span><strong id="petResultName">—</strong></div>
+        <div class="metric"><span>Rarity</span><strong id="petResultRarity">—</strong></div>
+      </div>
+    </div>
+
+    <div class="panel db-tools">
+      <div class="search-wrap"><input id="petSearch" type="search" placeholder="Search pets..." autocomplete="off"></div>
+      <div class="filters" style="grid-template-columns:1fr 1fr">
+        <select id="petRarityFilter">
+          <option value="all">All Rarities</option><option>Common</option><option>Rare</option><option>Legendary</option><option>Mythical</option><option>Divine</option><option>Special</option>
+        </select>
+        <select id="petSortFilter">
+          <option value="default">Game Order</option><option value="name">Name A–Z</option><option value="rarity">Rarity</option>
+        </select>
+      </div>
+      <div class="db-meta"><span id="petCount">15 pets</span><span>Tap for details</span></div>
+    </div>
+    <div id="petList" class="drill-list"></div>
+  </div>
+</section>
+
+<section id="eventsView" class="view">
+  <div class="panel timezone-note">
+    <div class="timezone-icon">TZ</div>
+    <div class="timezone-copy"><strong>All event times are shown in your local date &amp; time</strong><small>Your timezone: <b id="localTimezone">—</b></small></div>
+  </div>
+  <div class="panel next-event">
+    <div><span class="eyebrow">NEXT EVENT</span><h2 id="nextEventName">—</h2><p id="nextEventTime">—</p></div>
+    <div class="countdown"><strong id="nextEventCountdown">—</strong><small>UNTIL START</small></div>
+  </div>
+  <div id="eventList" class="event-list"></div>
+  <div class="panel admin-card">
+    <h3>Admin Abuse</h3><p>Weekend waves only • shown in your local date &amp; time.</p>
+    <div id="adminTimes" class="admin-times"></div>
+  </div>
+</section>
+
+<section id="codesView" class="view">
+  <div class="panel codes-toolbar">
+    <div class="codes-title-row"><div><h2>Codes</h2><p>Useful in-game codes and rewards.</p></div><span id="codesCount" class="mini-pill">0 codes</span></div>
+    <input id="codesSearch" class="db-search" type="search" placeholder="Search code or reward..." autocomplete="off" dir="ltr">
+    <div id="codesFilters" class="codes-filters">
+      <button class="chip active" data-code-filter="all">All</button>
+      <button class="chip" data-code-filter="cash">Cash</button>
+      <button class="chip" data-code-filter="gasoline">Gasoline</button>
+      <button class="chip" data-code-filter="energy">Energy</button>
+      <button class="chip" data-code-filter="items">Items</button>
+    </div>
+  </div>
+  <div id="codesList" class="codes-list"></div>
+</section>
+
+</main>
+<div class="footer">Community tool • Game values may change with updates • Last updated Aug 30 2026</div>
+</div>
+
+<div id="pickerBackdrop" class="picker-backdrop">
+  <div class="picker">
+    <div class="picker-top">
+      <div class="grab"></div>
+      <div class="picker-row"><strong>Choose Drill</strong><button id="pickerClose" class="close" type="button">×</button></div>
+      <input id="pickerSearch" class="picker-search" type="search" placeholder="Search any drill..." autocomplete="off">
+    </div>
+    <div id="pickerList" class="picker-list"></div>
+  </div>
+</div>
+
+
+<div id="helpPreview" class="help-preview" aria-hidden="true">
+  <div class="help-sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="help-head">
+      <div><h2 id="helpTitle">How It Works</h2></div>
+      <button id="helpClose" class="share-close" type="button" aria-label="Close">×</button>
+    </div>
+    <div id="helpContent" class="help-content"></div>
+  </div>
+</div>
+
+<div id="sharePreview" class="share-preview" aria-hidden="true"><div class="share-sheet" role="dialog" aria-modal="true" aria-labelledby="sharePreviewTitle"><div class="share-brand"><div class="share-game-name">STEAL THE OIL TYCOON</div><div class="share-credit">Created by <b>1yono</b></div></div><div class="share-sheet-head"><div><h2 id="sharePreviewTitle">Result Preview</h2></div><button id="sharePreviewClose" class="share-close" type="button" aria-label="Close">×</button></div><div id="sharePreviewContent" class="share-content"></div><div class="share-sheet-actions"><button id="sharePreviewCopy" class="primary" type="button">Copy Summary</button><button id="sharePreviewDone" type="button">Done</button></div></div></div>
+
+<script defer src="js/app.js?v=5.58"></script>
+<script defer src="js/beta-patches.bundle.js?v=5.58"></script>
 </body>
 </html>
