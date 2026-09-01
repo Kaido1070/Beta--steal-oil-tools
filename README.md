@@ -1,11 +1,10 @@
 # STEAL THE OIL TYCOON — Beta
 
-Private testing/development branch for the community tools site.
+Private staging repository for testing **STOT Tools v5.39** before anything is promoted to the public site.
 
-## Runtime structure
-- `js/game-data.js` — game/database values
-- `js/app.js` — shared/core application logic
-- `js/pages/database.js` — Database page runtime
-- `css/pages/database.css` — Database-only styles
+- Public baseline pinned to commit: `aec48cd084062e3791d523b72cb65618948508c7`
+- Beta updates are loaded from this repository in their original v5.39 execution order.
+- No `CNAME` is used here, so the production domain is not affected.
+- Promote to `Steal-The-Oil-Tools` only after the beta build is approved.
 
-Changes are tested here before they are considered for the public site.
+Created by **1yono**.
