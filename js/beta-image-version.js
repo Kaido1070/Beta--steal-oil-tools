@@ -1,1 +1,0 @@
-window.__STOT_IMAGE_ASSET_VERSION__='5.46';
