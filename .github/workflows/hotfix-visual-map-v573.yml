@@ -1,0 +1,101 @@
+name: Visual Map Hotfix v5.73
+
+on:
+  push:
+    paths:
+      - '.github/workflows/hotfix-visual-map-v573.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply exact visual map ordering
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          builder=Path('js/pages/oil-visual-builder.js')
+          s=builder.read_text(encoding='utf-8')
+          s=s.replace('/* STOT Oil visual plot builder — v5.72 */','/* STOT Oil visual plot builder — v5.73 */',1)
+          area="const AREA_CLASS={forest:'forest',desert:'desert','volcano-side':'volcano-side','volcano-core':'volcano-core','mountain-side':'mountain-side','mountain-summit':'mountain-summit'};"
+          mapping="""const PLOT_DISPLAY_MAP={1:['forest','Forest',1],2:['forest','Forest',1],3:['forest','Forest',1],4:['forest','Forest',1],5:['forest','Forest',1],6:['forest','Forest',1],7:['desert','Desert',2],8:['desert','Desert',2],9:['desert','Desert',2],10:['volcano-side','Volcano Sides',3],11:['volcano-core','Volcano Core',5],12:['volcano-side','Volcano Sides',3],13:['mountain-side','Mountain Sides',6],14:['mountain-summit','Mountain Summit',10],15:['mountain-side','Mountain Sides',6]};"""
+          if 'PLOT_DISPLAY_MAP=' not in s:
+              s=s.replace(area,area+'\n  '+mapping,1)
+          s=s.replace("function areaClass(plot){return AREA_CLASS[plot.area]||'forest'}", "function displayMeta(plot){const n=plotNumber(plot),m=PLOT_DISPLAY_MAP[n];return m?{area:m[0],areaName:m[1],mult:m[2]}:{area:plot.area||'forest',areaName:plot.areaName||'Forest',mult:plot.mult||1}}\n  function areaClass(plot){return AREA_CLASS[displayMeta(plot).area]||'forest'}",1)
+          old="function visualPlotHtml(plot){const number=plotNumber(plot),packed=packVisual(plot),used=pieceList(plot).area,valid=packed!==null,occupied=valid?packed.map(placementHtml).join(''):'';return `<button class=\"v572-plot-card ${areaClass(plot)}${selectedPlotId===plot.id?' selected':''}${valid?'':' invalid'}\" data-visual-plot=\"${plot.id}\" type=\"button\" aria-label=\"Edit plot ${number}, ${esc(plot.areaName)}\"><span class=\"v572-plot-head\"><strong>${number} <em>${esc(plot.areaName)}</em></strong><i>×${plot.mult}</i></span>"
+          new="function visualPlotHtml(plot){const number=plotNumber(plot),meta=displayMeta(plot),packed=packVisual(plot),used=pieceList(plot).area,valid=packed!==null,occupied=valid?packed.map(placementHtml).join(''):'';return `<button class=\"v572-plot-card ${areaClass(plot)}${selectedPlotId===plot.id?' selected':''}${valid?'':' invalid'}\" data-visual-plot=\"${plot.id}\" type=\"button\" aria-label=\"Edit plot ${number}, ${esc(meta.areaName)}\"><span class=\"v572-plot-head\"><strong>${number} <em>${esc(meta.areaName)}</em></strong><i>×${meta.mult}</i></span>"
+          if old not in s:
+              raise SystemExit('Could not patch visual plot header')
+          s=s.replace(old,new,1)
+          s=s.replace('${number} ${esc(plot.areaName)} <span>×${plot.mult}</span>','${number} ${esc(displayMeta(plot).areaName)} <span>×${displayMeta(plot).mult}</span>',1)
+          builder.write_text(s,encoding='utf-8')
+
+          build=Path('scripts/consolidate-beta.sh')
+          b=build.read_text(encoding='utf-8')
+          if 'VERSION="5.72"' not in b: raise SystemExit('Expected v5.72 build')
+          build.write_text(b.replace('VERSION="5.72"','VERSION="5.73"',1),encoding='utf-8')
+
+          ch=Path('js/changelog.js')
+          c=ch.read_text(encoding='utf-8')
+          marker='window.STOT_CHANGELOG=Object.freeze([\n'
+          entry='''  Object.freeze({version:"5.73",date:"Sep 2 2026",changes:Object.freeze([\n    "Corrected the visual map order to match the in-game plot layout",\n    "Plot 11 is Volcano Core ×5, Plot 12 is Volcano Sides ×3, and Plot 14 is Mountain Summit ×10"\n  ])}),\n'''
+          if 'version:"5.73"' not in c:
+              c=c.replace(marker,marker+entry,1)
+          ch.write_text(c,encoding='utf-8')
+
+          test=Path('tests/smoke-beta.mjs')
+          t=test.read_text(encoding='utf-8').replace("'5.72'","'5.73'")
+          anchor="assert.equal(await page.locator('#layoutVisualBuilder .v572-plot-card').count(), 15);\n"
+          checks="""const visualMapLabels = await page.locator('#layoutVisualBuilder .v572-plot-head').evaluateAll(nodes => nodes.map(n => n.textContent.replace(/\\s+/g,' ').trim()));\nassert.match(visualMapLabels[9], /^10 Volcano Sides ×3$/);\nassert.match(visualMapLabels[10], /^11 Volcano Core ×5$/);\nassert.match(visualMapLabels[11], /^12 Volcano Sides ×3$/);\nassert.match(visualMapLabels[12], /^13 Mountain Sides ×6$/);\nassert.match(visualMapLabels[13], /^14 Mountain Summit ×10$/);\nassert.match(visualMapLabels[14], /^15 Mountain Sides ×6$/);\n"""
+          if checks not in t:
+              t=t.replace(anchor,anchor+checks,1)
+          test.write_text(t,encoding='utf-8')
+          PY
+
+      - name: Build v5.73
+        run: bash scripts/consolidate-beta.sh
+
+      - name: Verify syntax and exact map
+        run: |
+          node --check js/pages/oil-visual-builder.js
+          grep -q 'version:"5.73"' js/site-config.js
+          grep -q "11:\['volcano-core','Volcano Core',5\]" js/pages/oil-visual-builder.js
+          grep -q "12:\['volcano-side','Volcano Sides',3\]" js/pages/oil-visual-builder.js
+          grep -q "14:\['mountain-summit','Mountain Summit',10\]" js/pages/oil-visual-builder.js
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/stot-http.log
+          exit 1
+
+      - name: Run full browser smoke suite
+        run: node tests/smoke-beta.mjs
+
+      - name: Commit tested hotfix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Fix visual map ordering v5.73'
+          git push origin HEAD:main
