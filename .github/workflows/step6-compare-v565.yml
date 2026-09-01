@@ -1,0 +1,232 @@
+name: Step 6 Separate Compare
+
+on:
+  push:
+    branches: [consolidation-work]
+
+permissions:
+  contents: write
+
+jobs:
+  split-compare:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: consolidation-work
+          fetch-depth: 0
+
+      - name: Patch build pipeline for Compare page
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p=Path('scripts/consolidate-beta.sh')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('VERSION="5.64"','VERSION="5.65"',1)
+
+          anchor='# Keep already-separated page module version markers aligned with this build.'
+          if '# Step 6: move Drill Compare behavior and styles out of the shared core.' not in s:
+              step=r'''# Step 6: move Drill Compare behavior and styles out of the shared core.
+          python3 <<'PY_COMPARE'
+          from pathlib import Path
+          import re
+
+          app_path=Path('js/app.js')
+          compare_path=Path('js/pages/compare.js')
+          compare_path.parent.mkdir(parents=True,exist_ok=True)
+          app=app_path.read_text(encoding='utf-8')
+          start_marker='let compareA='
+          end_marker='\nconst viewBadges='
+
+          if start_marker in app:
+              start=app.index(start_marker)
+              end=app.index(end_marker,start)
+              block=app[start:end].strip()
+              compare_path.write_text(
+                  '/* STOT Drill Compare page runtime v5.65 — extracted from js/app.js */\n'
+                  + block
+                  + '\n\n/* Initial Drill Compare render now belongs to this page module. */\n'
+                  + 'renderCompare();\n'
+                  + 'document.documentElement.dataset.stotComparePage="5.65";\n',
+                  encoding='utf-8'
+              )
+              app=app[:start]+app[end+1:]
+              startup='calcDrill();\nrenderCompare();'
+              if startup not in app:
+                  raise SystemExit('Could not locate Compare startup call in js/app.js')
+              app=app.replace(startup,'calcDrill();',1)
+              app_path.write_text(app,encoding='utf-8')
+          else:
+              if not compare_path.exists():
+                  raise SystemExit('Compare already removed from app.js but js/pages/compare.js is missing')
+              if 'function renderCompare()' in app or 'let compareA=' in app:
+                  raise SystemExit('Compare runtime still remains in js/app.js')
+
+          css_path=Path('css/main.css')
+          page_css=Path('css/pages/compare.css')
+          css=css_path.read_text(encoding='utf-8')
+          css_start='/* Compare */'
+          css_end='\n\n@media(min-width:700px)'
+          if css_start in css:
+              start=css.index(css_start)
+              end=css.index(css_end,start)
+              block=css[start:end].strip()
+              page_css.parent.mkdir(parents=True,exist_ok=True)
+              page_css.write_text(
+                  '/* STOT Drill Compare page CSS v5.65 */\n'
+                  + block
+                  + '\n@media(min-width:700px){.compare-setup-grid{grid-template-columns:repeat(4,1fr)}.compare-card{padding:16px}.compare-logo{width:58px;height:58px}}\n',
+                  encoding='utf-8'
+              )
+              css=css[:start]+css[end:]
+              old='@media(min-width:700px){.drill-list{grid-template-columns:1fr 1fr}.drill-card.open{grid-column:span 1}.compare-setup-grid{grid-template-columns:repeat(4,1fr)}.compare-card{padding:16px}.compare-logo{width:58px;height:58px}.event-list{grid-template-columns:1fr 1fr}.admin-card{margin-top:8px}}'
+              new='@media(min-width:700px){.drill-list{grid-template-columns:1fr 1fr}.drill-card.open{grid-column:span 1}.event-list{grid-template-columns:1fr 1fr}.admin-card{margin-top:8px}}'
+              if old in css:
+                  css=css.replace(old,new,1)
+              elif '.compare-setup-grid{grid-template-columns:repeat(4,1fr)}' in css:
+                  raise SystemExit('Compare media rules still remain in css/main.css')
+              css_path.write_text(css,encoding='utf-8')
+          elif not page_css.exists():
+              raise SystemExit('Compare CSS already removed from css/main.css but css/pages/compare.css is missing')
+          PY_COMPARE
+
+          '''
+              if anchor not in s:
+                  raise SystemExit('Could not locate Compare insertion point')
+              s=s.replace(anchor,step+anchor,1)
+
+          # Align page-module markers to each build instead of leaving historical versions behind.
+          old_block="""# Keep already-separated page module version markers aligned with this build.\npython3 <<'PY_PAGE_VERSIONS'\nfrom pathlib import Path\np = Path('js/pages/events.js')\ntext = p.read_text(encoding='utf-8')\ntext = text.replace('v5.62', 'v5.63').replace('stotEventsPage=\"5.62\"', 'stotEventsPage=\"5.63\"')\np.write_text(text, encoding='utf-8')\nPY_PAGE_VERSIONS"""
+          new_block="""# Keep already-separated page module version markers aligned with this build.\npython3 - \"$VERSION\" <<'PY_PAGE_VERSIONS'\nfrom pathlib import Path\nimport re, sys\nversion=sys.argv[1]\nfor path,attr,label in [\n    ('js/pages/events.js','stotEventsPage','Events'),\n    ('js/pages/codes.js','stotCodesPage','Codes'),\n    ('js/pages/compare.js','stotComparePage','Compare'),\n]:\n    p=Path(path)\n    text=p.read_text(encoding='utf-8')\n    text=re.sub(r'v5\\.\\d+',f'v{version}',text,count=1)\n    text=re.sub(rf'{attr}=\"5\\.\\d+\"',f'{attr}=\"{version}\"',text)\n    p.write_text(text,encoding='utf-8')\nPY_PAGE_VERSIONS"""
+          if old_block in s:
+              s=s.replace(old_block,new_block,1)
+          elif 'stotComparePage' not in s:
+              raise SystemExit('Could not replace page version sync block')
+
+          old_style="f'<link rel=\"stylesheet\" href=\"css/app.bundle.css?v={version}\">\\n<link rel=\"stylesheet\" href=\"css/pages/database.css?v={version}\">\\n<link rel=\"stylesheet\" href=\"css/pages/events.css?v={version}\">\\n<link rel=\"stylesheet\" href=\"css/pages/codes.css?v={version}\">',"
+          new_style="f'<link rel=\"stylesheet\" href=\"css/app.bundle.css?v={version}\">\\n<link rel=\"stylesheet\" href=\"css/pages/compare.css?v={version}\">\\n<link rel=\"stylesheet\" href=\"css/pages/database.css?v={version}\">\\n<link rel=\"stylesheet\" href=\"css/pages/events.css?v={version}\">\\n<link rel=\"stylesheet\" href=\"css/pages/codes.css?v={version}\">',"
+          if old_style in s:
+              s=s.replace(old_style,new_style,1)
+          elif 'css/pages/compare.css?v={version}' not in s:
+              raise SystemExit('Could not add Compare stylesheet to index generator')
+
+          old_scripts="f'<script defer src=\"js/app.js?v={version}\"></script>\\n'\n    f'<script defer src=\"js/pages/database.js?v={version}\"></script>\\n'"
+          new_scripts="f'<script defer src=\"js/app.js?v={version}\"></script>\\n'\n    f'<script defer src=\"js/pages/compare.js?v={version}\"></script>\\n'\n    f'<script defer src=\"js/pages/database.js?v={version}\"></script>\\n'"
+          if old_scripts in s:
+              s=s.replace(old_scripts,new_scripts,1)
+          elif 'js/pages/compare.js?v={version}' not in s:
+              raise SystemExit('Could not add Compare script to index generator')
+
+          s=s.replace('node --check js/pages/codes.js\nnode --check js/beta-patches.bundle.js','node --check js/pages/codes.js\nnode --check js/pages/compare.js\nnode --check js/beta-patches.bundle.js',1)
+          s=s.replace("! grep -q 'const GAME_CODES=\\[' js/app.js","! grep -q 'const GAME_CODES=\\[' js/app.js\n! grep -q 'function renderCompare()' js/app.js\n! grep -q 'let compareA=' js/app.js",1)
+          s=s.replace("grep -q 'const GAME_CODES=\\[' js/pages/codes.js","grep -q 'const GAME_CODES=\\[' js/pages/codes.js\ngrep -q 'function renderCompare()' js/pages/compare.js\ngrep -q 'let compareA=' js/pages/compare.js",1)
+          s=s.replace('grep -q "css/pages/codes.css?v=${VERSION}" index.html','grep -q "css/pages/codes.css?v=${VERSION}" index.html\ngrep -q "css/pages/compare.css?v=${VERSION}" index.html',1)
+          s=s.replace('grep -q "js/pages/codes.js?v=${VERSION}" index.html','grep -q "js/pages/codes.js?v=${VERSION}" index.html\ngrep -q "js/pages/compare.js?v=${VERSION}" index.html',1)
+          s=s.replace('echo "Consolidated Beta v${VERSION}: Database, Events and Codes separated into page modules"','echo "Consolidated Beta v${VERSION}: Database, Events, Codes and Drill Compare separated into page modules"',1)
+          p.write_text(s,encoding='utf-8')
+
+          t=Path('tests/smoke-beta.mjs')
+          test=t.read_text(encoding='utf-8')
+          test=test.replace("'5.63'","'5.65'").replace('v5.63','v5.65')
+          test=test.replace(
+              "assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.65');",
+              "assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.65');\nassert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.65');",
+              1
+          )
+          test=test.replace(
+              "assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);",
+              "assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);"
+          )
+          test=test.replace(
+              "assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);",
+              "assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/compare.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);"
+          )
+          compare_test=r'''
+          assert.equal(await page.evaluate(() => typeof renderCompare), 'function');
+          await page.locator('.tabs button[data-view="compare"]').click();
+          await page.waitForTimeout(120);
+          assert.ok(await page.locator('#compareView').evaluate(el => el.classList.contains('active')));
+          assert.equal(await page.locator('#compareCards .compare-card').count(), 2, 'Drill Compare cards did not render');
+          assert.ok(await page.locator('#compareTable .compare-row').count() >= 8, 'Drill Compare table did not render');
+          await page.locator('#compareA').selectOption('clock');
+          await page.waitForTimeout(80);
+          assert.match((await page.locator('#compareCards').textContent()) || '', /Clock/i, 'Clock Drill did not render in Compare');
+          assert.match((await page.locator('#compareInsight').textContent()) || '', /Result:/i, 'Compare insight did not render');
+          '''
+          anchor="await page.locator('.tabs button[data-view=\"database\"]').click();"
+          if compare_test.strip() not in test:
+              if anchor not in test:
+                  raise SystemExit('Could not locate Database test anchor')
+              test=test.replace(anchor,compare_test+'\n'+anchor,1)
+
+          pet_test=r'''
+          await page.locator('#databaseTabs [data-dbview="pets"]').click();
+          await page.waitForTimeout(120);
+          const petLogo = page.locator('#petList .drill-card').first().locator('.drill-logo');
+          assert.ok(await petLogo.evaluate(el => el.classList.contains('v546-atlas-thumb')), 'Pet atlas class missing');
+          assert.match(await petLogo.evaluate(el => getComputedStyle(el).backgroundImage), /pets-0\.webp/, 'Pet atlas background image is hidden or missing');
+          '''
+          db_anchor="await page.locator('#databaseTabs [data-dbview=\"refineries\"]').click();\nawait page.locator('#refinerySearch').fill('Infinity');"
+          if pet_test.strip() not in test:
+              if db_anchor not in test:
+                  raise SystemExit('Could not locate Database pet regression anchor')
+              test=test.replace(db_anchor,pet_test+'\n'+db_anchor,1)
+
+          reload_anchor="assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.65');\nassert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');"
+          reload_new="assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.65');\nassert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.65');\nassert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');"
+          if reload_anchor in test:
+              test=test.replace(reload_anchor,reload_new,1)
+          test=test.replace('SMOKE PASS: v5.65 Database + Events + Codes separated, calculators, Preset UI, images, filters, reload','SMOKE PASS: v5.65 Database + Events + Codes + Drill Compare separated, pet images, calculators, Preset UI, filters, reload')
+          t.write_text(test,encoding='utf-8')
+          PY
+
+      - name: Build v5.65 runtime
+        run: bash scripts/consolidate-beta.sh
+
+      - name: Verify Compare extraction statically
+        shell: bash
+        run: |
+          test -s js/pages/compare.js
+          test -s css/pages/compare.css
+          ! grep -q 'function renderCompare()' js/app.js
+          ! grep -q 'let compareA=' js/app.js
+          grep -q 'function renderCompare()' js/pages/compare.js
+          grep -q 'stotComparePage="5.65"' js/pages/compare.js
+          grep -q 'css/pages/compare.css?v=5.65' index.html
+          grep -q 'js/pages/compare.js?v=5.65' index.html
+          grep -q 'stot-local-version" content="5.65"' index.html
+          node --check js/app.js
+          node --check js/pages/compare.js
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/stot-http.log
+          exit 1
+
+      - name: Run full browser smoke suite
+        run: node tests/smoke-beta.mjs
+
+      - name: Commit tested Compare separation
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Separate Drill Compare page runtime v5.65'
+          git push origin HEAD:consolidation-work
