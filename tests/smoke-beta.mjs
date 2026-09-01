@@ -20,13 +20,17 @@ page.on('request', request => {
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
 
-assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.59');
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.59');
+assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.60');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.60');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.60');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
 
 const scriptSrcs = await page.locator('script[src]').evaluateAll(nodes => nodes.map(n => new URL(n.src).pathname));
-assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/beta-patches.bundle.js']);
+assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/database.js', '/js/beta-patches.bundle.js']);
+const styleHrefs = await page.locator('link[rel="stylesheet"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname));
+assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/database.css']);
+
 const dataCounts = await page.evaluate(() => {
   const d = window.STOT_GAME_DATA;
   return d ? {
@@ -49,12 +53,16 @@ assert.deepEqual(dataCounts, {
   lootboxes: 13,
 });
 
-const styleHrefs = await page.locator('link[rel="stylesheet"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname));
-assert.deepEqual(styleHrefs, ['/css/app.bundle.css']);
+assert.equal(await page.evaluate(() => typeof renderActiveDatabasePane), 'function');
+assert.equal(await page.evaluate(() => typeof renderDb), 'function');
+assert.equal(await page.evaluate(() => typeof renderCompare), 'function');
+
 const requestedPaths = localRequests.map(url => new URL(url).pathname);
 assert.equal(requestedPaths.filter(path => path.startsWith('/js/v539-')).length, 0, 'Standalone historical patch JS was requested');
 assert.equal(requestedPaths.filter(path => path.startsWith('/css/v539-')).length, 0, 'Standalone historical patch CSS was requested');
 assert.equal(requestedPaths.filter(path => path === '/js/layout-quick-compare.js').length, 0, 'Obsolete sequential loader was requested');
+assert.equal(requestedPaths.filter(path => path === '/js/beta-database-images.js').length, 0, 'Database image patch leaked into standalone requests');
+assert.equal(requestedPaths.filter(path => path === '/js/beta-database-redesign.js').length, 0, 'Database redesign patch leaked into standalone requests');
 
 assert.equal((await page.locator('#saleValue').textContent())?.trim(), '$11.8K');
 assert.equal((await page.locator('#saleOil').inputValue()).trim(), '50');
@@ -107,12 +115,13 @@ assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
 
 await page.reload({ waitUntil: 'networkidle' });
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.59');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.60');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.60');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
-const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed'));
+const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed') || x.includes('STOT Database patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log('SMOKE PASS: v5.59 separated game data, calculators, Preset UI, database images, filters, reload');
+console.log('SMOKE PASS: v5.60 Database page separated, calculators, Preset UI, images, filters, reload');
 await browser.close();
