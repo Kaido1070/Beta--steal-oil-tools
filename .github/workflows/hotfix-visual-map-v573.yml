@@ -54,6 +54,7 @@ jobs:
 
           test=Path('tests/smoke-beta.mjs')
           t=test.read_text(encoding='utf-8').replace("'5.72'","'5.73'")
+          t=t.replace('stot-v5.72-layout-save-v1','stot-v5.73-layout-save-v1')
           anchor="assert.equal(await page.locator('#layoutVisualBuilder .v572-plot-card').count(), 15);\n"
           checks="""const visualMapLabels = await page.locator('#layoutVisualBuilder .v572-plot-head').evaluateAll(nodes => nodes.map(n => n.textContent.replace(/\\s+/g,' ').trim()));\nassert.match(visualMapLabels[9], /^10 Volcano Sides ×3$/);\nassert.match(visualMapLabels[10], /^11 Volcano Core ×5$/);\nassert.match(visualMapLabels[11], /^12 Volcano Sides ×3$/);\nassert.match(visualMapLabels[12], /^13 Mountain Sides ×6$/);\nassert.match(visualMapLabels[13], /^14 Mountain Summit ×10$/);\nassert.match(visualMapLabels[14], /^15 Mountain Sides ×6$/);\n"""
           if checks not in t:
