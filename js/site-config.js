@@ -18,3 +18,4 @@ window.STOT_CONFIG=Object.freeze({
   }),
   storageKey(scope,suffix="v1"){return `${this.storageNamespace}-v${this.version}-${scope}-${suffix}`;}
 });
+/* v5.72 visual builder smoke sync */
