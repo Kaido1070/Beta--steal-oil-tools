@@ -1,4 +1,4 @@
-/* STOT Oil visual plot builder — v5.73 */
+/* STOT Oil visual plot builder — v5.75 */
 (()=>{
   const AREA_CLASS={forest:'forest',desert:'desert','volcano-side':'volcano-side','volcano-core':'volcano-core','mountain-side':'mountain-side','mountain-summit':'mountain-summit'};
   const PLOT_DISPLAY_MAP={1:['forest','Forest',1],2:['forest','Forest',1],3:['forest','Forest',1],4:['forest','Forest',1],5:['forest','Forest',1],6:['forest','Forest',1],7:['desert','Desert',2],8:['desert','Desert',2],9:['desert','Desert',2],10:['volcano-side','Volcano Sides',3],11:['volcano-core','Volcano Core',5],12:['volcano-side','Volcano Sides',3],13:['mountain-side','Mountain Sides',6],14:['mountain-summit','Mountain Summit',10],15:['mountain-side','Mountain Sides',6]};
@@ -38,5 +38,43 @@
   function commitVisualEdit(){if(typeof renderLayout==='function')renderLayout();else if(typeof calcLayout==='function')calcLayout();renderVisualBuilder();renderVisualEditor()}
   const legacyRenderLayout=typeof renderLayout==='function'?renderLayout:null;if(legacyRenderLayout){renderLayout=function(){const value=legacyRenderLayout.apply(this,arguments);queueMicrotask(renderVisualBuilder);return value}}
   const legacyUpdatePlotCard=typeof updatePlotCard==='function'?updatePlotCard:null;if(legacyUpdatePlotCard){updatePlotCard=function(){const value=legacyUpdatePlotCard.apply(this,arguments);queueMicrotask(()=>{renderVisualBuilder();if(selectedPlotId)renderVisualEditor()});return value}}
-  window.STOT_VISUAL_PLOT_BUILDER=Object.freeze({render:renderVisualBuilder,open:openVisualPlotEditor,close:closeVisualPlotEditor,pack:packVisual});document.documentElement.dataset.stotVisualBuilder=STOT_CONFIG.version;if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',renderVisualBuilder,{once:true});else renderVisualBuilder();
+
+  function ensureStickyRate(){
+    let bar=document.getElementById('v575StickyRate');
+    const rate=document.getElementById('layoutNowRate');
+    const details=rate?.closest('.panel.result');
+    if(!rate||!details)return null;
+    details.id='layoutResultDetails';
+    details.classList.add('v575-result-details');
+    if(!bar){
+      bar=document.createElement('button');
+      bar.id='v575StickyRate';
+      bar.className='v575-sticky-rate';
+      bar.type='button';
+      bar.setAttribute('aria-label','Current oil production. Tap to view details.');
+      bar.innerHTML='<span><small>Current Production</small><strong data-v575-rate>0/s</strong></span><i>Details ↓</i>';
+      document.body.appendChild(bar);
+      bar.addEventListener('click',()=>{
+        details.scrollIntoView({behavior:'smooth',block:'center'});
+        details.classList.remove('v575-result-focus');
+        requestAnimationFrame(()=>details.classList.add('v575-result-focus'));
+        setTimeout(()=>details.classList.remove('v575-result-focus'),900);
+      });
+    }
+    const sync=()=>{
+      const out=bar.querySelector('[data-v575-rate]');
+      if(out)out.textContent=rate.textContent?.trim()||'0/s';
+      bar.classList.toggle('show',document.getElementById('oilView')?.classList.contains('active')===true);
+    };
+    sync();
+    if(!bar.dataset.bound){
+      bar.dataset.bound='1';
+      new MutationObserver(sync).observe(rate,{childList:true,characterData:true,subtree:true});
+      new MutationObserver(sync).observe(document.getElementById('oilView'),{attributes:true,attributeFilter:['class']});
+      document.addEventListener('click',e=>{if(e.target.closest?.('[data-view]'))queueMicrotask(sync)});
+    }
+    return bar;
+  }
+
+  window.STOT_VISUAL_PLOT_BUILDER=Object.freeze({render:renderVisualBuilder,open:openVisualPlotEditor,close:closeVisualPlotEditor,pack:packVisual});document.documentElement.dataset.stotVisualBuilder=STOT_CONFIG.version;ensureStickyRate();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',renderVisualBuilder,{once:true});else renderVisualBuilder();
 })();

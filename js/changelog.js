@@ -1,6 +1,10 @@
 /* STEAL THE OIL TYCOON — internal release changelog */
 /* Newest release must stay first. Dates are null where an exact historical release date was not recorded here. */
 window.STOT_CHANGELOG=Object.freeze([
+  Object.freeze({version:"5.75",date:"Sep 2 2026",changes:Object.freeze([
+    "Added a compact sticky Current Production card to Oil / Hour",
+    "Sticky Oil/s stays visible while building and jumps to the full result details when tapped"
+  ])}),
   Object.freeze({version:"5.74",date:"Sep 2 2026",changes:Object.freeze([
     "Refined the visual 5×5 map to blend with the dark site theme",
     "Area colors now emphasize borders, titles and multipliers instead of filling every empty cell",
