@@ -1,0 +1,70 @@
+name: Fix version-scoped storage
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-storage-version.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply version-scoped storage fix
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_required(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'Missing expected text in {path}: {old[:80]}')
+              p.write_text(text.replace(old, new), encoding='utf-8')
+
+          layout_old = '(()=>{const KEY="stot-v5.39-layout-save-v1",API=window.STOT_LAYOUT_PERSIST;'
+          layout_new = '(()=>{const BUILD_VERSION=document.querySelector(\'meta[name="stot-local-version"]\')?.content||window.__STOT_CONSOLIDATED_RUNTIME__||"unknown",KEY=`stot-v${BUILD_VERSION}-layout-save-v1`,API=window.STOT_LAYOUT_PERSIST;'
+          compare_old = '(()=>{const view=document.querySelector("#layoutcompareView"),API=window.STOT_LAYOUT_PERSIST;if(!view||!API||document.querySelector("#v524CompareSettings"))return;const STORE_KEY="stot-v5.32-compare-separate-boosts-v1";'
+          compare_new = '(()=>{const view=document.querySelector("#layoutcompareView"),API=window.STOT_LAYOUT_PERSIST;if(!view||!API||document.querySelector("#v524CompareSettings"))return;const BUILD_VERSION=document.querySelector(\'meta[name="stot-local-version"]\')?.content||window.__STOT_CONSOLIDATED_RUNTIME__||"unknown",STORE_KEY=`stot-v${BUILD_VERSION}-compare-separate-boosts-v1`;'
+
+          replace_required('js/v539-04.js', layout_old, layout_new)
+          replace_required('js/v539-06.js', compare_old, compare_new)
+          replace_required('js/beta-patches.bundle.js', layout_old, layout_new)
+          replace_required('js/beta-patches.bundle.js', compare_old, compare_new)
+
+          for path in [
+              'index.html',
+              'js/beta-patches.bundle.js',
+              'scripts/consolidate-beta.sh',
+              'tests/smoke-beta.mjs',
+              '.github/workflows/consolidate-beta.yml',
+          ]:
+              p = Path(path)
+              if not p.exists():
+                  continue
+              text = p.read_text(encoding='utf-8')
+              if '5.60' in text:
+                  p.write_text(text.replace('5.60', '5.61'), encoding='utf-8')
+
+          print('Storage keys are now scoped by stot-local-version; build bumped to 5.61.')
+          PY
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html js/v539-04.js js/v539-06.js js/beta-patches.bundle.js scripts/consolidate-beta.sh tests/smoke-beta.mjs .github/workflows/consolidate-beta.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Scope saved state to build version"
+          git push
