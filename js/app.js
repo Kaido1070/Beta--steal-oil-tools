@@ -911,7 +911,7 @@ $$('.tabs button').forEach(b=>b.onclick=()=>openView(b.dataset.view));
 
 I18N.setLanguage("en");
 calcSale();
-calcProduction();
+if(typeof calcProduction==="function")calcProduction();
 calcDrill();
 renderDb();
 renderRefineries();
