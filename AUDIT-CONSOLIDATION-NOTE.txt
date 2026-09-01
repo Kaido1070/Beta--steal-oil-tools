@@ -1,0 +1,1 @@
+Consolidation work branch marker. Safe rollback branch: backup-v5.57-before-consolidation.
