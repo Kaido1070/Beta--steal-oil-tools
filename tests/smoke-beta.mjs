@@ -23,7 +23,8 @@ assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
 
-assert.equal((await page.locator('#saleValue').textContent())?.trim(), '$11.75K');
+// Current formatter rounds 11,750 to one decimal place at K scale.
+assert.equal((await page.locator('#saleValue').textContent())?.trim(), '$11.8K');
 assert.equal((await page.locator('#saleOil').inputValue()).trim(), '50');
 assert.equal((await page.locator('#sellPrice').inputValue()).trim(), '50');
 
