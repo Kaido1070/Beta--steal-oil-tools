@@ -1,6 +1,11 @@
 /* STEAL THE OIL TYCOON — internal release changelog */
 /* Newest release must stay first. Dates are null where an exact historical release date was not recorded here. */
 window.STOT_CHANGELOG=Object.freeze([
+  Object.freeze({version:"5.74",date:"Sep 2 2026",changes:Object.freeze([
+    "Refined the visual 5×5 map to blend with the dark site theme",
+    "Area colors now emphasize borders, titles and multipliers instead of filling every empty cell",
+    "Kept all Forest, Desert, Volcano and Mountain color identities"
+  ])}),
   Object.freeze({version:"5.73",date:"Sep 2 2026",changes:Object.freeze([
     "Corrected the visual map order to match the in-game plot layout",
     "Plot 11 is Volcano Core ×5, Plot 12 is Volcano Sides ×3, and Plot 14 is Mountain Summit ×10"
