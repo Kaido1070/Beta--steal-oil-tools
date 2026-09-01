@@ -1,1 +1,0 @@
-(() => { const imgs=['assets/images/drills/drills-atlas.webp?v=5.46','assets/images/pets/pets-atlas.webp?v=5.46']; imgs.forEach(src=>{ const i=new Image(); i.onerror=()=>console.error('STOT image atlas failed',src); i.src=src; }); })();
