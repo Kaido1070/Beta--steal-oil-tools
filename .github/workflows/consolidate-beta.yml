@@ -6,6 +6,21 @@ on:
     paths:
       - scripts/consolidate-beta.sh
       - .github/workflows/consolidate-beta.yml
+      - js/app.js
+      - js/v539-*.js
+      - js/beta-oil-order.js
+      - js/beta-first-visit.js
+      - js/beta-image-atlas-fix.js
+      - js/beta-preset-visuals.js
+      - js/beta-database-images.js
+      - js/beta-database-redesign.js
+      - css/main.css
+      - css/v539-*.css
+      - css/beta-first-visit.css
+      - css/beta-image-atlas-fix.css
+      - css/beta-preset-visuals.css
+      - css/beta-database-images.css
+      - css/beta-database-redesign.css
 
 permissions:
   contents: write
