@@ -1,1 +1,0 @@
-v5.70 footer centralization
