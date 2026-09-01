@@ -1,0 +1,413 @@
+/* v5.6 — single-layout Oil / Hour home, optional dedicated A/B compare */
+#oilView.v56-single .ab-layout-switch,
+#oilView.v56-single .ab-editing,
+#oilView.v56-single .ab-compare{display:none!important}
+
+#oilView .v56-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+#oilView .v56-hero-copy{min-width:0}
+#oilView .v56-hero h2{margin:0;font-size:18px;line-height:1.15}
+#oilView .v56-hero p{margin:6px 0 0;color:var(--muted);font-size:10px;line-height:1.5;max-width:500px}
+#oilView .v56-compare-open,#oilView .v56-back{
+ flex:0 0 auto;min-height:40px;padding:0 13px;border-radius:11px;border:1px solid #76578f;
+ background:linear-gradient(180deg,rgba(116,67,137,.85),rgba(67,52,104,.9));color:#fff;font-weight:950;font-size:10px
+}
+#oilView .v56-back{background:#111722;border-color:#354057;color:#dce3ef}
+#oilView .v56-summary{display:grid;gap:8px;margin-bottom:10px}
+#oilView .v56-summary-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#oilView .v56-summary-title strong{font-size:12px}
+#oilView .v56-summary-title span{color:var(--muted);font-size:8.5px}
+#oilView .v56-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+#oilView .v56-stat{min-width:0;border:1px solid #30394e;border-radius:12px;background:#111722;padding:10px}
+#oilView .v56-stat span{display:block;color:#aab4c6;font-size:8px;line-height:1.3;white-space:normal}
+#oilView .v56-stat strong{display:block;margin-top:5px;font-size:16px;line-height:1.15;overflow-wrap:anywhere}
+#oilView .v56-goal{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#oilView .v56-goal .v56-stat{background:#101620}
+#oilView .v56-share{width:100%;min-height:40px;border:1px solid #7b6cf0;border-radius:11px;background:linear-gradient(180deg,#7469ee,#5d55c9);color:#fff;font-size:10px;font-weight:950}
+#oilView .v56-editor-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+#oilView .v56-editor-head strong{font-size:11px}
+#oilView .v56-editor-head span{font-size:8.5px;color:var(--muted)}
+#oilView .v56-compare-page{display:none}
+#oilView.v56-compare .v56-single-only{display:none!important}
+#oilView.v56-compare .v56-compare-page{display:block}
+#oilView.v56-compare .oil-layout-intro{display:none!important}
+#oilView.v56-compare .ab-layout-switch,
+#oilView.v56-compare .ab-editing,
+#oilView.v56-compare .ab-compare{display:grid}
+#oilView.v56-compare .ab-editing{display:block}
+#oilView .v56-compare-intro h2{margin:0;font-size:17px}
+#oilView .v56-compare-intro p{margin:5px 0 0;color:var(--muted);font-size:9.5px;line-height:1.45}
+#oilView .v56-compare-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+#oilView .v56-compare-actions button{min-height:40px;border-radius:11px;font-size:10px;font-weight:950}
+#oilView .v56-share-compare{border:1px solid #7b6cf0;background:linear-gradient(180deg,#7469ee,#5d55c9);color:#fff}
+#oilView .v56-a{border:1px solid #354057;background:#111722;color:#dce3ef}
+#oilView .ab-compare-head{gap:8px}
+#oilView .ab-compare-head strong,#oilView .ab-compare-head small,
+#oilView .ab-score span,#oilView .ab-metric span,#oilView .ab-winner{
+ white-space:normal!important;overflow-wrap:anywhere;line-height:1.3
+}
+@media(max-width:600px){
+ #oilView .v56-hero{align-items:flex-start}
+ #oilView .v56-hero h2{font-size:16px}
+ #oilView .v56-compare-open,#oilView .v56-back{padding:0 10px}
+ #oilView .v56-summary-grid{grid-template-columns:1fr 1fr}
+ #oilView .v56-summary-grid .v56-stat:first-child{grid-column:1/-1}
+ #oilView .v56-goal{grid-template-columns:1fr 1fr}
+ #oilView .v56-compare-actions{grid-template-columns:1fr}
+}
+
+/* STOT v5.7 — dedicated Compare Layouts view */
+.tabs button[data-view="compare"]{ }
+#oilView .v56-compare-open{display:none!important}
+#layoutcompareView{display:none}
+#layoutcompareView.active{display:block}
+#layoutcompareView .v56-compare-page{display:block!important}
+#layoutcompareView .v56-compare-intro{margin-bottom:8px}
+#layoutcompareView .v56-compare-intro .v56-back{display:none!important}
+#layoutcompareView .ab-layout-switch{display:grid!important}
+#layoutcompareView .ab-editing{display:block!important}
+#layoutcompareView .ab-compare{display:block!important}
+#layoutcompareView .ab-compare-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:8px
+}
+#layoutcompareView .ab-compare-head strong,
+#layoutcompareView .ab-compare-head small,
+#layoutcompareView .ab-score span,
+#layoutcompareView .ab-metric span,
+#layoutcompareView .ab-winner{
+  white-space:normal!important;
+  overflow-wrap:anywhere;
+  line-height:1.3
+}
+#layoutcompareView .v57-editor-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:10px 2px 8px
+}
+#layoutcompareView .v57-editor-head strong{font-size:11px}
+#layoutcompareView .v57-editor-head span{font-size:8.5px;color:var(--muted)}
+#layoutcompareView .layout-controls,
+#layoutcompareView .result,
+#layoutcompareView #layoutCopyBar,
+#layoutcompareView #layoutAreas,
+#layoutcompareView .layout-note{display:block!important}
+#layoutcompareView .v56-compare-actions{display:grid!important}
+#layoutcompareView .v57-view-note{
+  margin:0 0 9px;padding:9px 11px;border:1px solid #2d3548;border-radius:12px;
+  background:#101620;color:#96a2b6;font-size:9px;line-height:1.45
+}
+@media(max-width:620px){
+  .tabs{grid-template-columns:repeat(4,minmax(max-content,1fr))}
+  #layoutcompareView .ab-diff{grid-template-columns:1fr 1fr}
+  #layoutcompareView .ab-diff .ab-metric:last-child{grid-column:1/-1}
+}
+
+/* STOT v5.8 — targeted spacing/overflow fixes only */
+
+/* Oil / Hour: keep headings and status text inside the card */
+#oilView .v56-summary{
+  padding:10px !important;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+#oilView .v56-summary-title{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  margin:0 0 1px;
+}
+#oilView .v56-summary-title strong,
+#oilView .v56-summary-title span{
+  min-width:0;
+  white-space:normal !important;
+  overflow-wrap:anywhere;
+}
+#oilView .v56-summary-title strong{line-height:1.25}
+#oilView .v56-summary-title span{text-align:right;line-height:1.25}
+#oilView .v56-editor-head{
+  padding:0 1px;
+  box-sizing:border-box;
+}
+#oilView .v56-editor-head strong,
+#oilView .v56-editor-head span{
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+
+/* Compare Layouts: moved out of #oilView in v5.7, so give the moved pieces
+   their proper padding and button styling in their new view. */
+#layoutcompareView .v56-compare-intro{
+  padding:11px !important;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+#layoutcompareView .v56-compare-intro .v56-hero{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  min-width:0;
+}
+#layoutcompareView .v56-compare-intro .v56-hero-copy{min-width:0}
+#layoutcompareView .v56-compare-intro h2{
+  margin:0;
+  font-size:17px;
+  line-height:1.2;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+#layoutcompareView .v56-compare-intro p{
+  margin:6px 0 0;
+  color:var(--muted);
+  font-size:9.5px;
+  line-height:1.45;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+#layoutcompareView .v56-compare-page > .panel:not(.ab-compare){
+  padding:8px;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+#layoutcompareView .ab-editing{
+  margin:7px 0 0 !important;
+  padding:0 2px 1px;
+  line-height:1.3;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+#layoutcompareView .ab-compare{
+  padding:10px !important;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+#layoutcompareView .ab-compare-head{
+  width:100%;
+  min-width:0;
+  margin-bottom:9px;
+}
+#layoutcompareView .ab-compare-head strong,
+#layoutcompareView .ab-compare-head small{
+  min-width:0;
+  max-width:100%;
+}
+#layoutcompareView .ab-compare-head small{
+  text-align:right;
+}
+#layoutcompareView .ab-score,
+#layoutcompareView .ab-metric,
+#layoutcompareView .ab-winner{
+  min-width:0;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+#layoutcompareView .v56-compare-actions{
+  grid-template-columns:1fr 1fr !important;
+  gap:8px;
+  margin-top:9px;
+}
+#layoutcompareView .v56-compare-actions button{
+  width:100%;
+  min-width:0;
+  min-height:40px;
+  padding:8px 10px;
+  border-radius:11px;
+  font-size:10px;
+  line-height:1.2;
+  font-weight:950;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  box-sizing:border-box;
+}
+#layoutcompareView .v56-a{
+  border:1px solid #354057;
+  background:#111722;
+  color:#dce3ef;
+}
+#layoutcompareView .v56-share-compare{
+  border:1px solid #7b6cf0;
+  background:linear-gradient(180deg,#7469ee,#5d55c9);
+  color:#fff;
+}
+
+/* Share preview: keep the complete share sheet inside the visible viewport.
+   Header/actions stay visible while long content scrolls inside the sheet. */
+.share-preview{
+  height:100dvh;
+  max-height:100dvh;
+  padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom)) !important;
+  align-items:center !important;
+  box-sizing:border-box;
+}
+.share-sheet{
+  width:min(560px,100%);
+  max-height:calc(100dvh - max(16px,env(safe-area-inset-top)) - max(16px,env(safe-area-inset-bottom))) !important;
+  overflow:hidden !important;
+  display:flex;
+  flex-direction:column;
+  padding:12px !important;
+  border-radius:17px !important;
+  box-sizing:border-box;
+}
+.share-sheet-head{
+  flex:0 0 auto;
+  align-items:center;
+  min-width:0;
+}
+.share-sheet-head > div{min-width:0}
+.share-sheet-head h2,
+.share-sheet-head p{
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.share-content{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  margin-top:9px !important;
+  gap:6px !important;
+  padding-right:1px;
+}
+.share-section{
+  padding:8px 9px !important;
+  border-radius:11px !important;
+}
+.share-section-title{margin-bottom:5px !important}
+.share-line{
+  gap:8px !important;
+  padding:4px 0 !important;
+  min-width:0;
+}
+.share-line span,
+.share-line strong{
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.share-sheet-actions{
+  flex:0 0 auto;
+  margin-top:8px !important;
+  padding-bottom:0;
+}
+.share-sheet-actions button{height:37px !important}
+
+/* General mobile containment for labels inside cards/controls */
+@media(max-width:520px){
+  #oilView .v56-summary-title{gap:6px}
+  #oilView .v56-summary-title strong{font-size:11px}
+  #oilView .v56-summary-title span{font-size:8px}
+  #layoutcompareView .v56-compare-actions{grid-template-columns:1fr 1fr !important}
+  #layoutcompareView .ab-compare-head strong{font-size:13px}
+  #layoutcompareView .ab-compare-head small{font-size:8.5px}
+  .share-preview{padding:max(5px,env(safe-area-inset-top)) 5px max(5px,env(safe-area-inset-bottom)) !important}
+  .share-sheet{
+    max-height:calc(100dvh - max(10px,env(safe-area-inset-top)) - max(10px,env(safe-area-inset-bottom))) !important;
+    padding:10px !important;
+    border-radius:14px !important;
+  }
+}
+@supports not (height:100dvh){
+  .share-preview{height:100vh;max-height:100vh}
+  .share-sheet{max-height:calc(100vh - 16px) !important}
+}
+
+/* STOT v5.9 — four targeted fixes */
+
+/* Layout editor pet level inputs only need 0–100, keep names fully visible */
+#oilView .layout-two .field{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 78px !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+#oilView .layout-two .field .field-head{
+  min-width:0;
+  margin:0 !important;
+}
+#oilView .layout-two .field .labels{
+  min-width:0;
+}
+#oilView .layout-two .field .labels strong,
+#oilView .layout-two .field .labels small{
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+#oilView .layout-two #layoutMole,
+#oilView .layout-two #layoutFruit{
+  width:78px !important;
+  min-width:78px !important;
+  max-width:78px !important;
+  min-height:42px !important;
+  height:42px !important;
+  padding:0 8px !important;
+  text-align:center !important;
+  justify-self:end !important;
+  box-sizing:border-box;
+}
+
+/* Same compact sizing when that exact editor is reused inside Compare Layouts */
+#layoutcompareView .layout-two .field{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 78px !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+#layoutcompareView .layout-two .field .field-head{min-width:0;margin:0 !important}
+#layoutcompareView .layout-two .field .labels{min-width:0}
+#layoutcompareView .layout-two .field .labels strong,
+#layoutcompareView .layout-two .field .labels small{
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+#layoutcompareView .layout-two #layoutMole,
+#layoutcompareView .layout-two #layoutFruit{
+  width:78px !important;
+  min-width:78px !important;
+  max-width:78px !important;
+  min-height:42px !important;
+  height:42px !important;
+  padding:0 8px !important;
+  text-align:center !important;
+  justify-self:end !important;
+  box-sizing:border-box;
+}
+
+/* Drill share button */
+#drillsView .v59-drill-share{
+  width:100%;
+  min-height:42px;
+  margin-top:10px;
+  border:1px solid #7b6cf0;
+  border-radius:12px;
+  background:linear-gradient(180deg,#7469ee,#5d55c9);
+  color:#fff;
+  font-weight:950;
+  font-size:11px;
+}
+
+/* STOT v5.13 — freeze fix + layout cell/count + repeat paste */
+#layoutCopyBar{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto auto !important;
+  gap:8px !important;
+  align-items:center !important;
+}
+#layoutPasteAll{
+  min-height:38px;
+  padding:0 12px;
+  border:1px solid #3b465f;
+  border-radius:10px;
+  background:#111722;
+  color:#dcc8f5;
+  font-weight:850;
+  font-size:9.5px;
+}
+#layoutPasteAll:disabled{opacity:.4}
+@media(max-width:600px){
+  #layoutCopyBar{grid-template-columns:1fr 1fr !important}
+  #layoutCopyBar > div{grid-column:1/-1}
+  #layoutPasteEmpty,#layoutPasteAll{width:100%}
+}
