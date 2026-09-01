@@ -7,9 +7,9 @@ on:
       - tests/smoke-beta.mjs
       - .github/workflows/smoke-beta.yml
       - index.html
-      - js/app.js
-      - js/beta-patches.bundle.js
-      - css/app.bundle.css
+      - js/**
+      - css/**
+      - assets/images/**
 
 permissions:
   contents: read
