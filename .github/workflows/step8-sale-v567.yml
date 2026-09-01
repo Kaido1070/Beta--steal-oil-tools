@@ -1,0 +1,199 @@
+name: Step 8 Separate Sale
+
+on:
+  push:
+    branches: [consolidation-work]
+
+permissions:
+  contents: write
+
+jobs:
+  split-sale:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: consolidation-work
+          fetch-depth: 0
+
+      - name: Patch build pipeline for Sale page
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('scripts/consolidate-beta.sh')
+          s=p.read_text(encoding='utf-8')
+          if 'VERSION="5.66"' not in s:
+              raise SystemExit('Expected v5.66 build pipeline')
+          s=s.replace('VERSION="5.66"','VERSION="5.67"',1)
+
+          anchor='# Keep already-separated page module version markers aligned with this build.'
+          step=r'''# Step 8: move Sale calculator behavior out of the shared core.
+          # Sale uses the shared field/result/action component styles, so no duplicate page CSS is created here.
+          python3 <<'PY_SALE'
+          from pathlib import Path
+
+          app_path=Path('js/app.js')
+          sale_path=Path('js/pages/sale.js')
+          sale_path.parent.mkdir(parents=True,exist_ok=True)
+          app=app_path.read_text(encoding='utf-8')
+          sale_start='let saleUnit=1,friendBoost=50;'
+          shared_start='async function copyText'
+          share_start='$("#saleCopy").onclick='
+          oil_marker='/* oil layout */'
+
+          if sale_start in app:
+              start=app.index(sale_start)
+              end=app.index(shared_start,start)
+              calc_block=app[start:end].strip()
+              app=app[:start]+app[end:]
+
+              share_pos=app.index(share_start)
+              oil_pos=app.index(oil_marker,share_pos)
+              share_block=app[share_pos:oil_pos].strip()
+              app=app[:share_pos]+app[oil_pos:]
+
+              startup='calcSale();\nif(typeof calcProduction==="function")calcProduction();'
+              if startup not in app:
+                  raise SystemExit('Could not locate Sale startup call in js/app.js')
+              app=app.replace(startup,'if(typeof calcProduction==="function")calcProduction();',1)
+              app=app.replace('/* sale */\nfunction escapeHTML','/* shared numeric/share helpers used by Sale and Oil */\nfunction escapeHTML',1)
+
+              sale_path.write_text(
+                  '/* STOT Sale page runtime v5.67 — extracted from js/app.js */\n'
+                  + calc_block + '\n\n'
+                  + share_block
+                  + '\n\n/* Initial Sale render now belongs to this page module. */\n'
+                  + 'calcSale();\n'
+                  + 'document.documentElement.dataset.stotSalePage="5.67";\n',
+                  encoding='utf-8'
+              )
+              app_path.write_text(app,encoding='utf-8')
+          else:
+              if not sale_path.exists():
+                  raise SystemExit('Sale already removed from app.js but js/pages/sale.js is missing')
+              if 'function calcSale()' in app or 'let saleUnit=' in app or 'function saleSummaryText()' in app:
+                  raise SystemExit('Sale runtime still remains in js/app.js')
+          PY_SALE
+
+          '''
+          if anchor not in s:
+              raise SystemExit('Could not locate Sale insertion point')
+          s=s.replace(anchor,step+anchor,1)
+
+          old="    ('js/pages/drills.js','stotDrillsPage','Drills'),\n]"
+          new="    ('js/pages/drills.js','stotDrillsPage','Drills'),\n    ('js/pages/sale.js','stotSalePage','Sale'),\n]"
+          if old not in s:
+              raise SystemExit('Could not add Sale to page version sync')
+          s=s.replace(old,new,1)
+
+          old_scripts='''    f'<script defer src="js/app.js?v={version}"></script>\\n'\n    f'<script defer src="js/pages/drills.js?v={version}"></script>\\n'\n'''
+          new_scripts='''    f'<script defer src="js/app.js?v={version}"></script>\\n'\n    f'<script defer src="js/pages/sale.js?v={version}"></script>\\n'\n    f'<script defer src="js/pages/drills.js?v={version}"></script>\\n'\n'''
+          if old_scripts not in s:
+              raise SystemExit('Could not add Sale script to generated index')
+          s=s.replace(old_scripts,new_scripts,1)
+
+          s=s.replace('node --check js/app.js\nnode --check js/pages/database-core.js','node --check js/app.js\nnode --check js/pages/sale.js\nnode --check js/pages/database-core.js',1)
+          s=s.replace("! grep -q 'function calcDrill()' js/app.js","! grep -q 'function calcDrill()' js/app.js\n! grep -q 'function calcSale()' js/app.js\n! grep -q 'let saleUnit=' js/app.js\n! grep -q 'function saleSummaryText()' js/app.js",1)
+          s=s.replace("grep -q 'function calcDrill()' js/pages/drills.js","grep -q 'function calcDrill()' js/pages/drills.js\ngrep -q 'function calcSale()' js/pages/sale.js\ngrep -q 'let saleUnit=' js/pages/sale.js\ngrep -q 'function saleSummaryText()' js/pages/sale.js",1)
+          s=s.replace('grep -q "js/app.js?v=${VERSION}" index.html','grep -q "js/app.js?v=${VERSION}" index.html\ngrep -q "js/pages/sale.js?v=${VERSION}" index.html',1)
+          s=s.replace('Database, Events, Codes, Drill Compare and Drills separated into page modules','Database, Events, Codes, Drill Compare, Drills and Sale separated into page modules',1)
+
+          stale="elif safe_with_drill in s or safe_without_drill in s:\n    pass"
+          stale_new="elif safe_with_drill in s or safe_without_drill in s or 'if(typeof calcProduction===\"function\")calcProduction();' in s:\n    pass"
+          if stale not in s:
+              raise SystemExit('Could not make startup guard Sale-aware')
+          s=s.replace(stale,stale_new,1)
+
+          p.write_text(s,encoding='utf-8')
+
+          t=Path('tests/smoke-beta.mjs')
+          test=t.read_text(encoding='utf-8').replace('5.66','5.67')
+          marker="assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.67');"
+          if marker not in test:
+              raise SystemExit('Could not locate Drills version assertion')
+          test=test.replace(marker,marker+"\nassert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.67');",1)
+
+          old_list="assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/drills.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);"
+          new_list="assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/sale.js', '/js/pages/drills.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);"
+          if old_list not in test:
+              raise SystemExit('Could not update script request list')
+          test=test.replace(old_list,new_list,1)
+
+          sale_anchor="assert.equal((await page.locator('#sellPrice').inputValue()).trim(), '50');"
+          sale_test=r'''
+          assert.equal(await page.evaluate(() => typeof calcSale), 'function');
+          assert.equal(await page.evaluate(() => typeof saleSummaryText), 'function');
+          await page.locator('.tabs button[data-view="sale"]').click();
+          await page.waitForTimeout(80);
+          assert.ok(await page.locator('#saleView').evaluate(el => el.classList.contains('active')));
+          const saleBefore = (await page.locator('#saleValue').textContent())?.trim();
+          await page.locator('#saleOil').fill('100');
+          await page.waitForTimeout(60);
+          const saleAfter = (await page.locator('#saleValue').textContent())?.trim();
+          assert.notEqual(saleAfter, saleBefore, 'Sale calculator did not react to Oil Amount input');
+          await page.locator('#saleOil').fill('50');
+          await page.waitForTimeout(40);
+          '''
+          if sale_anchor not in test:
+              raise SystemExit('Could not locate Sale smoke-test insertion point')
+          test=test.replace(sale_anchor,sale_anchor+'\n'+sale_test,1)
+
+          reload_marker="assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.67');\nassert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');"
+          reload_repl="assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.67');\nassert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.67');\nassert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');"
+          if reload_marker not in test:
+              raise SystemExit('Could not locate reload Sale assertion point')
+          test=test.replace(reload_marker,reload_repl,1)
+          test=test.replace('Database + Events + Codes + Drill Compare + Drills separated','Database + Events + Codes + Drill Compare + Drills + Sale separated')
+          t.write_text(test,encoding='utf-8')
+          PY
+
+      - name: Build v5.67 runtime
+        run: bash scripts/consolidate-beta.sh
+
+      - name: Verify Sale extraction statically
+        shell: bash
+        run: |
+          test -s js/pages/sale.js
+          ! grep -q 'function calcSale()' js/app.js
+          ! grep -q 'let saleUnit=' js/app.js
+          ! grep -q 'function saleSummaryText()' js/app.js
+          grep -q 'function calcSale()' js/pages/sale.js
+          grep -q 'function saleSummaryText()' js/pages/sale.js
+          grep -q 'stotSalePage="5.67"' js/pages/sale.js
+          grep -q 'js/pages/sale.js?v=5.67' index.html
+          grep -q 'stot-local-version" content="5.67"' index.html
+          node --check js/app.js
+          node --check js/pages/sale.js
+          node --check js/pages/drills.js
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/stot-http.log
+          exit 1
+
+      - name: Run full browser smoke suite
+        run: node tests/smoke-beta.mjs
+
+      - name: Commit tested Sale separation
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/consolidate-beta.sh js/app.js js/pages/sale.js js/pages/drills.js js/pages/compare.js js/pages/events.js js/pages/codes.js css/app.bundle.css css/pages/drills.css css/pages/compare.css css/pages/database.css css/pages/events.css css/pages/codes.css index.html tests/smoke-beta.mjs js/beta-patches.bundle.js js/pages/database.js
+          git commit -m 'Separate Sale page runtime v5.67'
+          git push origin HEAD:consolidation-work
