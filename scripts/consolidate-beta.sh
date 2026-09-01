@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.66"
+VERSION="5.67"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
 
@@ -390,6 +390,54 @@ elif not page_css.exists():
     raise SystemExit('Drills CSS already removed from css/main.css but css/pages/drills.css is missing')
 PY_DRILLS
 
+# Step 8: move Sale calculator behavior out of the shared core.
+# Sale uses the shared field/result/action component styles, so no duplicate page CSS is created here.
+python3 <<'PY_SALE'
+from pathlib import Path
+
+app_path=Path('js/app.js')
+sale_path=Path('js/pages/sale.js')
+sale_path.parent.mkdir(parents=True,exist_ok=True)
+app=app_path.read_text(encoding='utf-8')
+sale_start='let saleUnit=1,friendBoost=50;'
+shared_start='async function copyText'
+share_start='$("#saleCopy").onclick='
+oil_marker='/* oil layout */'
+
+if sale_start in app:
+    start=app.index(sale_start)
+    end=app.index(shared_start,start)
+    calc_block=app[start:end].strip()
+    app=app[:start]+app[end:]
+
+    share_pos=app.index(share_start)
+    oil_pos=app.index(oil_marker,share_pos)
+    share_block=app[share_pos:oil_pos].strip()
+    app=app[:share_pos]+app[oil_pos:]
+
+    startup='calcSale();\nif(typeof calcProduction==="function")calcProduction();'
+    if startup not in app:
+        raise SystemExit('Could not locate Sale startup call in js/app.js')
+    app=app.replace(startup,'if(typeof calcProduction==="function")calcProduction();',1)
+    app=app.replace('/* sale */\nfunction escapeHTML','/* shared numeric/share helpers used by Sale and Oil */\nfunction escapeHTML',1)
+
+    sale_path.write_text(
+        '/* STOT Sale page runtime v5.67 — extracted from js/app.js */\n'
+        + calc_block + '\n\n'
+        + share_block
+        + '\n\n/* Initial Sale render now belongs to this page module. */\n'
+        + 'calcSale();\n'
+        + 'document.documentElement.dataset.stotSalePage="5.67";\n',
+        encoding='utf-8'
+    )
+    app_path.write_text(app,encoding='utf-8')
+else:
+    if not sale_path.exists():
+        raise SystemExit('Sale already removed from app.js but js/pages/sale.js is missing')
+    if 'function calcSale()' in app or 'let saleUnit=' in app or 'function saleSummaryText()' in app:
+        raise SystemExit('Sale runtime still remains in js/app.js')
+PY_SALE
+
 # Keep already-separated page module version markers aligned with this build.
 python3 - "$VERSION" <<'PY_PAGE_VERSIONS'
 from pathlib import Path
@@ -400,6 +448,7 @@ for path,attr,label in [
     ('js/pages/codes.js','stotCodesPage','Codes'),
     ('js/pages/compare.js','stotComparePage','Compare'),
     ('js/pages/drills.js','stotDrillsPage','Drills'),
+    ('js/pages/sale.js','stotSalePage','Sale'),
 ]:
     p=Path(path)
     text=p.read_text(encoding='utf-8')
@@ -418,7 +467,7 @@ safe_with_drill = 'calcSale();\nif(typeof calcProduction==="function")calcProduc
 safe_without_drill = 'calcSale();\nif(typeof calcProduction==="function")calcProduction();'
 if old in s:
     s = s.replace(old, safe_with_drill, 1)
-elif safe_with_drill in s or safe_without_drill in s:
+elif safe_with_drill in s or safe_without_drill in s or 'if(typeof calcProduction==="function")calcProduction();' in s:
     pass
 else:
     raise SystemExit('Could not locate expected startup sequence in js/app.js')
@@ -504,6 +553,7 @@ html = html.replace('<head>', '<head>\n' + meta, 1)
 scripts = (
     f'\n<script defer src="js/game-data.js?v={version}"></script>\n'
     f'<script defer src="js/app.js?v={version}"></script>\n'
+    f'<script defer src="js/pages/sale.js?v={version}"></script>\n'
     f'<script defer src="js/pages/drills.js?v={version}"></script>\n'
     f'<script defer src="js/pages/compare.js?v={version}"></script>\n'
     f'<script defer src="js/pages/database.js?v={version}"></script>\n'
@@ -518,6 +568,7 @@ PY
 # Static safety checks.
 node --check js/game-data.js
 node --check js/app.js
+node --check js/pages/sale.js
 node --check js/pages/database-core.js
 node --check js/pages/database.js
 node --check js/pages/events.js
@@ -538,6 +589,9 @@ grep -q '^window.STOT_GAME_DATA=' js/game-data.js
 ! grep -q 'function renderCompare()' js/app.js
 ! grep -q 'let compareA=' js/app.js
 ! grep -q 'function calcDrill()' js/app.js
+! grep -q 'function calcSale()' js/app.js
+! grep -q 'let saleUnit=' js/app.js
+! grep -q 'function saleSummaryText()' js/app.js
 ! grep -q 'function renderPicker()' js/app.js
 ! grep -q 'const ds=' js/app.js
 grep -q 'function renderDb()' js/pages/database-core.js
@@ -548,6 +602,9 @@ grep -q 'const GAME_CODES=\[' js/pages/codes.js
 grep -q 'function renderCompare()' js/pages/compare.js
 grep -q 'let compareA=' js/pages/compare.js
 grep -q 'function calcDrill()' js/pages/drills.js
+grep -q 'function calcSale()' js/pages/sale.js
+grep -q 'let saleUnit=' js/pages/sale.js
+grep -q 'function saleSummaryText()' js/pages/sale.js
 grep -q 'function renderPicker()' js/pages/drills.js
 grep -q 'const ds=' js/pages/drills.js
 grep -q 'beta-database-images.js' js/pages/database.js
@@ -562,6 +619,7 @@ grep -q "css/pages/compare.css?v=${VERSION}" index.html
 grep -q "css/pages/drills.css?v=${VERSION}" index.html
 grep -q "js/game-data.js?v=${VERSION}" index.html
 grep -q "js/app.js?v=${VERSION}" index.html
+grep -q "js/pages/sale.js?v=${VERSION}" index.html
 grep -q "js/pages/database.js?v=${VERSION}" index.html
 grep -q "js/pages/events.js?v=${VERSION}" index.html
 grep -q "js/pages/codes.js?v=${VERSION}" index.html
@@ -570,4 +628,4 @@ grep -q "js/pages/drills.js?v=${VERSION}" index.html
 grep -q "js/beta-patches.bundle.js?v=${VERSION}" index.html
 grep -q "stot-local-version\" content=\"${VERSION}" index.html
 
-echo "Consolidated Beta v${VERSION}: Database, Events, Codes, Drill Compare and Drills separated into page modules"
+echo "Consolidated Beta v${VERSION}: Database, Events, Codes, Drill Compare, Drills and Sale separated into page modules"

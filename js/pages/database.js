@@ -1,4 +1,4 @@
-/* STOT Database page runtime v5.65 */
+/* STOT Database page runtime v5.67 */
 /* STOT Database page core — extracted from js/app.js */
 /* database */
 
@@ -415,4 +415,4 @@ try {
 
 } catch (error) { console.error("STOT Database patch failed: js/beta-database-redesign.js", error); }
 
-document.documentElement.dataset.stotDatabasePage="5.65";
+document.documentElement.dataset.stotDatabasePage="5.67";

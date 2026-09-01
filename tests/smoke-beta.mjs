@@ -20,18 +20,19 @@ page.on('request', request => {
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
 
-assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.66');
+assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.67');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
 
 const scriptSrcs = await page.locator('script[src]').evaluateAll(nodes => nodes.map(n => new URL(n.src).pathname));
-assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/drills.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);
+assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/pages/sale.js', '/js/pages/drills.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);
 const styleHrefs = await page.locator('link[rel="stylesheet"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname));
 assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/drills.css', '/css/pages/compare.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);
 
@@ -71,6 +72,20 @@ assert.equal(requestedPaths.filter(path => path === '/js/beta-database-redesign.
 assert.equal((await page.locator('#saleValue').textContent())?.trim(), '$11.8K');
 assert.equal((await page.locator('#saleOil').inputValue()).trim(), '50');
 assert.equal((await page.locator('#sellPrice').inputValue()).trim(), '50');
+
+assert.equal(await page.evaluate(() => typeof calcSale), 'function');
+assert.equal(await page.evaluate(() => typeof saleSummaryText), 'function');
+await page.locator('.tabs button[data-view="sale"]').click();
+await page.waitForTimeout(80);
+assert.ok(await page.locator('#saleView').evaluate(el => el.classList.contains('active')));
+const saleBefore = (await page.locator('#saleValue').textContent())?.trim();
+await page.locator('#saleOil').fill('100');
+await page.waitForTimeout(60);
+const saleAfter = (await page.locator('#saleValue').textContent())?.trim();
+assert.notEqual(saleAfter, saleBefore, 'Sale calculator did not react to Oil Amount input');
+await page.locator('#saleOil').fill('50');
+await page.waitForTimeout(40);
+
 assert.ok(((await page.locator('#drillMainRate').textContent()) || '').trim().length > 0, 'Drill calculator did not initialize');
 
 
@@ -184,17 +199,18 @@ assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
 
 await page.reload({ waitUntil: 'networkidle' });
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.66');
-assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.66');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.67');
+assert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.67');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
 const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed') || x.includes('STOT Database patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log('SMOKE PASS: v5.66 Database + Events + Codes + Drill Compare + Drills separated, pet images, calculators, Preset UI, filters, reload');
+console.log('SMOKE PASS: v5.67 Database + Events + Codes + Drill Compare + Drills + Sale separated, pet images, calculators, Preset UI, filters, reload');
 await browser.close();
