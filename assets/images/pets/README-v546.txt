@@ -1,1 +1,0 @@
-Real pet atlas rebuilt from the 15 uploaded pet images. Binary atlas replacement follows in this revision.

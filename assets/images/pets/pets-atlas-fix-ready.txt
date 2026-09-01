@@ -1,1 +1,0 @@
-Real atlas bytes generated locally from the 15 uploaded pet images.

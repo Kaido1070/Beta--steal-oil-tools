@@ -1,1 +1,0 @@
-Old atlas was invalid and caused blank thumbnails. v5.46 must use the rebuilt binary atlas.
