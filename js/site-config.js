@@ -1,6 +1,6 @@
 /* STEAL THE OIL TYCOON — central site settings */
 window.STOT_CONFIG=Object.freeze({
-  version:"5.70",
+  version:"5.71",
   sourceCommit:"aec48cd084062e3791d523b72cb65618948508c7",
   lastUpdated:"Sep 2 2026",
   storageNamespace:"stot",

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.70"
+VERSION="5.71"
 LAST_UPDATED="Sep 2 2026"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
@@ -653,6 +653,7 @@ html = html.replace('<head>', '<head>\n' + meta, 1)
 
 scripts = (
     f'\n<script defer src="js/site-config.js?v={version}"></script>\n'
+    f'<script defer src="js/changelog.js?v={version}"></script>\n'
     f'<script defer src="js/game-data.js?v={version}"></script>\n'
     f'<script defer src="js/app.js?v={version}"></script>\n'
     f'<script defer src="js/pages/sale.js?v={version}"></script>\n'
@@ -670,6 +671,7 @@ PY
 
 # Static safety checks.
 node --check js/site-config.js
+node --check js/changelog.js
 node --check js/game-data.js
 node --check js/app.js
 node --check js/pages/sale.js
@@ -685,6 +687,20 @@ node --check js/beta-patches.bundle.js
 ! grep -q 'document.write' index.html
 ! grep -q '^const drills=' js/app.js
 grep -q '^window.STOT_CONFIG=' js/site-config.js
+node - "$VERSION" "$LAST_UPDATED" <<'NODE_CHANGELOG'
+global.window={};
+require('./js/changelog.js');
+const [expectedVersion,expectedDate]=process.argv.slice(2);
+const entries=window.STOT_CHANGELOG;
+if(!Array.isArray(entries)||entries.length===0) throw new Error('STOT_CHANGELOG is empty');
+const latest=entries[0];
+if(latest.version!==expectedVersion) throw new Error(`Changelog latest version ${latest.version} does not match build ${expectedVersion}`);
+if(latest.date!==expectedDate) throw new Error(`Changelog latest date ${latest.date} does not match ${expectedDate}`);
+if(!Array.isArray(latest.changes)||latest.changes.length===0) throw new Error('Latest changelog entry has no changes');
+const versions=entries.map(x=>x.version);
+if(new Set(versions).size!==versions.length) throw new Error('Duplicate changelog versions');
+for(const entry of entries){if(!entry.version||!Array.isArray(entry.changes)||entry.changes.length===0) throw new Error('Invalid changelog entry');}
+NODE_CHANGELOG
 grep -q '^window.STOT_GAME_DATA=' js/game-data.js
 ! grep -q '^calcProduction();$' js/app.js
 ! grep -q 'function renderDb()' js/app.js
@@ -730,6 +746,7 @@ grep -q "css/pages/codes.css?v=${VERSION}" index.html
 grep -q "css/pages/compare.css?v=${VERSION}" index.html
 grep -q "css/pages/drills.css?v=${VERSION}" index.html
 grep -q "js/site-config.js?v=${VERSION}" index.html
+grep -q "js/changelog.js?v=${VERSION}" index.html
 grep -q "js/game-data.js?v=${VERSION}" index.html
 grep -q "js/app.js?v=${VERSION}" index.html
 grep -q "js/pages/sale.js?v=${VERSION}" index.html

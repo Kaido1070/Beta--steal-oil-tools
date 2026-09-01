@@ -20,15 +20,15 @@ page.on('request', request => {
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
 
-assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-oil-page'), '5.70');
+assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-oil-page'), '5.71');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
 assert.equal((await page.locator('.footer').textContent())?.trim(), 'Community tool • Game values may change with updates • Last updated Sep 2 2026');
@@ -45,7 +45,7 @@ const configSnapshot = await page.evaluate(() => ({
   storageKey: window.STOT_CONFIG?.storageKey?.('layout-save'),
 }));
 assert.deepEqual(configSnapshot, {
-  version: '5.70',
+  version: '5.71',
   sourceCommit: 'aec48cd084062e3791d523b72cb65618948508c7',
             lastUpdated: 'Sep 2 2026',
   storageNamespace: 'stot',
@@ -53,12 +53,23 @@ assert.deepEqual(configSnapshot, {
   defaultLanguage: 'en',
   saleBadge: 'Sale Calculator',
   oilBadge: 'Oil Layout',
-  storageKey: 'stot-v5.70-layout-save-v1',
+  storageKey: 'stot-v5.71-layout-save-v1',
 });
 
 
+const changelogSnapshot = await page.evaluate(() => ({
+  latestVersion: window.STOT_CHANGELOG?.[0]?.version,
+  latestDate: window.STOT_CHANGELOG?.[0]?.date,
+  latestChanges: window.STOT_CHANGELOG?.[0]?.changes?.length,
+  versions: window.STOT_CHANGELOG?.map(entry => entry.version),
+}));
+assert.equal(changelogSnapshot.latestVersion, '5.71');
+assert.equal(changelogSnapshot.latestDate, 'Sep 2 2026');
+assert.ok(changelogSnapshot.latestChanges >= 1, 'Latest changelog entry has no changes');
+assert.equal(new Set(changelogSnapshot.versions).size, changelogSnapshot.versions.length, 'Duplicate changelog versions');
+
 const scriptSrcs = await page.locator('script[src]').evaluateAll(nodes => nodes.map(n => new URL(n.src).pathname));
-assert.deepEqual(scriptSrcs, ['/js/site-config.js', '/js/game-data.js', '/js/app.js', '/js/pages/sale.js', '/js/pages/oil.js', '/js/pages/drills.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);
+assert.deepEqual(scriptSrcs, ['/js/site-config.js', '/js/changelog.js', '/js/game-data.js', '/js/app.js', '/js/pages/sale.js', '/js/pages/oil.js', '/js/pages/drills.js', '/js/pages/compare.js', '/js/pages/database.js', '/js/pages/events.js', '/js/pages/codes.js', '/js/beta-patches.bundle.js']);
 const styleHrefs = await page.locator('link[rel="stylesheet"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname));
 assert.deepEqual(styleHrefs, ['/css/app.bundle.css', '/css/pages/drills.css', '/css/pages/compare.css', '/css/pages/database.css', '/css/pages/events.css', '/css/pages/codes.css']);
 
@@ -236,19 +247,19 @@ assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
 
 await page.reload({ waitUntil: 'networkidle' });
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.70');
-assert.equal(await page.locator('html').getAttribute('data-stot-oil-page'), '5.70');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-database-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-events-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-codes-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-compare-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-drills-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-sale-page'), '5.71');
+assert.equal(await page.locator('html').getAttribute('data-stot-oil-page'), '5.71');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
 const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed') || x.includes('STOT Database patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log('SMOKE PASS: v5.70 Central config + separated page modules, pet images, calculators, Preset UI, filters, reload');
+console.log('SMOKE PASS: v5.71 Central config + separated page modules, pet images, calculators, Preset UI, filters, reload');
 await browser.close();
