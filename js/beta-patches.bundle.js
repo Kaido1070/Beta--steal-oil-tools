@@ -1,5 +1,5 @@
-/* STOT Beta consolidated patch runtime v5.75 */
-window.__STOT_CONSOLIDATED_RUNTIME__='5.75';
+/* STOT Beta consolidated patch runtime v5.76 */
+window.__STOT_CONSOLIDATED_RUNTIME__='5.76';
 
 /* ===== js/v539-01.js ===== */
 try {
@@ -618,6 +618,22 @@ try {
     el.style.backgroundRepeat = 'no-repeat';
   }
 
+  function decorateLayoutDrill(inputId, drillId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const host = input.closest('.field') || input.closest('label') || input.parentElement;
+    if (!host) return;
+    host.classList.add('v547-pet-boost');
+    let thumb = host.querySelector('.v547-pet-boost-thumb');
+    if (!thumb) {
+      thumb = document.createElement('span');
+      thumb.className = 'v547-pet-boost-thumb';
+      thumb.setAttribute('aria-hidden','true');
+      host.insertBefore(thumb, host.firstChild);
+    }
+    paintAtlas(thumb, 'drill', drillIndex[drillId]);
+  }
+
   function decorateLayoutBoost(inputId, petId) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -692,6 +708,7 @@ try {
   function refresh() {
     decorateLayoutBoost('layoutMole', 'mole');
     decorateLayoutBoost('layoutFruit', 'fruit');
+    decorateLayoutDrill('layoutLikes', 'heart');
     decorateDrillPetRow('moleLevel', 'mole');
     decorateDrillPetRow('fruitLevel', 'fruit');
     decorateSelectedDrill();
@@ -709,4 +726,4 @@ try {
 
 } catch (error) { console.error("STOT patch failed: js/beta-preset-visuals.js", error); }
 
-document.documentElement.dataset.stotBetaReady="5.75";
+document.documentElement.dataset.stotBetaReady="5.76";

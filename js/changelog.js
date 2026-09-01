@@ -1,6 +1,10 @@
 /* STEAL THE OIL TYCOON — internal release changelog */
 /* Newest release must stay first. Dates are null where an exact historical release date was not recorded here. */
 window.STOT_CHANGELOG=Object.freeze([
+  Object.freeze({version:"5.76",date:"Sep 2 2026",changes:Object.freeze([
+    "Added the Heart Drill thumbnail beside Heart Likes in Oil / Hour",
+    "Heart Likes now uses the existing drill image atlas instead of an empty placeholder"
+  ])}),
   Object.freeze({version:"5.75",date:"Sep 2 2026",changes:Object.freeze([
     "Added a compact sticky Current Production card to Oil / Hour",
     "Sticky Oil/s stays visible while building and jumps to the full result details when tapped"
