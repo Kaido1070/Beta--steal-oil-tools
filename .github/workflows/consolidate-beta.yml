@@ -1,0 +1,45 @@
+name: Consolidate Beta Runtime
+
+on:
+  push:
+    branches: [consolidation-work]
+    paths:
+      - scripts/consolidate-beta.sh
+      - .github/workflows/consolidate-beta.yml
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout work branch
+        uses: actions/checkout@v4
+        with:
+          ref: consolidation-work
+          fetch-depth: 0
+
+      - name: Build consolidated runtime
+        run: bash scripts/consolidate-beta.sh
+
+      - name: Validate generated files
+        run: |
+          test -s index.html
+          test -s css/app.bundle.css
+          test -s js/beta-patches.bundle.js
+          test "$(grep -c 'js/app.js?v=5.58' index.html)" -eq 1
+          test "$(grep -c 'js/beta-patches.bundle.js?v=5.58' index.html)" -eq 1
+          test "$(grep -c 'css/app.bundle.css?v=5.58' index.html)" -eq 1
+
+      - name: Commit generated runtime
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html css/app.bundle.css js/beta-patches.bundle.js
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+          else
+            git commit -m "Build consolidated Beta runtime v5.58"
+            git push origin HEAD:consolidation-work
+          fi
