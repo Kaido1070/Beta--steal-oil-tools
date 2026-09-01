@@ -1,4 +1,6 @@
-/* STOT core runtime: game values live in js/game-data.js */
+/* STOT core runtime: shared settings + game values */
+if(!window.STOT_CONFIG) throw new Error("STOT site config failed to load");
+const STOT_CONFIG=window.STOT_CONFIG;
 if(!window.STOT_GAME_DATA) throw new Error("STOT game data failed to load");
 const {drills,pets,refineries,solarPanels,totems,decorations,lootboxes}=window.STOT_GAME_DATA;
 
@@ -106,7 +108,7 @@ function rarityRank(r){return ({Common:1,Rare:2,Legendary:3,Mythical:4,Divine:5,
 /* shared visual helper used by Compare and Database */
 function initials(name){return name.split(/\s+/).filter(x=>!["Drill","Refinery","Panel","Totem","Lootbox","Station","Turbine"].includes(x)).slice(0,2).map(x=>x[0]).join("").toUpperCase()||name.slice(0,2).toUpperCase()}
 
-const viewBadges={sale:"Sale Calculator",oil:"Oil Layout",drills:"Drill Calculator",compare:"Drill Compare",database:"Game Database",events:"Events",codes:"Codes"};
+const viewBadges={...STOT_CONFIG.pageBadges};
 function openView(key){
   currentView=key;
   $$(".tabs button").forEach(x=>x.classList.toggle("active",x.dataset.view===key));
@@ -120,5 +122,5 @@ function openView(key){
 }
 $$('.tabs button').forEach(b=>b.onclick=()=>openView(b.dataset.view));
 
-I18N.setLanguage("en");
+I18N.setLanguage(STOT_CONFIG.defaultLanguage);
 

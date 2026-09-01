@@ -1,4 +1,4 @@
-/* STOT Oil / Hour page runtime v5.68 — extracted from js/app.js */
+/* STOT Oil / Hour page runtime — version from js/site-config.js — extracted from js/app.js  */
 /* oil layout */
 const LAYOUT_AREAS=[
   {id:"forest",name:"Forest",mult:1,plots:6},
@@ -174,4 +174,4 @@ $("#layoutShare").onclick=()=>{
 };
 renderLayout();
 
-document.documentElement.dataset.stotOilPage="5.68";
+document.documentElement.dataset.stotOilPage=STOT_CONFIG.version;

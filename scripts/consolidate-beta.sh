@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.68"
+VERSION="5.69"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
 
@@ -473,25 +473,84 @@ else:
         raise SystemExit('Oil runtime still remains in js/app.js')
 PY_OIL
 
-# Keep already-separated page module version markers aligned with this build.
-python3 - "$VERSION" <<'PY_PAGE_VERSIONS'
+# Step 10: centralize runtime site settings/version/storage namespace.
+python3 - "$VERSION" "$SOURCE_COMMIT" <<'PY_CONFIG'
 from pathlib import Path
 import re, sys
-version=sys.argv[1]
-for path,attr,label in [
-    ('js/pages/events.js','stotEventsPage','Events'),
-    ('js/pages/codes.js','stotCodesPage','Codes'),
-    ('js/pages/compare.js','stotComparePage','Compare'),
-    ('js/pages/drills.js','stotDrillsPage','Drills'),
-    ('js/pages/sale.js','stotSalePage','Sale'),
-    ('js/pages/oil.js','stotOilPage','Oil'),
-]:
-    p=Path(path)
-    text=p.read_text(encoding='utf-8')
-    text=re.sub(r'v5\.\d+',f'v{version}',text,count=1)
-    text=re.sub(rf'{attr}="5\.\d+"',f'{attr}="{version}"',text)
+
+version, source_commit = sys.argv[1:3]
+config = f'''/* STEAL THE OIL TYCOON — central site settings */
+window.STOT_CONFIG=Object.freeze({{
+  version:"{version}",
+  sourceCommit:"{source_commit}",
+  storageNamespace:"stot",
+  storageSchema:1,
+  defaultLanguage:"en",
+  pageBadges:Object.freeze({{
+    sale:"Sale Calculator",
+    oil:"Oil Layout",
+    drills:"Drill Calculator",
+    compare:"Drill Compare",
+    layoutcompare:"Layout Compare",
+    database:"Game Database",
+    events:"Events",
+    codes:"Codes"
+  }}),
+  storageKey(scope,suffix="v1"){{return `${{this.storageNamespace}}-v${{this.version}}-${{scope}}-${{suffix}}`;}}
+}});
+'''
+Path('js/site-config.js').write_text(config,encoding='utf-8')
+
+app_path=Path('js/app.js')
+app=app_path.read_text(encoding='utf-8')
+loader='''/* STOT core runtime: game values live in js/game-data.js */
+if(!window.STOT_GAME_DATA) throw new Error("STOT game data failed to load");
+const {drills,pets,refineries,solarPanels,totems,decorations,lootboxes}=window.STOT_GAME_DATA;'''
+replacement='''/* STOT core runtime: shared settings + game values */
+if(!window.STOT_CONFIG) throw new Error("STOT site config failed to load");
+const STOT_CONFIG=window.STOT_CONFIG;
+if(!window.STOT_GAME_DATA) throw new Error("STOT game data failed to load");
+const {drills,pets,refineries,solarPanels,totems,decorations,lootboxes}=window.STOT_GAME_DATA;'''
+if loader in app:
+    app=app.replace(loader,replacement,1)
+elif 'const STOT_CONFIG=window.STOT_CONFIG;' not in app:
+    raise SystemExit('Could not centralize app config loader')
+old='const viewBadges={sale:"Sale Calculator",oil:"Oil Layout",drills:"Drill Calculator",compare:"Drill Compare",database:"Game Database",events:"Events",codes:"Codes"};'
+if old in app:
+    app=app.replace(old,'const viewBadges={...STOT_CONFIG.pageBadges};',1)
+elif 'const viewBadges={...STOT_CONFIG.pageBadges};' not in app:
+    raise SystemExit('Could not centralize page badges')
+if 'I18N.setLanguage("en");' in app:
+    app=app.replace('I18N.setLanguage("en");','I18N.setLanguage(STOT_CONFIG.defaultLanguage);',1)
+app_path.write_text(app,encoding='utf-8')
+
+pages=[
+  ('js/pages/events.js','stotEventsPage'),
+  ('js/pages/codes.js','stotCodesPage'),
+  ('js/pages/compare.js','stotComparePage'),
+  ('js/pages/drills.js','stotDrillsPage'),
+  ('js/pages/sale.js','stotSalePage'),
+  ('js/pages/oil.js','stotOilPage'),
+]
+for path,attr in pages:
+    p=Path(path); text=p.read_text(encoding='utf-8')
+    text=re.sub(r'/\* (STOT .*? page runtime) v5\.\d+(.*?)\*/',r'/* \1 — version from js/site-config.js\2 */',text,count=1)
+    text=re.sub(rf'document\.documentElement\.dataset\.{attr}="5\.\d+";',rf'document.documentElement.dataset.{attr}=STOT_CONFIG.version;',text)
     p.write_text(text,encoding='utf-8')
-PY_PAGE_VERSIONS
+
+patch=Path('js/v539-04.js')
+text=patch.read_text(encoding='utf-8')
+old='const BUILD_VERSION=document.querySelector(\'meta[name="stot-local-version"]\')?.content||window.__STOT_CONSOLIDATED_RUNTIME__||"unknown",KEY=`stot-v${BUILD_VERSION}-layout-save-v1`'
+new='const BUILD_VERSION=window.STOT_CONFIG?.version||document.querySelector(\'meta[name="stot-local-version"]\')?.content||window.__STOT_CONSOLIDATED_RUNTIME__||"unknown",KEY=window.STOT_CONFIG?.storageKey?.("layout-save")||`stot-v${BUILD_VERSION}-layout-save-v1`'
+if old in text:
+    text=text.replace(old,new,1)
+elif 'STOT_CONFIG?.storageKey?.("layout-save")' not in text:
+    raise SystemExit('Could not centralize layout storage key')
+patch.write_text(text,encoding='utf-8')
+PY_CONFIG
+
+# Page modules now read their runtime version from js/site-config.js.
+# No per-page runtime version rewriting is needed.
 
 # Fix a stale startup call left in the pinned core.
 python3 <<'PY'
@@ -589,7 +648,8 @@ meta = (
 html = html.replace('<head>', '<head>\n' + meta, 1)
 
 scripts = (
-    f'\n<script defer src="js/game-data.js?v={version}"></script>\n'
+    f'\n<script defer src="js/site-config.js?v={version}"></script>\n'
+    f'<script defer src="js/game-data.js?v={version}"></script>\n'
     f'<script defer src="js/app.js?v={version}"></script>\n'
     f'<script defer src="js/pages/sale.js?v={version}"></script>\n'
     f'<script defer src="js/pages/oil.js?v={version}"></script>\n'
@@ -605,6 +665,7 @@ Path('index.html').write_text(html, encoding='utf-8')
 PY
 
 # Static safety checks.
+node --check js/site-config.js
 node --check js/game-data.js
 node --check js/app.js
 node --check js/pages/sale.js
@@ -619,6 +680,7 @@ node --check js/beta-patches.bundle.js
 ! grep -q 'raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools' index.html
 ! grep -q 'document.write' index.html
 ! grep -q '^const drills=' js/app.js
+grep -q '^window.STOT_CONFIG=' js/site-config.js
 grep -q '^window.STOT_GAME_DATA=' js/game-data.js
 ! grep -q '^calcProduction();$' js/app.js
 ! grep -q 'function renderDb()' js/app.js
@@ -663,6 +725,7 @@ grep -q "css/pages/events.css?v=${VERSION}" index.html
 grep -q "css/pages/codes.css?v=${VERSION}" index.html
 grep -q "css/pages/compare.css?v=${VERSION}" index.html
 grep -q "css/pages/drills.css?v=${VERSION}" index.html
+grep -q "js/site-config.js?v=${VERSION}" index.html
 grep -q "js/game-data.js?v=${VERSION}" index.html
 grep -q "js/app.js?v=${VERSION}" index.html
 grep -q "js/pages/sale.js?v=${VERSION}" index.html
@@ -675,4 +738,4 @@ grep -q "js/pages/drills.js?v=${VERSION}" index.html
 grep -q "js/beta-patches.bundle.js?v=${VERSION}" index.html
 grep -q "stot-local-version\" content=\"${VERSION}" index.html
 
-echo "Consolidated Beta v${VERSION}: Database, Events, Codes, Drill Compare, Drills, Sale and Oil separated into page modules"
+echo "Consolidated Beta v${VERSION}: page modules separated with centralized runtime settings"
