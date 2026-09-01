@@ -20,14 +20,43 @@ page.on('request', request => {
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
 
-assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.58');
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.58');
+const version = await page.locator('meta[name="stot-local-version"]').getAttribute('content');
+assert.ok(version, 'Missing Beta version meta');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), version);
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
 
-// The page must load the consolidated runtime directly, not the old sequential patch waterfall.
 const scriptSrcs = await page.locator('script[src]').evaluateAll(nodes => nodes.map(n => new URL(n.src).pathname));
-assert.deepEqual(scriptSrcs, ['/js/app.js', '/js/beta-patches.bundle.js']);
+const expectedLegacy = ['/js/app.js', '/js/beta-patches.bundle.js'];
+const expectedSeparated = ['/js/game-data.js', '/js/app.js', '/js/beta-patches.bundle.js'];
+assert.ok(
+  JSON.stringify(scriptSrcs) === JSON.stringify(expectedLegacy) || JSON.stringify(scriptSrcs) === JSON.stringify(expectedSeparated),
+  `Unexpected runtime scripts: ${scriptSrcs.join(', ')}`
+);
+if (scriptSrcs.includes('/js/game-data.js')) {
+  const dataCounts = await page.evaluate(() => {
+    const d = window.STOT_GAME_DATA;
+    return d ? {
+      drills: d.drills?.length,
+      pets: d.pets?.length,
+      refineries: d.refineries?.length,
+      solarPanels: d.solarPanels?.length,
+      totems: d.totems?.length,
+      decorations: d.decorations?.length,
+      lootboxes: d.lootboxes?.length,
+    } : null;
+  });
+  assert.deepEqual(dataCounts, {
+    drills: 34,
+    pets: 15,
+    refineries: 26,
+    solarPanels: 4,
+    totems: 15,
+    decorations: 12,
+    lootboxes: 13,
+  });
+}
+
 const styleHrefs = await page.locator('link[rel="stylesheet"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname));
 assert.deepEqual(styleHrefs, ['/css/app.bundle.css']);
 const requestedPaths = localRequests.map(url => new URL(url).pathname);
@@ -35,13 +64,9 @@ assert.equal(requestedPaths.filter(path => path.startsWith('/js/v539-')).length,
 assert.equal(requestedPaths.filter(path => path.startsWith('/css/v539-')).length, 0, 'Standalone historical patch CSS was requested');
 assert.equal(requestedPaths.filter(path => path === '/js/layout-quick-compare.js').length, 0, 'Obsolete sequential loader was requested');
 
-// Current formatter rounds 11,750 to one decimal place at K scale.
 assert.equal((await page.locator('#saleValue').textContent())?.trim(), '$11.8K');
 assert.equal((await page.locator('#saleOil').inputValue()).trim(), '50');
 assert.equal((await page.locator('#sellPrice').inputValue()).trim(), '50');
-
-// This value is initialized after the old stale calcProduction call. If it is
-// populated, the core startup sequence completed rather than aborting midway.
 assert.ok(((await page.locator('#drillMainRate').textContent()) || '').trim().length > 0, 'Drill calculator did not initialize');
 
 await page.locator('.tabs button[data-view="oil"]').click();
@@ -90,12 +115,12 @@ assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
 
 await page.reload({ waitUntil: 'networkidle' });
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.58');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), version);
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
 const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log('SMOKE PASS: v5.58 direct local runtime, no patch waterfall, calculators, Preset UI, database images, filters, reload');
+console.log(`SMOKE PASS: v${version} runtime, calculators, Preset UI, database images, filters, reload`);
 await browser.close();
