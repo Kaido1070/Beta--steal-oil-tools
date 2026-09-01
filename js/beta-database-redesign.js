@@ -44,6 +44,20 @@
 
   function activeKey(){return document.querySelector('#databaseTabs [data-dbview].active')?.dataset.dbview||'drills'}
 
+  function ensureSourceNote(){
+    const intro=view.querySelector('.section-intro > div');
+    if(!intro||intro.querySelector('.v557-db-source')) return;
+    const note=document.createElement('p');
+    note.className='v557-db-source';
+    note.style.marginTop='7px';
+    note.style.fontSize='9px';
+    note.style.lineHeight='1.45';
+    note.style.color='var(--muted,#98a2b8)';
+    note.style.overflowWrap='anywhere';
+    note.textContent='Data source: https://oil-tycoon-fortnite.fandom.com/wiki/STEAL_THE_OIL_TYCOON_-_FORTNITE_Wiki';
+    intro.appendChild(note);
+  }
+
   function syncTabs(){
     const tabs=document.getElementById('databaseTabs');
     if(!tabs) return;
@@ -77,6 +91,7 @@
 
   function refresh(){
     Object.keys(config).forEach(enhanceList);
+    ensureSourceNote();
     ensureToolbar();
     syncTabs();syncToolbar();
   }
