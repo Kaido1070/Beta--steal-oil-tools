@@ -6,6 +6,7 @@ on:
     paths:
       - scripts/consolidate-beta.sh
       - .github/workflows/consolidate-beta.yml
+      - js/game-data.js
       - js/app.js
       - js/v539-*.js
       - js/beta-oil-order.js
@@ -42,21 +43,25 @@ jobs:
         run: |
           test -s index.html
           test -s css/app.bundle.css
+          test -s js/game-data.js
           test -s js/app.js
           test -s js/beta-patches.bundle.js
-          test "$(grep -c 'js/app.js?v=5.58' index.html)" -eq 1
-          test "$(grep -c 'js/beta-patches.bundle.js?v=5.58' index.html)" -eq 1
-          test "$(grep -c 'css/app.bundle.css?v=5.58' index.html)" -eq 1
+          test "$(grep -c 'js/game-data.js?v=5.59' index.html)" -eq 1
+          test "$(grep -c 'js/app.js?v=5.59' index.html)" -eq 1
+          test "$(grep -c 'js/beta-patches.bundle.js?v=5.59' index.html)" -eq 1
+          test "$(grep -c 'css/app.bundle.css?v=5.59' index.html)" -eq 1
+          grep -q '^window.STOT_GAME_DATA=' js/game-data.js
+          ! grep -q '^const drills=' js/app.js
           ! grep -q '^calcProduction();$' js/app.js
 
       - name: Commit generated runtime
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html css/app.bundle.css js/app.js js/beta-patches.bundle.js
+          git add index.html css/app.bundle.css js/game-data.js js/app.js js/beta-patches.bundle.js
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Build consolidated Beta runtime v5.58"
+            git commit -m "Build separated game data runtime v5.59"
             git push origin HEAD:consolidation-work
           fi
