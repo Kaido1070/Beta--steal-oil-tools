@@ -23,13 +23,13 @@ if marker not in s:
     raise SystemExit('Could not locate sourceCommit config field')
 s=s.replace(marker,marker+'  lastUpdated:"{last_updated}",\n',1)
 
-guard="""          elif 'const STOT_CONFIG=window.STOT_CONFIG;' not in app:
-              raise SystemExit('Could not centralize app config loader')
+guard="""elif 'const STOT_CONFIG=window.STOT_CONFIG;' not in app:
+    raise SystemExit('Could not centralize app config loader')
 """
-addition="""          elif 'const STOT_CONFIG=window.STOT_CONFIG;' not in app:
-              raise SystemExit('Could not centralize app config loader')
-          if 'STOT_CONFIG.lastUpdated' not in app:
-              app=app.replace('const STOT_CONFIG=window.STOT_CONFIG;','const STOT_CONFIG=window.STOT_CONFIG;\\ndocument.addEventListener(\"DOMContentLoaded\",()=>{const footer=document.querySelector(\".footer\");if(footer)footer.textContent=`Community tool • Game values may change with updates • Last updated ${STOT_CONFIG.lastUpdated}`;},{once:true});',1)
+addition="""elif 'const STOT_CONFIG=window.STOT_CONFIG;' not in app:
+    raise SystemExit('Could not centralize app config loader')
+if 'STOT_CONFIG.lastUpdated' not in app:
+    app=app.replace('const STOT_CONFIG=window.STOT_CONFIG;','const STOT_CONFIG=window.STOT_CONFIG;\\ndocument.addEventListener(\"DOMContentLoaded\",()=>{const footer=document.querySelector(\".footer\");if(footer)footer.textContent=`Community tool • Game values may change with updates • Last updated ${STOT_CONFIG.lastUpdated}`;},{once:true});',1)
 """
 if guard not in s:
     raise SystemExit('Could not locate central config loader guard')
