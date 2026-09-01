@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="5.59"
+VERSION="5.60"
 SOURCE_COMMIT="aec48cd084062e3791d523b72cb65618948508c7"
 BASE_URL="https://raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools/${SOURCE_COMMIT}/index.html"
 
@@ -13,6 +13,9 @@ CSS_FILES=(
   css/beta-first-visit.css
   css/beta-image-atlas-fix.css
   css/beta-preset-visuals.css
+)
+
+DATABASE_CSS_FILES=(
   css/beta-database-images.css
   css/beta-database-redesign.css
 )
@@ -33,17 +36,18 @@ PATCH_FILES=(
   js/beta-first-visit.js
   js/beta-image-atlas-fix.js
   js/beta-preset-visuals.js
+)
+
+DATABASE_PATCH_FILES=(
   js/beta-database-images.js
   js/beta-database-redesign.js
 )
 
-for file in "${CSS_FILES[@]}" "${PATCH_FILES[@]}" js/app.js; do
+for file in "${CSS_FILES[@]}" "${DATABASE_CSS_FILES[@]}" "${PATCH_FILES[@]}" "${DATABASE_PATCH_FILES[@]}" js/app.js; do
   test -f "$file" || { echo "Missing required file: $file" >&2; exit 1; }
 done
 
 # Step 2: keep mutable game/database values outside the application logic.
-# The first run extracts the seven data collections from the old combined app.js.
-# Later runs are idempotent and simply validate the separated files.
 python3 <<'PY'
 from pathlib import Path
 
@@ -88,8 +92,74 @@ else:
             raise SystemExit(f'js/game-data.js is missing: {key}')
 PY
 
-# Fix a stale startup call left in the pinned core. calcProduction no longer exists;
-# leaving the call unguarded aborts the remaining initial renders.
+# Step 3A: move Database behavior out of app.js.
+# The database page keeps its own filters, cards, pet checker and subsection navigation.
+python3 <<'PY'
+from pathlib import Path
+
+app_path = Path('js/app.js')
+core_path = Path('js/pages/database-core.js')
+core_path.parent.mkdir(parents=True, exist_ok=True)
+app = app_path.read_text(encoding='utf-8')
+start_marker = '/* database */'
+end_marker = '\nlet compareA='
+
+if start_marker in app:
+    start = app.index(start_marker)
+    end = app.index(end_marker, start)
+    block = app[start:end].strip()
+
+    # initials() is also used by Drill Compare, so it remains a shared core helper.
+    lines = block.splitlines()
+    initials_line = next((line for line in lines if line.startswith('function initials(')), None)
+    if not initials_line:
+        raise SystemExit('Could not locate shared initials() helper in Database block')
+    block = '\n'.join(line for line in lines if line != initials_line)
+
+    # Database tab changes should never rerender the unrelated Codes page.
+    block = block.replace('\nrenderCodes();\n', '\n')
+
+    page_core = (
+        '/* STOT Database page core — extracted from js/app.js */\n'
+        + block + '\n\n'
+        + '/* Initial Database render; visual enhancements load after this core. */\n'
+        + 'renderDb();\n'
+        + 'renderRefineries();\n'
+        + 'renderSolar();\n'
+        + 'renderTotems();\n'
+        + 'renderDecorations();\n'
+        + 'renderLootboxes();\n'
+        + 'renderPets();\n'
+        + 'calcPet();\n'
+    )
+    core_path.write_text(page_core, encoding='utf-8')
+
+    shared = '/* shared visual helper used by Compare and Database */\n' + initials_line + '\n\n'
+    app = app[:start] + shared + app[end+1:]
+
+    startup_db = (
+        'renderDb();\n'
+        'renderRefineries();\n'
+        'renderSolar();\n'
+        'renderTotems();\n'
+        'renderCodes();\n'
+        'renderDecorations();\n'
+        'renderLootboxes();\n'
+        'renderPets();\n'
+        'calcPet();\n'
+    )
+    if startup_db not in app:
+        raise SystemExit('Could not locate Database startup sequence in js/app.js')
+    app = app.replace(startup_db, 'renderCodes();\n', 1)
+    app_path.write_text(app, encoding='utf-8')
+else:
+    if not core_path.exists():
+        raise SystemExit('Database already removed from app.js but js/pages/database-core.js is missing')
+    if 'function renderDb()' in app or 'function renderRefineries()' in app:
+        raise SystemExit('Database functions still remain in js/app.js')
+PY
+
+# Fix a stale startup call left in the pinned core.
 python3 <<'PY'
 from pathlib import Path
 p = Path('js/app.js')
@@ -103,7 +173,7 @@ elif new not in s:
 p.write_text(s, encoding='utf-8')
 PY
 
-# Keep the exact CSS cascade that v5.57 used, but serve it as one local file.
+# Core/global CSS stays in one file.
 {
   echo "/* STOT Beta consolidated CSS v${VERSION} */"
   for file in "${CSS_FILES[@]}"; do
@@ -113,7 +183,18 @@ PY
   done
 } > css/app.bundle.css
 
-# Keep each historical patch isolated so one optional UI patch cannot prevent later patches.
+# Database-only CSS now has a clear owner.
+mkdir -p css/pages
+{
+  echo "/* STOT Database page CSS v${VERSION} */"
+  for file in "${DATABASE_CSS_FILES[@]}"; do
+    printf '\n/* ===== %s ===== */\n' "$file"
+    cat "$file"
+    printf '\n'
+  done
+} > css/pages/database.css
+
+# Shared historical patches no longer contain Database-only patches.
 {
   echo "/* STOT Beta consolidated patch runtime v${VERSION} */"
   echo "window.__STOT_CONSOLIDATED_RUNTIME__='${VERSION}';"
@@ -126,6 +207,20 @@ PY
   printf '\ndocument.documentElement.dataset.stotBetaReady="%s";\n' "$VERSION"
 } > js/beta-patches.bundle.js
 
+# Database core + its two visual enhancements are served as one page-owned runtime.
+mkdir -p js/pages
+{
+  echo "/* STOT Database page runtime v${VERSION} */"
+  cat js/pages/database-core.js
+  for file in "${DATABASE_PATCH_FILES[@]}"; do
+    printf '\n/* ===== %s ===== */\n' "$file"
+    printf 'try {\n'
+    cat "$file"
+    printf '\n} catch (error) { console.error("STOT Database patch failed: %s", error); }\n' "$file"
+  done
+  printf '\ndocument.documentElement.dataset.stotDatabasePage="%s";\n' "$VERSION"
+} > js/pages/database.js
+
 curl -fsSL "$BASE_URL" -o /tmp/stot-base-index.html
 
 python3 - "$VERSION" "$SOURCE_COMMIT" <<'PY'
@@ -134,16 +229,14 @@ import re, sys
 
 version, source_commit = sys.argv[1:3]
 html = Path('/tmp/stot-base-index.html').read_text(encoding='utf-8')
-
 html = html.replace('Weekend x2 Lobby', 'Admin Event Lobby')
 html = re.sub(
     r'<link\s+rel=["\']stylesheet["\']\s+href=["\']css/main\.css(?:\?[^"\']*)?["\']\s*/?>',
-    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">',
+    f'<link rel="stylesheet" href="css/app.bundle.css?v={version}">\n<link rel="stylesheet" href="css/pages/database.css?v={version}">',
     html,
     count=1,
     flags=re.I,
 )
-
 html = re.sub(r'\s*<script\s+src=["\']js/app\.js(?:\?[^"\']*)?["\']\s*></script>', '', html, flags=re.I)
 html = re.sub(r'\s*<script\s+src=["\']js/layout-quick-compare\.js(?:\?[^"\']*)?["\']\s*></script>', '', html, flags=re.I)
 
@@ -159,25 +252,36 @@ html = html.replace('<head>', '<head>\n' + meta, 1)
 scripts = (
     f'\n<script defer src="js/game-data.js?v={version}"></script>\n'
     f'<script defer src="js/app.js?v={version}"></script>\n'
+    f'<script defer src="js/pages/database.js?v={version}"></script>\n'
     f'<script defer src="js/beta-patches.bundle.js?v={version}"></script>\n'
 )
 html = html.replace('</body>', scripts + '</body>', 1)
 Path('index.html').write_text(html, encoding='utf-8')
 PY
 
-# Static safety checks for the generated runtime.
+# Static safety checks.
 node --check js/game-data.js
 node --check js/app.js
+node --check js/pages/database-core.js
+node --check js/pages/database.js
 node --check js/beta-patches.bundle.js
 ! grep -q 'raw.githubusercontent.com/Kaido1070/Steal-The-Oil-Tools' index.html
 ! grep -q 'document.write' index.html
 ! grep -q '^const drills=' js/app.js
 grep -q '^window.STOT_GAME_DATA=' js/game-data.js
 ! grep -q '^calcProduction();$' js/app.js
+! grep -q 'function renderDb()' js/app.js
+grep -q 'function renderDb()' js/pages/database-core.js
+grep -q 'beta-database-images.js' js/pages/database.js
+grep -q 'beta-database-redesign.js' js/pages/database.js
+! grep -q 'beta-database-images.js' js/beta-patches.bundle.js
+! grep -q 'beta-database-redesign.js' js/beta-patches.bundle.js
 grep -q "css/app.bundle.css?v=${VERSION}" index.html
+grep -q "css/pages/database.css?v=${VERSION}" index.html
 grep -q "js/game-data.js?v=${VERSION}" index.html
 grep -q "js/app.js?v=${VERSION}" index.html
+grep -q "js/pages/database.js?v=${VERSION}" index.html
 grep -q "js/beta-patches.bundle.js?v=${VERSION}" index.html
 grep -q "stot-local-version\" content=\"${VERSION}" index.html
 
-echo "Consolidated Beta v${VERSION}: game data separated from application logic"
+echo "Consolidated Beta v${VERSION}: Database separated into js/pages/database.js"
