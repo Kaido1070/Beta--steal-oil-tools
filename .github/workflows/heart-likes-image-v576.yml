@@ -54,7 +54,7 @@ jobs:
           t=test.read_text(encoding='utf-8').replace("'5.75'","'5.76'")
           t=t.replace('stot-v5.75-layout-save-v1','stot-v5.76-layout-save-v1')
           anchor="assert.equal(await page.locator('#layoutVisualBuilder .v572-plot-card').count(), 15);\n"
-          checks="""const heartThumb = page.locator('.field:has(#layoutLikes) .v547-pet-boost-thumb');\nassert.equal(await heartThumb.count(), 1, 'Heart Likes thumbnail missing');\nassert.ok((await heartThumb.evaluate(el => getComputedStyle(el).backgroundImage)).includes('drills-3.webp'), 'Heart Likes is not using the Heart Drill atlas image');\n"""
+          checks="""const heartThumb = page.locator('#v520Likes .v547-pet-boost-thumb');\nassert.equal(await heartThumb.count(), 1, 'Heart Likes thumbnail missing');\nassert.ok((await heartThumb.evaluate(el => getComputedStyle(el).backgroundImage)).includes('drills-3.webp'), 'Heart Likes is not using the Heart Drill atlas image');\n"""
           if checks not in t:
               if anchor not in t: raise SystemExit('Smoke anchor missing')
               t=t.replace(anchor,anchor+checks,1)
