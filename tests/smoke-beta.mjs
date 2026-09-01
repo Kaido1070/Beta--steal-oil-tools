@@ -20,42 +20,34 @@ page.on('request', request => {
 
 await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
 
-const version = await page.locator('meta[name="stot-local-version"]').getAttribute('content');
-assert.ok(version, 'Missing Beta version meta');
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), version);
+assert.equal(await page.locator('meta[name="stot-local-version"]').getAttribute('content'), '5.59');
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.59');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 assert.equal(legacyRequests.length, 0, `Legacy public runtime request detected: ${legacyRequests.join(', ')}`);
 
 const scriptSrcs = await page.locator('script[src]').evaluateAll(nodes => nodes.map(n => new URL(n.src).pathname));
-const expectedLegacy = ['/js/app.js', '/js/beta-patches.bundle.js'];
-const expectedSeparated = ['/js/game-data.js', '/js/app.js', '/js/beta-patches.bundle.js'];
-assert.ok(
-  JSON.stringify(scriptSrcs) === JSON.stringify(expectedLegacy) || JSON.stringify(scriptSrcs) === JSON.stringify(expectedSeparated),
-  `Unexpected runtime scripts: ${scriptSrcs.join(', ')}`
-);
-if (scriptSrcs.includes('/js/game-data.js')) {
-  const dataCounts = await page.evaluate(() => {
-    const d = window.STOT_GAME_DATA;
-    return d ? {
-      drills: d.drills?.length,
-      pets: d.pets?.length,
-      refineries: d.refineries?.length,
-      solarPanels: d.solarPanels?.length,
-      totems: d.totems?.length,
-      decorations: d.decorations?.length,
-      lootboxes: d.lootboxes?.length,
-    } : null;
-  });
-  assert.deepEqual(dataCounts, {
-    drills: 34,
-    pets: 15,
-    refineries: 26,
-    solarPanels: 4,
-    totems: 15,
-    decorations: 12,
-    lootboxes: 13,
-  });
-}
+assert.deepEqual(scriptSrcs, ['/js/game-data.js', '/js/app.js', '/js/beta-patches.bundle.js']);
+const dataCounts = await page.evaluate(() => {
+  const d = window.STOT_GAME_DATA;
+  return d ? {
+    drills: d.drills?.length,
+    pets: d.pets?.length,
+    refineries: d.refineries?.length,
+    solarPanels: d.solarPanels?.length,
+    totems: d.totems?.length,
+    decorations: d.decorations?.length,
+    lootboxes: d.lootboxes?.length,
+  } : null;
+});
+assert.deepEqual(dataCounts, {
+  drills: 34,
+  pets: 15,
+  refineries: 26,
+  solarPanels: 4,
+  totems: 15,
+  decorations: 12,
+  lootboxes: 13,
+});
 
 const styleHrefs = await page.locator('link[rel="stylesheet"]').evaluateAll(nodes => nodes.map(n => new URL(n.href).pathname));
 assert.deepEqual(styleHrefs, ['/css/app.bundle.css']);
@@ -115,12 +107,12 @@ assert.equal(await page.locator('#refineryList .drill-card').count(), 1);
 assert.ok((await page.locator('#refineryList .drill-card .drill-info strong').textContent())?.includes('Infinity'));
 
 await page.reload({ waitUntil: 'networkidle' });
-assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), version);
+assert.equal(await page.locator('html').getAttribute('data-stot-beta-ready'), '5.59');
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 assert.equal(pageErrors.length, 0, `Page errors:\n${pageErrors.join('\n')}`);
 const patchFailures = consoleErrors.filter(x => x.includes('STOT patch failed'));
 assert.equal(patchFailures.length, 0, `Patch failures:\n${patchFailures.join('\n')}`);
 
-console.log(`SMOKE PASS: v${version} runtime, calculators, Preset UI, database images, filters, reload`);
+console.log('SMOKE PASS: v5.59 separated game data, calculators, Preset UI, database images, filters, reload');
 await browser.close();
