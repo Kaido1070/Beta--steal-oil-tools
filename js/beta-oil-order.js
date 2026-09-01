@@ -17,16 +17,20 @@
   function separateSummary(oil) {
     const summary = getSummary();
     if (!summary) return null;
-
-    // v5.19 merged the result into the calculator card. v5.41 deliberately
-    // reverses that merge so the result is its own final section.
     summary.classList.add('panel', 'v541-summary-panel');
     if (summary.parentElement !== oil) oil.appendChild(summary);
     return summary;
   }
 
+  function syncCompareOnlyBoostUI() {
+    const compareActive = byId('layoutcompareView')?.classList.contains('active');
+    const badge = document.querySelector('.v524-shared-badge');
+    if (badge) badge.style.display = compareActive ? '' : 'none';
+  }
+
   function applyOilOrder() {
     const oil = byId('oilView');
+    syncCompareOnlyBoostUI();
     if (!oil || !oil.classList.contains('active')) return;
 
     const introPanel = oil.querySelector(':scope > .panel.step');
@@ -42,24 +46,24 @@
     if (!introPanel || !calc) return;
 
     const summary = separateSummary(oil);
-
-    // 1) Calculation choice and its relevant input first.
     introPanel.insertAdjacentElement('afterend', calc);
     let anchor = calc;
 
-    // 2) Boosts, preset controls and building tools.
     for (const el of [boosts, controls, quick, advanced, areas, note]) {
       if (!el || el === calc || el === summary) continue;
       anchor.insertAdjacentElement('afterend', el);
       anchor = el;
     }
 
-    // 3) Preset Summary is a completely separate final section.
     if (summary) oil.appendChild(summary);
+    syncCompareOnlyBoostUI();
   }
 
   document.querySelectorAll('.tabs button').forEach(btn => {
-    btn.addEventListener('click', () => later(applyOilOrder));
+    btn.addEventListener('click', () => later(() => {
+      syncCompareOnlyBoostUI();
+      applyOilOrder();
+    }));
   });
 
   if (document.readyState === 'loading') {
