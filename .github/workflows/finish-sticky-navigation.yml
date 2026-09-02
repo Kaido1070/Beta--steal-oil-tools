@@ -1,0 +1,44 @@
+name: Finish Current Production Navigation
+on:
+  push:
+    paths:
+      - '.github/workflows/finish-sticky-navigation.yml'
+permissions:
+  contents: write
+jobs:
+  finish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Apply prepared fix
+        run: |
+          python3 -c "import re,base64,pathlib; w=pathlib.Path('.github/workflows/apply-sticky-navigation-v578.yml').read_text(); n=base64.b64decode(re.search(r'NEWFUNC: ([A-Za-z0-9+/=]+)',w).group(1)).decode(); p=pathlib.Path('js/pages/oil-visual-builder.js'); s=p.read_text(); a=s.index('  function ensureStickyRate(){'); b=s.index('\\n\\n  window.STOT_VISUAL_PLOT_BUILDER',a); p.write_text(s[:a]+n+s[b:])"
+          python3 -c "from pathlib import Path; p=Path('css/pages/oil-visual-builder.css'); s=p.read_text(); x='.v575-sticky-rate>*{pointer-events:none;user-select:none;-webkit-user-select:none}.v575-sticky-rate{touch-action:manipulation}'; p.write_text(s if x in s else s+x)"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser test
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium
+      - name: Start local site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          exit 1
+      - name: Test requested behavior
+        run: |
+          node --input-type=module -e "import assert from 'node:assert/strict'; import {chromium} from 'playwright'; const b=await chromium.launch({headless:true}); const p=await b.newPage({viewport:{width:390,height:600}}); await p.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'}); await p.locator('.tabs button[data-view=oil]').click(); await p.waitForTimeout(150); const bar=p.locator('#v575StickyRate'),d=p.locator('#layoutResultDetails'); assert.equal(await bar.count(),1); await p.evaluate(()=>scrollTo(0,0)); await p.waitForTimeout(120); assert.ok(await bar.evaluate(e=>e.classList.contains('show'))); await bar.click(); await p.waitForTimeout(120); assert.ok(!(await bar.evaluate(e=>e.classList.contains('show')))); assert.ok(await d.evaluate(e=>e.classList.contains('v575-result-focus'))); await p.waitForTimeout(700); assert.ok(!(await bar.evaluate(e=>e.classList.contains('show')))); await p.evaluate(()=>scrollTo(0,0)); await p.waitForTimeout(220); assert.ok(await bar.evaluate(e=>e.classList.contains('show'))); assert.equal(await bar.locator('span').evaluate(e=>getComputedStyle(e).pointerEvents),'none'); assert.equal(await bar.locator('i').evaluate(e=>getComputedStyle(e).pointerEvents),'none'); await b.close(); console.log('requested sticky behavior passed')"
+      - name: Commit verified fix
+        run: |
+          rm -f package.json package-lock.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/pages/oil-visual-builder.js css/pages/oil-visual-builder.css
+          git commit -m 'Fix Current Production sticky navigation'
+          git push origin HEAD:main
