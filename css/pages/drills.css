@@ -1,4 +1,4 @@
-/* STOT Drills page CSS v5.66 */
+/* STOT Drills page CSS v5.95 */
 .picker-btn{
   grid-column:1/-1;width:100%;height:39px;border-radius:10px;border:1px solid #3b445d;background:#0d1119;color:#fff;
   display:flex;align-items:center;justify-content:space-between;padding:0 11px;font-size:11.5px;font-weight:950;text-align:left
@@ -44,4 +44,13 @@
 .pick-mark{width:31px;height:31px;border:1px solid #364158;background:#0e141e;border-radius:9px;display:grid;place-items:center;font-size:8px;font-weight:1000;color:#c8b6ff}
 .pick-copy{min-width:0;flex:1}.pick-copy strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pick-copy small{display:block;font-size:8px;color:#8995a9;margin-top:3px}
 .pick-rate{font-size:10px;color:var(--cyan);font-weight:950}
+
+/* v5.95 — text labels already explain these controls; remove redundant T / × / + / ♥ / H icon boxes. */
+#drillsView .field-head>.icon{display:none!important}
+#drillsView .field-head{gap:0!important}
+#drillsView .field-head .labels{width:100%;min-width:0}
+#drillsView .field-head .labels strong{font-size:13px;line-height:1.08}
+#drillsView .field-head .labels small{margin-top:4px}
+#drillsView .setup-pack>.field-head{padding:1px 0 2px!important}
+
 @media(min-width:700px){.picker{border-radius:22px;max-height:75vh;margin:20px}.picker-backdrop{align-items:center}}
