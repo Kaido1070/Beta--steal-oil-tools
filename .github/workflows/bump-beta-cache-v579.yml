@@ -1,0 +1,38 @@
+name: Force Load Sticky Production Fix
+on:
+  push:
+    paths:
+      - '.github/workflows/bump-beta-cache-v579.yml'
+permissions:
+  contents: write
+jobs:
+  bump:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Bump browser cache keys
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('?v=5.77','?v=5.79')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Verify latest sticky code and cache keys
+        run: |
+          grep -q "navigatingToResult=true" js/pages/oil-visual-builder.js
+          grep -q "window.addEventListener('scroll',sync" js/pages/oil-visual-builder.js
+          grep -q "oil-visual-builder.js?v=5.79" index.html
+          grep -q "oil-visual-builder.css?v=5.79" index.html
+      - name: Commit cache bump
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Force load latest Current Production fix'
+          git push origin HEAD:main
