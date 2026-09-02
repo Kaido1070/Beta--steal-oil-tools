@@ -1,7 +1,7 @@
-/* STOT compact Advanced Tools bar — v5.93 */
+/* STOT compact Advanced Tools bar — v5.94 */
 (()=>{
-  if(window.__STOT_ADVANCED_INLINE_V593__)return;
-  window.__STOT_ADVANCED_INLINE_V593__=true;
+  if(window.__STOT_ADVANCED_INLINE_V594__)return;
+  window.__STOT_ADVANCED_INLINE_V594__=true;
 
   function apply(){
     const tools=document.getElementById('v536AdvancedTools');
@@ -54,10 +54,10 @@
     };
   }
 
-  /* v5.93 Oil page flow polish. Runs only on load/view entry; no observers. */
-  if(!document.getElementById('v593OilFlowStyle')){
+  /* v5.94 Oil page flow polish. Runs only on load/view entry; no observers. */
+  if(!document.getElementById('v594OilFlowStyle')){
     const style=document.createElement('style');
-    style.id='v593OilFlowStyle';
+    style.id='v594OilFlowStyle';
     style.textContent=`
       #oilView .v539-hidden-shell,
       #oilView .v533-obsolete-empty,
@@ -67,18 +67,17 @@
       #layoutcompareView .v533-obsolete-empty,
       #layoutcompareView .v539-empty-controls{display:none!important}
 
-      #oilView .v593-question-title{margin:0 0 4px!important;font-size:20px!important;line-height:1.08!important;letter-spacing:-.2px!important}
-      #oilView .v593-question-copy{margin:0 0 10px!important;color:#a3adbf!important;font-size:12px!important;line-height:1.35!important}
-      #oilView .v593-calc-card{padding:12px!important;border-radius:17px!important}
-      #oilView #layoutModeTabs.v593-mode-grid{gap:8px!important;margin:7px 0 10px!important}
-      #oilView #layoutModeTabs .v593-mode-choice{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:82px!important;height:auto!important;padding:11px 13px!important;border-radius:14px!important;text-align:left!important;line-height:1.15!important}
-      #oilView #layoutModeTabs .v593-mode-choice strong,
-      #oilView #layoutModeTabs .v593-mode-choice b{font-size:17px!important;line-height:1.05!important}
-      #oilView #layoutModeTabs .v593-mode-choice small,
-      #oilView #layoutModeTabs .v593-mode-choice span{line-height:1.25!important}
-      #oilView .v593-runtime-field{grid-template-columns:minmax(0,1fr) 112px!important;align-items:center!important;gap:10px!important;min-height:70px!important;padding:9px 11px!important;border-radius:14px!important}
+      #oilView .v593-question-title{margin:0 0 2px!important;font-size:17px!important;line-height:1.08!important;letter-spacing:-.1px!important}
+      #oilView .v593-question-copy{margin:0 0 7px!important;color:#a3adbf!important;font-size:10px!important;line-height:1.25!important}
+      #oilView .v593-calc-card{padding:10px!important;border-radius:17px!important}
+      #oilView #layoutModeTabs.v593-mode-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;margin:5px 0 8px!important}
+      #oilView #layoutModeTabs .v593-mode-choice{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-height:56px!important;height:56px!important;padding:7px 9px!important;border-radius:12px!important;text-align:center!important;line-height:1.05!important;white-space:normal!important}
+      #oilView #layoutModeTabs .v593-mode-choice strong{display:block!important;font-size:14px!important;line-height:1.05!important;font-weight:950!important;white-space:nowrap!important}
+      #oilView #layoutModeTabs .v593-mode-choice small{display:block!important;margin-top:4px!important;font-size:8.5px!important;line-height:1.1!important;font-weight:650!important;opacity:.72!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important}
+      #oilView #layoutModeTabs .v593-mode-choice.active small{opacity:.9!important}
+      #oilView .v593-runtime-field{grid-template-columns:minmax(0,1fr) 112px!important;align-items:center!important;gap:10px!important;min-height:64px!important;padding:8px 10px!important;border-radius:14px!important}
       #oilView .v593-runtime-field .field-head{margin:0!important}
-      #oilView .v593-runtime-field input{height:48px!important;min-height:48px!important;font-size:18px!important;border-radius:12px!important}
+      #oilView .v593-runtime-field input{height:44px!important;min-height:44px!important;font-size:18px!important;border-radius:12px!important}
       #oilView .v520-boosts{margin-bottom:9px!important}
       #oilView #v536QuickFill.v593-quick-flow{margin-top:0!important;padding:12px!important;border-radius:17px!important}
       #oilView #v536QuickFill.v593-quick-flow .v536-qf-head{margin-bottom:9px!important}
@@ -87,17 +86,15 @@
       #oilView #v536QuickFill.v593-quick-flow .v537-template-fit{margin:6px 0!important;padding:6px 0!important}
 
       @media(max-width:620px){
-        #oilView .v593-question-title{font-size:18px!important}
-        #oilView .v593-question-copy{font-size:11px!important;margin-bottom:8px!important}
-        #oilView .v593-calc-card{padding:10px!important}
-        #oilView #layoutModeTabs.v593-mode-grid{gap:7px!important;margin:6px 0 8px!important}
-        #oilView #layoutModeTabs .v593-mode-choice{min-height:72px!important;padding:9px 11px!important;border-radius:12px!important}
-        #oilView #layoutModeTabs .v593-mode-choice strong,
-        #oilView #layoutModeTabs .v593-mode-choice b{font-size:15px!important}
-        #oilView #layoutModeTabs .v593-mode-choice small,
-        #oilView #layoutModeTabs .v593-mode-choice span{font-size:10px!important}
-        #oilView .v593-runtime-field{grid-template-columns:minmax(0,1fr) 102px!important;min-height:62px!important;padding:8px 10px!important}
-        #oilView .v593-runtime-field input{height:44px!important;min-height:44px!important;font-size:17px!important}
+        #oilView .v593-question-title{font-size:15px!important}
+        #oilView .v593-question-copy{font-size:9px!important;margin-bottom:6px!important}
+        #oilView .v593-calc-card{padding:9px!important}
+        #oilView #layoutModeTabs.v593-mode-grid{gap:6px!important;margin:4px 0 7px!important}
+        #oilView #layoutModeTabs .v593-mode-choice{min-height:52px!important;height:52px!important;padding:6px 7px!important;border-radius:11px!important}
+        #oilView #layoutModeTabs .v593-mode-choice strong{font-size:13px!important}
+        #oilView #layoutModeTabs .v593-mode-choice small{font-size:7.5px!important;margin-top:3px!important}
+        #oilView .v593-runtime-field{grid-template-columns:minmax(0,1fr) 102px!important;min-height:58px!important;padding:7px 9px!important}
+        #oilView .v593-runtime-field input{height:42px!important;min-height:42px!important;font-size:17px!important}
         #oilView #v536QuickFill.v593-quick-flow{padding:10px!important}
       }
     `;
@@ -111,18 +108,31 @@
     const modeTabs=document.getElementById('layoutModeTabs');
     if(modeTabs){
       modeTabs.classList.add('v593-mode-grid');
-      modeTabs.querySelectorAll('button').forEach(btn=>btn.classList.add('v593-mode-choice'));
+      const timeBtn=modeTabs.querySelector('[data-layoutmode="time"]');
+      const targetBtn=modeTabs.querySelector('[data-layoutmode="target"]');
+      if(timeBtn){
+        timeBtn.classList.add('v593-mode-choice');
+        timeBtn.innerHTML='<strong>Time → Oil</strong><small>How much oil you’ll make</small>';
+        timeBtn.setAttribute('aria-label','Time to Oil: calculate how much oil you will make');
+      }
+      if(targetBtn){
+        targetBtn.classList.add('v593-mode-choice');
+        targetBtn.innerHTML='<strong>Oil → Time</strong><small>When you’ll reach your target</small>';
+        targetBtn.setAttribute('aria-label','Oil to Time: calculate when you will reach your target');
+      }
       modeTabs.closest('.layout-control-card')?.classList.add('v593-calc-card');
     }
 
     document.getElementById('layoutHours')?.closest('.field')?.classList.add('v593-runtime-field');
     document.getElementById('v536QuickFill')?.classList.add('v593-quick-flow');
 
-    const textNodes=[...oil.querySelectorAll('h1,h2,h3,h4,p,strong,span')];
-    const question=textNodes.find(el=>el.textContent?.trim()==='What do you want to know?');
-    if(question)question.classList.add('v593-question-title');
-    const copy=textNodes.find(el=>el.textContent?.trim().startsWith('Choose one'));
-    if(copy)copy.classList.add('v593-question-copy');
+    const intro=oil.querySelector('.v543-calc-intro');
+    if(intro){
+      const title=intro.querySelector('strong');
+      const copy=intro.querySelector('span');
+      if(title){title.textContent='Choose a calculation';title.classList.add('v593-question-title');}
+      if(copy){copy.textContent='You can switch anytime.';copy.classList.add('v593-question-copy');}
+    }
 
     const isVisible=node=>{
       if(!node)return false;
