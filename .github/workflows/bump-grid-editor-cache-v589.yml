@@ -1,0 +1,37 @@
+name: Bump Grid Editor Cache v5.89
+
+on:
+  push:
+    paths:
+      - .github/workflows/bump-grid-editor-cache-v589.yml
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Bump grid editor asset cache
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('css/pages/oil-grid-editor-v585.css?v=5.87', 'css/pages/oil-grid-editor-v585.css?v=5.89')
+          s = s.replace('css/pages/oil-grid-editor-v585.css?v=5.88', 'css/pages/oil-grid-editor-v585.css?v=5.89')
+          p.write_text(s, encoding='utf-8')
+          PY
+          grep -Fq 'css/pages/oil-grid-editor-v585.css?v=5.89' index.html
+      - name: Commit cache bump
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Use compact editor cache v5.89'
+          git push origin HEAD:main
