@@ -1,4 +1,4 @@
-/* STOT Compare Presets live production bar v6.05 */
+/* STOT Compare Presets live production bar v6.06 */
 (() => {
   if (window.__STOT_COMPARE_PRESET_STICKY__) return;
   window.__STOT_COMPARE_PRESET_STICKY__ = true;
@@ -23,16 +23,17 @@
     #v601CompareSticky strong{font-size:16px;line-height:1.05;color:#f7f8ff;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     #v601CompareSticky i{font-style:normal;border-radius:9px;background:#211b3e;color:#cfbdff;padding:8px 9px;font-size:8px;font-weight:950;white-space:nowrap}
 
-    /* v6.05: one-line Target Oil control, scoped to Compare Presets only. */
+    /* v6.06: Target Oil is a compact standalone row, matching Run Time separation. */
     #layoutcompareView #layoutTargetPane .target-box{
       display:grid!important;
       grid-template-columns:minmax(88px,1fr) 64px auto!important;
       align-items:center!important;
       gap:7px!important;
       margin:10px 0 0!important;
-      padding:0!important;
-      border:0!important;
-      background:transparent!important;
+      padding:9px 10px!important;
+      border:1px solid rgba(109,122,151,.38)!important;
+      border-radius:14px!important;
+      background:rgba(15,21,33,.62)!important;
       box-shadow:none!important;
     }
     #layoutcompareView #layoutTargetPane .target-box>.field{display:contents!important}
@@ -107,7 +108,7 @@
       #v601CompareSticky .v601-side{display:grid;gap:2px}
       #v601CompareSticky strong{font-size:14px}
       #v601CompareSticky i{padding:8px 7px}
-      #layoutcompareView #layoutTargetPane .target-box{grid-template-columns:minmax(80px,1fr) 58px auto!important;gap:6px!important}
+      #layoutcompareView #layoutTargetPane .target-box{grid-template-columns:minmax(80px,1fr) 58px auto!important;gap:6px!important;padding:8px 9px!important}
       #layoutcompareView #layoutTargetPane #layoutTarget{width:58px!important;min-width:58px!important}
       #layoutcompareView #layoutTargetPane #layoutTargetUnits .chip{width:28px!important;min-width:28px!important;font-size:11px!important}
     }
