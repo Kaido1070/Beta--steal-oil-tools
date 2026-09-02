@@ -40,7 +40,7 @@ jobs:
           cat /tmp/stot-http.log
           exit 1
 
-      - name: Verify reserve behavior
+      - name: Verify corrected screenshot cases
         run: node tests/visual-grid-reserve-v583.mjs
 
       - name: Commit verified update
