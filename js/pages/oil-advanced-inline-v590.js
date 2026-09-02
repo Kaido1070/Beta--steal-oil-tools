@@ -1,7 +1,7 @@
-/* STOT compact Advanced Tools bar — v5.91 performance fix */
+/* STOT compact Advanced Tools bar — v5.92 */
 (()=>{
-  if(window.__STOT_ADVANCED_INLINE_V591__)return;
-  window.__STOT_ADVANCED_INLINE_V591__=true;
+  if(window.__STOT_ADVANCED_INLINE_V592__)return;
+  window.__STOT_ADVANCED_INLINE_V592__=true;
 
   function apply(){
     const tools=document.getElementById('v536AdvancedTools');
@@ -38,4 +38,19 @@
   document.querySelectorAll('.tabs button[data-view="oil"],.tabs button[data-view="layoutcompare"]').forEach(btn=>{
     btn.addEventListener('click',()=>setTimeout(apply,0));
   });
+
+  /* Oil Preset share preview: one-screen mobile layout, no observers. */
+  const originalOpen=window.openSharePreview;
+  if(typeof originalOpen==='function' && !window.__STOT_OIL_SHARE_COMPACT_V592__){
+    window.__STOT_OIL_SHARE_COMPACT_V592__=true;
+    window.openSharePreview=function(title,html,text){
+      const result=originalOpen.call(this,title,html,text);
+      const preview=document.getElementById('sharePreview');
+      if(preview){
+        const isOil=/\bOil\s+(Layout|Preset)\b/i.test(String(title||'')) || (String(html||'').includes('share-setup-grid') && String(html||'').includes('Production'));
+        preview.classList.toggle('v592-oil-share-compact',isOil);
+      }
+      return result;
+    };
+  }
 })();
