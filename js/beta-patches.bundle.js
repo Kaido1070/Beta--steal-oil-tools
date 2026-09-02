@@ -727,3 +727,31 @@ try {
 } catch (error) { console.error("STOT patch failed: js/beta-preset-visuals.js", error); }
 
 document.documentElement.dataset.stotBetaReady="5.77";
+
+/* ===== remove-empty-panels-v582.js ===== */
+try {
+(() => {
+  if (window.__STOT_REMOVE_EMPTY_PANELS_V582__) return;
+  window.__STOT_REMOVE_EMPTY_PANELS_V582__ = true;
+  const useful = 'input,select,textarea,button,img,svg,canvas,.plot-card,.drill-card,.metric,.actions,.v519-combined-summary,.v520-boosts,.v56-summary,.ab-compare,.v533-condition,.v536-quick-fill,#layoutAreas,#v575StickyRate';
+  function removable(panel){
+    if (!panel || panel.id === 'v575StickyRate') return false;
+    if (panel.matches('.v519-combined-summary,.v520-boosts,.v56-summary,.ab-compare,.v56-compare-intro,.v533-condition,.v536-quick-fill,.layout-control-card')) return false;
+    if (panel.querySelector(useful)) return false;
+    return !(panel.textContent || '').replace(/\s+/g,' ').trim();
+  }
+  function clean(){
+    document.querySelectorAll('.view .panel,#layoutcompareView .panel').forEach(panel => {
+      if (removable(panel)) panel.remove();
+    });
+    document.querySelectorAll('.v519-old-result,.v528-remove-empty,.v533-obsolete-empty').forEach(el => {
+      if (!el.querySelector(useful) && !(el.textContent || '').trim()) el.remove();
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', clean, {once:true});
+  else clean();
+  [0,80,220,500,1000].forEach(ms => setTimeout(clean, ms));
+  document.addEventListener('click', () => setTimeout(clean,0), true);
+  document.addEventListener('change', () => setTimeout(clean,0), true);
+})();
+} catch (error) { console.error('STOT empty-panel cleanup failed', error); }
