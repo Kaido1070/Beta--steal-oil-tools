@@ -23,6 +23,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verify Visual Plot CSS source
+        run: |
+          if grep -R --include='*.css' -n '\.v572-plot-map' css | grep -v '^css/pages/oil-visual-builder.css:'; then
+            echo 'ERROR: .v572-plot-map must only be defined in oil-visual-builder.css'
+            exit 1
+          fi
+          if grep -Eq '\.v572-plot-map\{[^}]*grid-template-columns:repeat\(2' css/pages/oil-visual-builder.css; then
+            echo 'ERROR: Visual Plot Builder cannot fall back to 2 columns'
+            exit 1
+          fi
+          grep -Fq '.v572-plot-map{grid-template-columns:repeat(3,minmax(0,1fr))}' css/pages/oil-visual-builder.css
+
+      - name: Cache bust all local CSS and JS
+        env:
+          ASSET_VERSION: ${{ github.sha }}
+        run: |
+          python3 -c 'import os,re,pathlib; p=pathlib.Path("index.html"); s=p.read_text(encoding="utf-8"); v=os.environ["ASSET_VERSION"][:12]; s=re.sub(r"((?:css|js)/[^\"?]+\.(?:css|js))\?v=[^\"]+", lambda m: f"{m.group(1)}?v={v}", s); p.write_text(s, encoding="utf-8")'
+          grep -Fq "oil-visual-builder.css?v=${ASSET_VERSION:0:12}" index.html
+          grep -Fq "oil-grid-editor-v585.css?v=${ASSET_VERSION:0:12}" index.html
+
       - name: Configure and enable Pages
         uses: actions/configure-pages@v5
         with:
