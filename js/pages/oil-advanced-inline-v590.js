@@ -1,18 +1,17 @@
-/* STOT compact Advanced Tools bar — v5.90 */
+/* STOT compact Advanced Tools bar — v5.91 performance fix */
 (()=>{
-  if(window.__STOT_ADVANCED_INLINE_V590__)return;
-  window.__STOT_ADVANCED_INLINE_V590__=true;
+  if(window.__STOT_ADVANCED_INLINE_V591__)return;
+  window.__STOT_ADVANCED_INLINE_V591__=true;
 
   function apply(){
     const tools=document.getElementById('v536AdvancedTools');
     if(!tools)return false;
+
     tools.open=true;
     tools.classList.add('v590-advanced-inline');
 
     const summary=tools.querySelector(':scope > summary');
-    if(summary && summary.textContent.trim()!=='Advanced Tools'){
-      summary.textContent='Advanced Tools';
-    }
+    if(summary && summary.textContent.trim()!=='Advanced Tools')summary.textContent='Advanced Tools';
 
     const empty=document.getElementById('layoutPasteEmpty');
     const all=document.getElementById('layoutPasteAll');
@@ -23,10 +22,20 @@
     return !!(empty&&all&&clear);
   }
 
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});
-  else apply();
+  function start(){
+    let tries=0;
+    const retry=()=>{
+      if(apply() || tries>=12)return;
+      tries++;
+      setTimeout(retry,120);
+    };
+    retry();
+  }
 
-  const observer=new MutationObserver(()=>apply());
-  observer.observe(document.documentElement,{subtree:true,childList:true});
-  [0,80,220,500,1000].forEach(ms=>setTimeout(apply,ms));
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+
+  document.querySelectorAll('.tabs button[data-view="oil"],.tabs button[data-view="layoutcompare"]').forEach(btn=>{
+    btn.addEventListener('click',()=>setTimeout(apply,0));
+  });
 })();
