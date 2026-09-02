@@ -53,6 +53,8 @@
       return r.width>0&&r.height>0;
     };
     const getTarget=()=>{
+      const current=document.querySelector('#oilView .v519-combined-summary');
+      if(isVisible(current))return current;
       const v56=document.getElementById('v56Now')?.closest('.v56-summary');
       if(isVisible(v56))return v56;
       const legacy=document.getElementById('layoutNowRate')?.closest('.panel.result');
