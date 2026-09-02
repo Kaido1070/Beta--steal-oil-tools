@@ -1,0 +1,12 @@
+/* STOT interactive 5x5 drill placement editor — v5.85 */
+.v572-editor-grid-preview .v572-grid-placements{pointer-events:auto!important}
+.v572-editor-grid-preview{touch-action:none;user-select:none;-webkit-user-select:none}
+.v572-editor-grid-preview .v585-drill-block{pointer-events:auto;cursor:grab;touch-action:none;transition:box-shadow .12s ease,transform .12s ease,border-color .12s ease}
+.v572-editor-grid-preview .v585-drill-block:active{cursor:grabbing;transform:scale(.985)}
+.v572-editor-grid-preview .v585-drill-block.selected{z-index:4;border-color:#fff6a8!important;box-shadow:0 0 0 2px rgba(255,231,108,.75),0 0 16px rgba(255,218,74,.3)!important}
+.v585-grid-tools{width:min(430px,100%);margin:-3px auto 12px;padding:9px;border:1px solid rgba(152,100,255,.28);border-radius:11px;background:#0d1320}
+.v585-grid-help{display:grid;gap:2px}.v585-grid-help strong{font-size:10px;color:#f1f4fb}.v585-grid-help span{font-size:8.5px;line-height:1.35;color:#9aa5b8}
+.v585-grid-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}.v585-grid-actions button{min-height:34px;border:1px solid rgba(255,255,255,.10);border-radius:9px;background:#171d2b;color:#edf1f8;font-size:9px;font-weight:850}.v585-grid-actions button:first-child{border-color:rgba(153,103,255,.36);background:rgba(132,80,238,.13)}.v585-grid-actions button:disabled{opacity:.38;cursor:not-allowed}
+.v585-grid-status{margin-top:6px;min-height:14px;color:#8e99ab;font-size:8px;line-height:1.35}.v585-grid-status.ok{color:#84dfaa}.v585-grid-status.bad{color:#ff929d}.v585-grid-status.warn{color:#ffd277}
+.v585-reserve-warning{position:absolute;left:50%;bottom:6px;z-index:7;transform:translateX(-50%);max-width:calc(100% - 12px);padding:4px 6px;border:1px solid rgba(255,189,79,.46);border-radius:7px;background:rgba(54,34,7,.92);color:#ffd893;font-size:7px;font-weight:850;line-height:1.15;text-align:center;white-space:nowrap;pointer-events:none}
+@media(max-width:520px){.v585-grid-tools{margin-bottom:9px}.v585-grid-actions button{min-height:36px}.v585-grid-help span{font-size:8px}.v585-reserve-warning{font-size:6.5px}}
