@@ -1,0 +1,95 @@
+name: Sticky Result Navigation v5.78
+
+on:
+  push:
+    paths:
+      - '.github/workflows/sticky-navigation-v578.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sticky_navigation:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Make sticky bar contextual and fully tappable
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          js=Path('js/pages/oil-visual-builder.js')
+          s=js.read_text(encoding='utf-8')
+          old="""    const sync=()=>{\n      const out=bar.querySelector('[data-v575-rate]');\n      if(out)out.textContent=rate.textContent?.trim()||'0/s';\n      bar.classList.toggle('show',document.getElementById('oilView')?.classList.contains('active')===true);\n    };\n    sync();\n    if(!bar.dataset.bound){\n      bar.dataset.bound='1';\n      new MutationObserver(sync).observe(rate,{childList:true,characterData:true,subtree:true});\n      new MutationObserver(sync).observe(document.getElementById('oilView'),{attributes:true,attributeFilter:['class']});\n      document.addEventListener('click',e=>{if(e.target.closest?.('[data-view]'))queueMicrotask(sync)});\n    }\n"""
+          new="""    let detailsVisible=bar.dataset.detailsVisible==='1';\n    const sync=()=>{\n      const out=bar.querySelector('[data-v575-rate]');\n      if(out)out.textContent=rate.textContent?.trim()||'0/s';\n      const oilActive=document.getElementById('oilView')?.classList.contains('active')===true;\n      bar.classList.toggle('show',oilActive&&!detailsVisible);\n    };\n    sync();\n    if(!bar.dataset.bound){\n      bar.dataset.bound='1';\n      new MutationObserver(sync).observe(rate,{childList:true,characterData:true,subtree:true});\n      new MutationObserver(sync).observe(document.getElementById('oilView'),{attributes:true,attributeFilter:['class']});\n      document.addEventListener('click',e=>{if(e.target.closest?.('[data-view]'))queueMicrotask(sync)});\n      const observer=new IntersectionObserver(entries=>{\n        detailsVisible=entries.some(entry=>entry.isIntersecting);\n        bar.dataset.detailsVisible=detailsVisible?'1':'0';\n        sync();\n      },{threshold:.15});\n      observer.observe(details);\n    }\n"""
+          if old not in s: raise SystemExit('sticky sync block missing')
+          js.write_text(s.replace(old,new,1).replace('/* STOT Oil visual plot builder — v5.75 */','/* STOT Oil visual plot builder — v5.78 */',1),encoding='utf-8')
+
+          css=Path('css/pages/oil-visual-builder.css')
+          c=css.read_text(encoding='utf-8')
+          anchor='.v575-sticky-rate:hover{border-color:#ae84ff}'
+          inject='.v575-sticky-rate>*{pointer-events:none;user-select:none;-webkit-user-select:none}.v575-sticky-rate{touch-action:manipulation}'
+          if inject not in c:
+              if anchor not in c: raise SystemExit('sticky CSS anchor missing')
+              c=c.replace(anchor,anchor+inject,1)
+          c=c.replace('/* STOT Oil visual plot builder — v5.75 */','/* STOT Oil visual plot builder — v5.78 */',1)
+          css.write_text(c,encoding='utf-8')
+
+          build=Path('scripts/consolidate-beta.sh')
+          b=build.read_text(encoding='utf-8')
+          if 'VERSION="5.77"' not in b: raise SystemExit('Expected v5.77 build')
+          build.write_text(b.replace('VERSION="5.77"','VERSION="5.78"',1),encoding='utf-8')
+
+          ch=Path('js/changelog.js')
+          h=ch.read_text(encoding='utf-8')
+          marker='window.STOT_CHANGELOG=Object.freeze([\n'
+          entry='''  Object.freeze({version:"5.78",date:"Sep 2 2026",changes:Object.freeze([\n    "Made the entire Current Production bar reliably tappable",\n    "Hide the sticky bar automatically once Preset Summary is reached"\n  ])}),\n'''
+          if 'version:"5.78"' not in h: h=h.replace(marker,marker+entry,1)
+          ch.write_text(h,encoding='utf-8')
+
+          test=Path('tests/smoke-beta.mjs')
+          t=test.read_text(encoding='utf-8').replace("'5.77'","'5.78'")
+          t=t.replace('stot-v5.77-layout-save-v1','stot-v5.78-layout-save-v1')
+          anchor="""await page.locator('#v575StickyRate').click();\nawait page.waitForTimeout(80);\nassert.ok(await page.locator('#layoutResultDetails').evaluate(el => el.classList.contains('v575-result-focus')));\n"""
+          extra="""await page.locator('#layoutResultDetails').scrollIntoViewIfNeeded();\nawait page.waitForTimeout(160);\nassert.ok(!(await page.locator('#v575StickyRate').evaluate(el => el.classList.contains('show'))), 'Sticky production bar should hide when result details are visible');\nawait page.evaluate(() => window.scrollTo({top:0,behavior:'instant'}));\nawait page.waitForTimeout(160);\nassert.ok(await page.locator('#v575StickyRate').evaluate(el => el.classList.contains('show')), 'Sticky production bar should return when result details leave view');\n"""
+          if extra not in t:
+              if anchor not in t: raise SystemExit('sticky click smoke anchor missing')
+              t=t.replace(anchor,anchor+extra,1)
+          test.write_text(t,encoding='utf-8')
+          PY
+
+      - name: Build v5.78
+        run: bash scripts/consolidate-beta.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/stot-http.log
+          exit 1
+
+      - name: Run full browser smoke suite
+        run: node tests/smoke-beta.mjs
+
+      - name: Commit tested sticky navigation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Improve sticky result navigation v5.78'
+          git push origin HEAD:main
