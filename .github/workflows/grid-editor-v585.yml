@@ -52,4 +52,4 @@ jobs:
           git commit -m 'Add interactive drill grid editor v5.85'
           git push origin HEAD:main
 
-# rerun: clean-state movement test
+# rerun: same-editor movement test
