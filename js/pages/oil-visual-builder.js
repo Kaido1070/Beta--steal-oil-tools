@@ -68,7 +68,8 @@
       const out=bar.querySelector('[data-v575-rate]');
       if(out)out.textContent=rate.textContent?.trim()||'0/s';
       const oilActive=document.getElementById('oilView')?.classList.contains('active')===true;
-      const beforeResult=details.getBoundingClientRect().top>window.innerHeight-36;
+      const resultTop=details.getBoundingClientRect().top;
+      const beforeResult=resultTop>140;
       if(!beforeResult)navigatingToResult=false;
       bar.classList.toggle('show',oilActive&&beforeResult&&!navigatingToResult);
     };
