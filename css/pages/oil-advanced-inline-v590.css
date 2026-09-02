@@ -71,3 +71,126 @@
   #v536AdvancedTools.v590-advanced-inline #layoutCopyBar{gap:4px!important}
   #v536AdvancedTools.v590-advanced-inline #layoutCopyBar>button{height:31px!important;min-height:31px!important;padding:3px!important;font-size:7px!important;border-radius:7px!important}
 }
+
+/* v5.91: polished Preset Summary results. */
+#oilView .v519-combined-summary.v541-summary-panel{
+  width:min(100%,560px)!important;
+  margin:18px auto 8px!important;
+  padding:12px!important;
+  border-radius:18px!important;
+  overflow:hidden!important;
+}
+#oilView .v519-combined-summary .v519-summary-head{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  margin:0!important;
+  padding:1px 4px 11px!important;
+}
+#oilView .v519-combined-summary .v519-summary-head strong{
+  font-size:14px!important;
+  line-height:1.1!important;
+  font-weight:950!important;
+  letter-spacing:0!important;
+}
+#oilView .v519-combined-summary .v519-summary-head span{
+  color:#9aa5b8!important;
+  font-size:9px!important;
+  font-weight:750!important;
+  white-space:nowrap!important;
+}
+#oilView .v519-combined-summary .result-main{
+  margin:0!important;
+  padding:16px 14px!important;
+  border-radius:15px!important;
+  text-align:center!important;
+}
+#oilView .v519-combined-summary .result-main span,
+#oilView .v519-combined-summary .metric span{
+  text-align:center!important;
+}
+#oilView .v519-combined-summary .result-main span{
+  font-size:8.5px!important;
+  letter-spacing:1px!important;
+}
+#oilView .v519-combined-summary .result-main strong{
+  margin:5px auto 0!important;
+  font-size:clamp(30px,8vw,40px)!important;
+  line-height:1!important;
+  letter-spacing:-1px!important;
+  text-align:center!important;
+}
+#oilView .v519-combined-summary .layout-summary{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin-top:8px!important;
+}
+#oilView .v519-combined-summary .layout-summary .metric:first-child{
+  grid-column:1/-1!important;
+  min-height:68px!important;
+}
+#oilView .v519-combined-summary .result-mini{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin-top:7px!important;
+}
+#oilView .v519-combined-summary .metric{
+  min-height:74px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:10px 8px!important;
+  border-radius:12px!important;
+  text-align:center!important;
+}
+#oilView .v519-combined-summary .metric span{
+  width:100%!important;
+  color:#9ea8b9!important;
+  font-size:8px!important;
+  line-height:1.25!important;
+  letter-spacing:.9px!important;
+}
+#oilView .v519-combined-summary .metric strong{
+  display:block!important;
+  width:100%!important;
+  margin-top:6px!important;
+  color:#5fe1cc!important;
+  font-size:18px!important;
+  line-height:1!important;
+  font-weight:950!important;
+  text-align:center!important;
+}
+#oilView .v519-combined-summary .actions{
+  display:flex!important;
+  justify-content:center!important;
+  gap:0!important;
+  margin-top:9px!important;
+}
+#oilView .v519-combined-summary .actions .action{
+  width:min(300px,100%)!important;
+  min-height:40px!important;
+  border-radius:11px!important;
+  font-size:10px!important;
+}
+@media(max-width:520px){
+  #oilView .v519-combined-summary.v541-summary-panel{
+    margin-top:14px!important;
+    padding:10px!important;
+    border-radius:16px!important;
+  }
+  #oilView .v519-combined-summary .v519-summary-head{padding:1px 3px 9px!important}
+  #oilView .v519-combined-summary .v519-summary-head strong{font-size:12px!important}
+  #oilView .v519-combined-summary .v519-summary-head span{font-size:8px!important}
+  #oilView .v519-combined-summary .result-main{padding:14px 10px!important}
+  #oilView .v519-combined-summary .result-main strong{font-size:32px!important}
+  #oilView .v519-combined-summary .layout-summary,
+  #oilView .v519-combined-summary .result-mini{gap:6px!important}
+  #oilView .v519-combined-summary .metric{min-height:66px!important;padding:8px 6px!important}
+  #oilView .v519-combined-summary .layout-summary .metric:first-child{min-height:62px!important}
+  #oilView .v519-combined-summary .metric strong{font-size:16px!important}
+  #oilView .v519-combined-summary .actions .action{width:100%!important;min-height:38px!important}
+}
