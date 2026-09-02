@@ -1,4 +1,4 @@
-/* STOT Compare Presets live production bar v6.02 */
+/* STOT Compare Presets live production bar v6.03 */
 (() => {
   if (window.__STOT_COMPARE_PRESET_STICKY__) return;
   window.__STOT_COMPARE_PRESET_STICKY__ = true;
@@ -31,6 +31,17 @@
   `;
   document.head.appendChild(style);
 
+  function enforceCompareOrder(view) {
+    const builder = document.getElementById('layoutVisualBuilder');
+    const comparison = view?.querySelector('.ab-compare');
+    const actions = view?.querySelector('.v56-compare-actions');
+    if (!view || !builder || !comparison) return;
+
+    if (builder.parentElement !== view) view.appendChild(builder);
+    if (comparison.previousElementSibling !== builder) builder.insertAdjacentElement('afterend', comparison);
+    if (actions && actions.previousElementSibling !== comparison) comparison.insertAdjacentElement('afterend', actions);
+  }
+
   function setup() {
     const view = document.getElementById('layoutcompareView');
     if (!view) return false;
@@ -44,6 +55,7 @@
       bar.innerHTML = '<span class="v601-side"><small>PRESET A</small><strong data-v601-a>0/s</strong></span><span class="v601-side"><small>PRESET B</small><strong data-v601-b>0/s</strong></span><i>Details ↓</i>';
       document.body.appendChild(bar);
       bar.addEventListener('click', () => {
+        enforceCompareOrder(view);
         const target = view.querySelector('.ab-compare');
         if (!target) return;
         bar.classList.remove('show');
@@ -52,6 +64,7 @@
     }
 
     const sync = () => {
+      enforceCompareOrder(view);
       const a = document.getElementById('abRateA');
       const b = document.getElementById('abRateB');
       const outA = bar.querySelector('[data-v601-a]');
@@ -85,12 +98,17 @@
       view.addEventListener('click',()=>requestAnimationFrame(sync),true);
       window.addEventListener('scroll',sync,{passive:true});
       window.addEventListener('resize',sync,{passive:true});
-      document.querySelectorAll('.tabs button').forEach(btn=>btn.addEventListener('click',()=>setTimeout(sync,0)));
+      document.querySelectorAll('.tabs button').forEach(btn=>btn.addEventListener('click',()=>{
+        setTimeout(sync,0);
+        setTimeout(sync,100);
+        setTimeout(sync,260);
+      }));
     }
 
     sync();
     setTimeout(sync,80);
     setTimeout(sync,220);
+    setTimeout(sync,520);
     return true;
   }
 
