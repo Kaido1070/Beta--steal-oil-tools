@@ -1,4 +1,4 @@
-/* STOT Compare Presets live production bar v6.04 */
+/* STOT Compare Presets live production bar v6.05 */
 (() => {
   if (window.__STOT_COMPARE_PRESET_STICKY__) return;
   window.__STOT_COMPARE_PRESET_STICKY__ = true;
@@ -23,69 +23,93 @@
     #v601CompareSticky strong{font-size:16px;line-height:1.05;color:#f7f8ff;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     #v601CompareSticky i{font-style:normal;border-radius:9px;background:#211b3e;color:#cfbdff;padding:8px 9px;font-size:8px;font-weight:950;white-space:nowrap}
 
-    /* v6.04: compact Target Oil editor — same behavior, much less vertical space. */
-    #layoutTargetPane .target-box{
+    /* v6.05: one-line Target Oil control, scoped to Compare Presets only. */
+    #layoutcompareView #layoutTargetPane .target-box{
       display:grid!important;
-      grid-template-columns:minmax(0,1fr) auto!important;
+      grid-template-columns:minmax(88px,1fr) 64px auto!important;
       align-items:center!important;
-      gap:8px!important;
-      padding:8px!important;
-      margin:0!important;
+      gap:7px!important;
+      margin:10px 0 0!important;
+      padding:0!important;
+      border:0!important;
+      background:transparent!important;
+      box-shadow:none!important;
     }
-    #layoutTargetPane .target-box>.field{
-      display:grid!important;
-      grid-template-columns:minmax(0,1fr) 68px!important;
-      align-items:center!important;
-      gap:8px!important;
-      margin:0!important;
-      min-width:0!important;
-    }
-    #layoutTargetPane .target-box>.field .field-head{
+    #layoutcompareView #layoutTargetPane .target-box>.field{display:contents!important}
+    #layoutcompareView #layoutTargetPane .target-box .field-head{
+      grid-column:1!important;
       display:block!important;
       margin:0!important;
-      min-width:0!important;
-    }
-    #layoutTargetPane .target-box>.field .field-head .icon{display:none!important}
-    #layoutTargetPane .target-box>.field .labels{display:block!important;min-width:0!important}
-    #layoutTargetPane .target-box>.field .labels strong{font-size:14px!important;line-height:1.1!important;white-space:nowrap!important}
-    #layoutTargetPane .target-box>.field .labels small{display:none!important}
-    #layoutTargetPane #layoutTarget{
-      width:68px!important;
-      min-width:68px!important;
-      min-height:40px!important;
-      height:40px!important;
-      padding:0 8px!important;
-      text-align:center!important;
-      font-size:18px!important;
-      border-radius:9px!important;
-    }
-    #layoutTargetPane #layoutTargetUnits{
-      display:grid!important;
-      grid-template-columns:repeat(4,32px)!important;
-      gap:4px!important;
-      margin:0!important;
-      align-items:center!important;
-    }
-    #layoutTargetPane #layoutTargetUnits .chip{
-      min-width:32px!important;
-      width:32px!important;
-      min-height:40px!important;
-      height:40px!important;
       padding:0!important;
-      border-radius:9px!important;
+      min-width:0!important;
+      border:0!important;
+      background:none!important;
+    }
+    #layoutcompareView #layoutTargetPane .target-box .field-head .icon{display:none!important}
+    #layoutcompareView #layoutTargetPane .target-box .labels{display:block!important;min-width:0!important}
+    #layoutcompareView #layoutTargetPane .target-box .labels strong{
+      display:block!important;
       font-size:13px!important;
       line-height:1!important;
+      white-space:nowrap!important;
+      color:#f3f5fb!important;
+    }
+    #layoutcompareView #layoutTargetPane .target-box .labels small{display:none!important}
+    #layoutcompareView #layoutTargetPane #layoutTarget{
+      grid-column:2!important;
+      width:64px!important;
+      min-width:64px!important;
+      min-height:38px!important;
+      height:38px!important;
+      margin:0!important;
+      padding:0 7px!important;
+      border-radius:10px!important;
+      text-align:center!important;
+      font-size:16px!important;
+      font-weight:900!important;
+    }
+    #layoutcompareView #layoutTargetPane #layoutTargetUnits{
+      grid-column:3!important;
+      display:flex!important;
+      align-items:center!important;
+      gap:0!important;
+      width:auto!important;
+      margin:0!important;
+      padding:2px!important;
+      border:1px solid rgba(109,122,151,.38)!important;
+      border-radius:11px!important;
+      background:#0b101b!important;
+      overflow:hidden!important;
+    }
+    #layoutcompareView #layoutTargetPane #layoutTargetUnits .chip{
+      width:31px!important;
+      min-width:31px!important;
+      height:34px!important;
+      min-height:34px!important;
+      margin:0!important;
+      padding:0!important;
+      border:0!important;
+      border-radius:8px!important;
+      background:transparent!important;
+      box-shadow:none!important;
+      font-size:12px!important;
+      font-weight:900!important;
+      line-height:1!important;
+      color:#aab3c5!important;
+    }
+    #layoutcompareView #layoutTargetPane #layoutTargetUnits .chip.active{
+      background:linear-gradient(135deg,#6c356f,#5a3d7a)!important;
+      color:#fff!important;
+      box-shadow:inset 0 0 0 1px rgba(190,133,255,.55)!important;
     }
     @media(max-width:430px){
       #v601CompareSticky{width:calc(100vw - 24px);gap:6px;padding-left:8px}
       #v601CompareSticky .v601-side{display:grid;gap:2px}
       #v601CompareSticky strong{font-size:14px}
       #v601CompareSticky i{padding:8px 7px}
-      #layoutTargetPane .target-box{gap:6px!important;padding:7px!important}
-      #layoutTargetPane .target-box>.field{grid-template-columns:minmax(0,1fr) 62px!important;gap:6px!important}
-      #layoutTargetPane #layoutTarget{width:62px!important;min-width:62px!important}
-      #layoutTargetPane #layoutTargetUnits{grid-template-columns:repeat(4,29px)!important;gap:3px!important}
-      #layoutTargetPane #layoutTargetUnits .chip{width:29px!important;min-width:29px!important;font-size:12px!important}
+      #layoutcompareView #layoutTargetPane .target-box{grid-template-columns:minmax(80px,1fr) 58px auto!important;gap:6px!important}
+      #layoutcompareView #layoutTargetPane #layoutTarget{width:58px!important;min-width:58px!important}
+      #layoutcompareView #layoutTargetPane #layoutTargetUnits .chip{width:28px!important;min-width:28px!important;font-size:11px!important}
     }
   `;
   document.head.appendChild(style);
