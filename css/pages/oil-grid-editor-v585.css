@@ -11,7 +11,7 @@
 .v585-reserve-warning{position:absolute;left:50%;bottom:6px;z-index:7;transform:translateX(-50%);max-width:calc(100% - 12px);padding:4px 6px;border:1px solid rgba(255,189,79,.46);border-radius:7px;background:rgba(54,34,7,.92);color:#ffd893;font-size:7px;font-weight:850;line-height:1.15;text-align:center;white-space:nowrap;pointer-events:none}
 @media(max-width:520px){.v585-grid-tools{margin-bottom:9px}.v585-grid-actions button{min-height:36px}.v585-grid-help span{font-size:8px}.v585-reserve-warning{font-size:6.5px}}
 
-/* v5.86: keep the last editor controls scrollable above Current Production. */
+/* Keep the last editor controls scrollable above Current Production. */
 .v572-editor-sheet{scroll-padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .v572-editor-backdrop.open #v572EditorBody{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
 @supports selector(body:has(#v575StickyRate.show)){
@@ -27,10 +27,7 @@
   }
 }
 
-/* v5.86: always keep the Visual Plot Builder in 3 columns on phones. */
-@media(max-width:820px){
-  .v572-plot-map{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
-}
+/* Mobile compact sizing only. Column count belongs to oil-visual-builder.css. */
 @media(max-width:520px){
   .v572-visual-builder{padding:8px!important}
   .v572-map-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
@@ -38,7 +35,6 @@
   .v572-summary-item i{width:7px;height:7px}
   .v572-summary-item b{font-size:8px}
   .v572-summary-item small{font-size:7px;margin-top:1px}
-  .v572-plot-map{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
   .v572-plot-card{padding:4px!important;border-radius:9px}
   .v572-plot-head{gap:3px;margin:0 0 4px}
   .v572-plot-head strong{font-size:9px}
