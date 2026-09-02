@@ -1,0 +1,48 @@
+name: Install Advanced Tools Inline v5.90
+
+on:
+  push:
+    paths:
+      - .github/workflows/install-advanced-inline-v590.yml
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Add compact Advanced Tools assets to index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          css='<link rel="stylesheet" href="css/pages/oil-advanced-inline-v590.css?v=5.90">'
+          js='<script defer src="js/pages/oil-advanced-inline-v590.js?v=5.90"></script>'
+          if css not in s:
+              needle='<link rel="stylesheet" href="css/pages/oil-grid-editor-v585.css?v=5.89">'
+              if needle not in s:
+                  raise SystemExit('grid editor css include not found')
+              s=s.replace(needle, needle+'\n'+css, 1)
+          if js not in s:
+              needle='<script defer src="js/pages/oil-grid-editor-v585.js?v=5.85"></script>'
+              if needle not in s:
+                  raise SystemExit('grid editor js include not found')
+              s=s.replace(needle, needle+'\n'+js, 1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          grep -Fq 'oil-advanced-inline-v590.css?v=5.90' index.html
+          grep -Fq 'oil-advanced-inline-v590.js?v=5.90' index.html
+      - name: Commit install
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Show Advanced Tools as one inline row'
+          git push origin HEAD:main
