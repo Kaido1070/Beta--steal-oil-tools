@@ -1,5 +1,5 @@
-/* STOT Beta consolidated patch runtime v5.76 */
-window.__STOT_CONSOLIDATED_RUNTIME__='5.76';
+/* STOT Beta consolidated patch runtime v5.77 */
+window.__STOT_CONSOLIDATED_RUNTIME__='5.77';
 
 /* ===== js/v539-01.js ===== */
 try {
@@ -726,4 +726,4 @@ try {
 
 } catch (error) { console.error("STOT patch failed: js/beta-preset-visuals.js", error); }
 
-document.documentElement.dataset.stotBetaReady="5.76";
+document.documentElement.dataset.stotBetaReady="5.77";

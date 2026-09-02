@@ -1,6 +1,10 @@
 /* STEAL THE OIL TYCOON — internal release changelog */
 /* Newest release must stay first. Dates are null where an exact historical release date was not recorded here. */
 window.STOT_CHANGELOG=Object.freeze([
+  Object.freeze({version:"5.77",date:"Sep 2 2026",changes:Object.freeze([
+    "Slimmed and repositioned the sticky Current Production card",
+    "Added bottom spacing so Preset Summary and Share Preset are never covered"
+  ])}),
   Object.freeze({version:"5.76",date:"Sep 2 2026",changes:Object.freeze([
     "Added the Heart Drill thumbnail beside Heart Likes in Oil / Hour",
     "Heart Likes now uses the existing drill image atlas instead of an empty placeholder"
