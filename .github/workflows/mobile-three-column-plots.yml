@@ -1,15 +1,15 @@
-name: Mobile Three Column Plots
+name: Mobile Three Columns
 
 on:
   push:
     paths:
-      - .github/workflows/mobile-three-column-plots.yml
+      - '.github/workflows/mobile-three-column-plots.yml'
 
 permissions:
   contents: write
 
 jobs:
-  apply:
+  fix:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,67 +17,19 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Force three columns in source and bust cache
+      - name: Force three columns and bust cache
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
+          sed -i 's/\.v572-plot-map{grid-template-columns:repeat(2,minmax(0,1fr))}/.v572-plot-map{grid-template-columns:repeat(3,minmax(0,1fr))}/g' css/pages/oil-visual-builder.css
+          sed -i -E 's#css/pages/oil-visual-builder\.css\?v=[0-9.]+#css/pages/oil-visual-builder.css?v=5.87#' index.html
+          sed -i -E 's#css/pages/oil-grid-editor-v585\.css\?v=[0-9.]+#css/pages/oil-grid-editor-v585.css?v=5.87#' index.html
+          grep -F '.v572-plot-map{grid-template-columns:repeat(3,minmax(0,1fr))}' css/pages/oil-visual-builder.css
+          grep -F 'oil-visual-builder.css?v=5.87' index.html
+          grep -F 'oil-grid-editor-v585.css?v=5.87' index.html
 
-          css = Path('css/pages/oil-visual-builder.css')
-          s = css.read_text(encoding='utf-8')
-          marker = 'v5.87 authoritative three-column mobile fix'
-          patch = r'''
-
-/* v5.87 authoritative three-column mobile fix */
-@media(max-width:820px){
-  #oilView .v572-plot-map{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
-}
-@media(max-width:520px){
-  #oilView .v572-visual-builder{padding:8px!important}
-  #oilView .v572-map-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
-  #oilView .v572-summary-item{grid-template-columns:7px minmax(0,1fr);column-gap:4px;padding:5px;border-radius:8px}
-  #oilView .v572-summary-item i{width:7px;height:7px}
-  #oilView .v572-summary-item b{font-size:8px}
-  #oilView .v572-summary-item small{font-size:7px;margin-top:1px}
-  #oilView .v572-plot-map{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
-  #oilView .v572-plot-card{padding:4px!important;border-radius:9px}
-  #oilView .v572-plot-head{gap:3px;margin:0 0 4px}
-  #oilView .v572-plot-head strong{font-size:9px}
-  #oilView .v572-plot-head i{padding:2px 4px;font-size:7px}
-  #oilView .v572-grid-stage{border-width:1px;border-radius:6px}
-  #oilView .v572-grid-cells,#oilView .v572-grid-placements{inset:2px;gap:1px}
-  #oilView .v572-grid-cells span{border-radius:2px}
-  #oilView .v572-drill-block{padding:1px;border-radius:3px}
-  #oilView .v572-drill-block b{font-size:5.5px}
-  #oilView .v572-drill-block small{display:none}
-  #oilView .v572-plot-foot{gap:3px;margin:4px 0 0;font-size:6.5px}
-  #oilView .v572-plot-foot span:last-child{white-space:nowrap}
-}
-'''
-          if marker not in s:
-              s += patch
-          css.write_text(s, encoding='utf-8')
-
-          index = Path('index.html')
-          html = index.read_text(encoding='utf-8')
-          html, n1 = re.subn(r'css/pages/oil-visual-builder\.css\?v=[0-9.]+', 'css/pages/oil-visual-builder.css?v=5.87', html, count=1)
-          html, n2 = re.subn(r'css/pages/oil-grid-editor-v585\.css\?v=[0-9.]+', 'css/pages/oil-grid-editor-v585.css?v=5.87', html, count=1)
-          if n1 != 1 or n2 != 1:
-              raise SystemExit(f'cache bump failed: visual={n1} editor={n2}')
-          index.write_text(html, encoding='utf-8')
-          PY
-
-      - name: Verify source and cache
-        run: |
-          grep -F 'v5.87 authoritative three-column mobile fix' css/pages/oil-visual-builder.css
-          grep -F '#oilView .v572-plot-map{grid-template-columns:repeat(3,minmax(0,1fr))!important' css/pages/oil-visual-builder.css
-          grep -F 'css/pages/oil-visual-builder.css?v=5.87' index.html
-          grep -F 'css/pages/oil-grid-editor-v585.css?v=5.87' index.html
-
-      - name: Commit verified fix
+      - name: Commit fix
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add css/pages/oil-visual-builder.css index.html
-          git commit -m 'Force three visual plot columns on mobile v5.87'
+          git commit -m 'Force three plot columns on phones v5.87'
           git push origin HEAD:main
