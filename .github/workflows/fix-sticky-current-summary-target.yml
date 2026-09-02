@@ -1,0 +1,86 @@
+name: Fix Sticky Current Summary Target
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-sticky-current-summary-target.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Use the visible combined summary as destination
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('js/pages/oil-visual-builder.js')
+          s=p.read_text(encoding='utf-8')
+          old="""    const getTarget=()=>{\n      const v56=document.getElementById('v56Now')?.closest('.v56-summary');\n      if(isVisible(v56))return v56;\n      const legacy=document.getElementById('layoutNowRate')?.closest('.panel.result');\n      if(isVisible(legacy))return legacy;\n      return null;\n    };"""
+          new="""    const getTarget=()=>{\n      const current=document.querySelector('#oilView .v519-combined-summary');\n      if(isVisible(current))return current;\n      const v56=document.getElementById('v56Now')?.closest('.v56-summary');\n      if(isVisible(v56))return v56;\n      const legacy=document.getElementById('layoutNowRate')?.closest('.panel.result');\n      if(isVisible(legacy))return legacy;\n      return null;\n    };"""
+          if old not in s: raise SystemExit('target function pattern not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          c=Path('css/pages/oil-visual-builder.css')
+          css=c.read_text(encoding='utf-8')
+          if 'v5.82 sticky target support' not in css:
+              css+='\n/* v5.82 sticky target support */\n.v575-sticky-rate{z-index:2147483000!important}\n.v575-sticky-rate.show{pointer-events:auto!important}\n'
+          c.write_text(css,encoding='utf-8')
+
+          i=Path('index.html')
+          html=i.read_text(encoding='utf-8')
+          import re
+          html=re.sub(r'(oil-visual-builder\.css\?v=)[0-9.]+',r'\g<1>5.82',html)
+          html=re.sub(r'(oil-visual-builder\.js\?v=)[0-9.]+',r'\g<1>5.82',html)
+          i.write_text(html,encoding='utf-8')
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify physical click reaches current summary
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0 >/dev/null 2>&1
+          npx playwright install chromium >/dev/null 2>&1
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && break; sleep 1; done
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {chromium} from 'playwright';
+          const b=await chromium.launch({headless:true});
+          const p=await b.newPage({viewport:{width:775,height:617}});
+          await p.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
+          await p.locator('.tabs button[data-view="oil"]').click();
+          await p.waitForTimeout(600);
+          await p.evaluate(()=>scrollTo(0,0));
+          await p.waitForTimeout(150);
+          const summary=p.locator('#oilView .v519-combined-summary');
+          assert.equal(await summary.count(),1,'current combined summary must exist');
+          assert.ok(await summary.evaluate(e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return r.width>0&&r.height>0&&s.display!=='none'&&s.visibility!=='hidden'}),'current summary must be visible');
+          const bar=p.locator('#v575StickyRate');
+          assert.ok(await bar.evaluate(e=>e.classList.contains('show')),'sticky must be visible before result');
+          const box=await bar.boundingBox(); assert.ok(box);
+          assert.equal(await p.evaluate(({x,y})=>document.elementFromPoint(x,y)?.id||'',{x:box.x+box.width/2,y:box.y+box.height/2}),'v575StickyRate');
+          const before=await p.evaluate(()=>scrollY);
+          await p.mouse.click(box.x+box.width/2,box.y+box.height/2);
+          await p.waitForTimeout(1000);
+          const after=await p.evaluate(()=>scrollY);
+          assert.ok(after>before+20,`physical click did not scroll ${before}->${after}`);
+          const r=await summary.boundingBox(); assert.ok(r);
+          assert.ok(r.y<617&&r.y+r.height>0,'summary must end inside viewport');
+          await b.close();
+          console.log('physical click reached current combined summary');
+          JS
+      - name: Commit verified target fix
+        run: |
+          rm -f package.json package-lock.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/pages/oil-visual-builder.js css/pages/oil-visual-builder.css index.html
+          git commit -m 'Make Current Production open current Layout Summary'
+          git push origin HEAD:main
