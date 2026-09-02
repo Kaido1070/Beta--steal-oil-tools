@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - '.github/workflows/compact-oil-editor-controls-v2.yml'
+      - '.github/scripts/compact_editor_patch.py'
 permissions:
   contents: write
 jobs:
