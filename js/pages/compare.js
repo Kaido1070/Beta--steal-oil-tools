@@ -116,3 +116,80 @@ $("#compareShare").onclick=()=>{const a=drills.find(d=>d.id===compareA)||drills[
 /* Initial Drill Compare render now belongs to this page module. */
 renderCompare();
 document.documentElement.dataset.stotComparePage=STOT_CONFIG.version;
+
+/* v5.97 Compare UI refresh — visual hints + compact controls, no observers. */
+(()=>{
+  if(window.__STOT_COMPARE_UI_V597__)return;
+  window.__STOT_COMPARE_UI_V597__=true;
+
+  const visualHTML=item=>{
+    if(!item)return '';
+    const name=I18N.itemName(item);
+    return item.image?`<img src="${item.image}" alt="${name}" loading="lazy">`:`<span>${initials(name)}</span>`;
+  };
+
+  const ensurePickerThumb=(selectId,thumbId)=>{
+    const select=$(selectId),label=select?.closest('label');
+    if(!select||!label)return;
+    let wrap=label.querySelector('.compare-picker-control');
+    if(!wrap){
+      wrap=document.createElement('div');
+      wrap.className='compare-picker-control';
+      const thumb=document.createElement('span');
+      thumb.className='compare-mini-thumb';
+      thumb.id=thumbId;
+      select.before(wrap);
+      wrap.append(thumb,select);
+    }
+  };
+
+  const ensureInlineIcon=(inputId,item,iconId)=>{
+    const input=$(inputId),label=input?.closest('.compare-control'),title=label?.querySelector(':scope > span');
+    if(!title||title.querySelector('.compare-inline-icon'))return;
+    const icon=document.createElement('i');
+    icon.className='compare-inline-icon';
+    icon.id=iconId;
+    icon.innerHTML=visualHTML(item);
+    title.prepend(icon);
+  };
+
+  const enhanceStatic=()=>{
+    ensurePickerThumb('#compareA','compareAThumb');
+    ensurePickerThumb('#compareB','compareBThumb');
+    ensureInlineIcon('#compareMole',pets.find(p=>p.id==='mole'),'compareMoleIcon');
+    ensureInlineIcon('#compareFruit',pets.find(p=>p.id==='fruit'),'compareFruitIcon');
+    ensureInlineIcon('#compareLikes',drills.find(d=>d.special==='heart'),'compareHeartIcon');
+
+    const counts=document.querySelector('#compareView .compare-count-panel');
+    const time=document.querySelector('#compareView .compare-time-panel');
+    if(counts&&time&&!counts.contains(time)){
+      counts.classList.add('compare-inputs-panel');
+      const head=counts.querySelector('.compare-setup-head');
+      const strong=head?.querySelector('strong'),small=head?.querySelector('span');
+      if(strong)strong.textContent='Counts & Time';
+      if(small)small.textContent='Per side + shared runtime';
+      time.classList.remove('panel');
+      time.classList.add('compare-time-inline');
+      counts.appendChild(time);
+    }
+  };
+
+  const syncVisuals=()=>{
+    const a=drills.find(d=>d.id===compareA)||drills[0];
+    const b=drills.find(d=>d.id===compareB)||drills[1];
+    const aThumb=document.getElementById('compareAThumb');
+    const bThumb=document.getElementById('compareBThumb');
+    if(aThumb)aThumb.innerHTML=visualHTML(a);
+    if(bThumb)bThumb.innerHTML=visualHTML(b);
+  };
+
+  enhanceStatic();
+  syncVisuals();
+  const baseRender=renderCompare;
+  renderCompare=function(){
+    const result=baseRender.apply(this,arguments);
+    enhanceStatic();
+    syncVisuals();
+    return result;
+  };
+})();
