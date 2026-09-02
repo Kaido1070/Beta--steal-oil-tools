@@ -23,3 +23,9 @@ body.v572-editor-open{overflow:hidden}.v572-editor-backdrop{position:fixed;inset
 /* v5.82 sticky target support */
 .v575-sticky-rate{z-index:2147483000!important}
 .v575-sticky-rate.show{pointer-events:auto!important}
+
+
+/* v5.83: neutral drill fill that works with every area color. */
+.v572-drill-block{border-color:rgba(157,205,255,.88)!important;background:linear-gradient(145deg,#286596,#173e67)!important;box-shadow:0 0 0 1px rgba(4,12,22,.80),0 0 8px rgba(42,112,170,.22)!important;color:#f7fbff!important}
+.v572-drill-block small{color:#d9edff!important;opacity:.9!important}
+.v572-drill-block b{color:#fff!important}

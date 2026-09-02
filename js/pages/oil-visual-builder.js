@@ -1,4 +1,4 @@
-/* STOT Oil visual plot builder — v5.75 */
+/* STOT Oil visual plot builder — v5.83 */
 (()=>{
   const AREA_CLASS={forest:'forest',desert:'desert','volcano-side':'volcano-side','volcano-core':'volcano-core','mountain-side':'mountain-side','mountain-summit':'mountain-summit'};
   const PLOT_DISPLAY_MAP={1:['forest','Forest',1],2:['forest','Forest',1],3:['forest','Forest',1],4:['forest','Forest',1],5:['forest','Forest',1],6:['forest','Forest',1],7:['desert','Desert',2],8:['desert','Desert',2],9:['desert','Desert',2],10:['volcano-side','Volcano Sides',3],11:['volcano-core','Volcano Core',5],12:['volcano-side','Volcano Sides',3],13:['mountain-side','Mountain Sides',6],14:['mountain-summit','Mountain Summit',10],15:['mountain-side','Mountain Sides',6]};
@@ -11,16 +11,48 @@
   function shortName(name){return String(name||'Drill').replace(/\s+Drill$/i,'')}
   function packVisual(plot){
     const pieces=[];let totalArea=0;
-    plot.rows.forEach((row,rowIndex)=>{const drill=drills.find(d=>d.id===row.drill);if(!drill)return;const [baseW,baseH]=fpSize(drill.footprint),count=Math.max(0,Math.floor(Number(row.count)||0));totalArea+=baseW*baseH*count;for(let instance=0;instance<count;instance++)pieces.push({row,rowIndex,drill,instance,baseW,baseH})});
+    plot.rows.forEach((row,rowIndex)=>{
+      const drill=drills.find(d=>d.id===row.drill);if(!drill)return;
+      const [baseW,baseH]=fpSize(drill.footprint),count=Math.max(0,Math.floor(Number(row.count)||0));
+      totalArea+=baseW*baseH*count;
+      for(let instance=0;instance<count;instance++)pieces.push({row,rowIndex,drill,instance,baseW,baseH,reserve:false});
+    });
+
+    const reserveMeta=window.STOT_REFINERY_RESERVE;
+    if(reserveMeta?.plotId===plot.id&&Array.isArray(reserveMeta.pieces)){
+      reserveMeta.pieces.forEach((dims,index)=>{
+        const baseW=Math.max(1,Number(dims?.[0])||1),baseH=Math.max(1,Number(dims?.[1])||1);
+        totalArea+=baseW*baseH;
+        pieces.push({reserve:true,reserveIndex:index,rowIndex:-1,baseW,baseH});
+      });
+    }
+
     if(totalArea>25)return null;
-    pieces.sort((a,b)=>(b.baseW*b.baseH)-(a.baseW*a.baseH)||Math.max(b.baseW,b.baseH)-Math.max(a.baseW,a.baseH)||a.rowIndex-b.rowIndex);
+    pieces.sort((a,b)=>(b.baseW*b.baseH)-(a.baseW*a.baseH)||Number(b.reserve)-Number(a.reserve)||Math.max(b.baseW,b.baseH)-Math.max(a.baseW,a.baseH)||a.rowIndex-b.rowIndex);
     const grid=Array(25).fill(false),placed=[];
     const fits=(w,h,x,y)=>{if(x+w>5||y+h>5)return false;for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(grid[yy*5+xx])return false;return true};
     const set=(w,h,x,y,value)=>{for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)grid[yy*5+xx]=value};
     const memo=new Set();
-    function dfs(i){if(i===pieces.length)return true;const key=i+':'+grid.map(v=>v?'1':'0').join('');if(memo.has(key))return false;const piece=pieces[i],orients=piece.baseW===piece.baseH?[[piece.baseW,piece.baseH]]:[[piece.baseW,piece.baseH],[piece.baseH,piece.baseW]];for(const [w,h] of orients){for(let y=0;y<=5-h;y++)for(let x=0;x<=5-w;x++){if(!fits(w,h,x,y))continue;set(w,h,x,y,true);placed[i]={...piece,x,y,w,h};if(dfs(i+1))return true;placed[i]=null;set(w,h,x,y,false)}}memo.add(key);return false}
-    return dfs(0)?placed.filter(Boolean):null;
+    function dfs(i){
+      if(i===pieces.length)return true;
+      const key=i+':'+grid.map(v=>v?'1':'0').join('');if(memo.has(key))return false;
+      const piece=pieces[i],orients=piece.baseW===piece.baseH?[[piece.baseW,piece.baseH]]:[[piece.baseW,piece.baseH],[piece.baseH,piece.baseW]];
+      for(const [w,h] of orients){
+        for(let y=0;y<=5-h;y++)for(let x=0;x<=5-w;x++){
+          if(!fits(w,h,x,y))continue;
+          set(w,h,x,y,true);placed[i]={...piece,x,y,w,h};
+          if(dfs(i+1))return true;
+          placed[i]=null;set(w,h,x,y,false);
+        }
+      }
+      memo.add(key);return false;
+    }
+    if(!dfs(0))return null;
+    // Reserved refinery pieces participate in packing but are intentionally not
+    // rendered. Their cells therefore stay visibly empty and contiguous.
+    return placed.filter(item=>item&&!item.reserve);
   }
+
   function gridCells(){return '<div class="v572-grid-cells">'+Array.from({length:25},()=>'<span></span>').join('')+'</div>'}
   function placementHtml(item){const name=shortName(item.drill.name),tier=TIER_OPTIONS[Number(item.row.tier)||0]?.name||'Basic',label=item.w*item.h===1?name.slice(0,7):name;return `<span class="v572-drill-block" style="grid-column:${item.x+1}/span ${item.w};grid-row:${item.y+1}/span ${item.h}" title="${esc(item.drill.name)} • ${tier} • ${item.w}×${item.h}"><b>${esc(label)}</b><small>${item.w}×${item.h}</small></span>`}
   function visualPlotHtml(plot){const number=plotNumber(plot),meta=displayMeta(plot),packed=packVisual(plot),used=pieceList(plot).area,valid=packed!==null,occupied=valid?packed.map(placementHtml).join(''):'';return `<button class="v572-plot-card ${areaClass(plot)}${selectedPlotId===plot.id?' selected':''}${valid?'':' invalid'}" data-visual-plot="${plot.id}" type="button" aria-label="Edit plot ${number}, ${esc(meta.areaName)}"><span class="v572-plot-head"><strong>${number} <em>${esc(meta.areaName)}</em></strong><i>×${meta.mult}</i></span><span class="v572-grid-stage">${gridCells()}<span class="v572-grid-placements">${occupied}</span>${valid?'':`<span class="v572-invalid-label">Doesn't fit</span>`}</span><span class="v572-plot-foot"><span>${used?`${used}/25 cells`:'Empty'}</span><span>${plot.rows.length?`${plot.rows.length} drill type${plot.rows.length===1?'':'s'}`:'Tap to build'}</span></span></button>`}
