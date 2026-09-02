@@ -1,4 +1,4 @@
-/* STOT Compare Presets live production bar v6.01 */
+/* STOT Compare Presets live production bar v6.02 */
 (() => {
   if (window.__STOT_COMPARE_PRESET_STICKY__) return;
   window.__STOT_COMPARE_PRESET_STICKY__ = true;
