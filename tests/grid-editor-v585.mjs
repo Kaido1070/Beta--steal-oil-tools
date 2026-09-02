@@ -39,7 +39,8 @@ await page.waitForTimeout(80);
 const afterTitle=await page.locator('.v572-editor-grid-preview [data-v585-piece^="r0i"]').first().getAttribute('title');
 if(beforeTitle===afterTitle)throw new Error('Rotate did not change Demonic orientation');
 
-// Separate sparse-layout move test.
+// Separate sparse-layout move test from a clean persisted state.
+await page.evaluate(()=>localStorage.clear());
 await page.reload({waitUntil:'networkidle'});
 await page.locator('.tabs button[data-view="oil"]').click();
 await page.waitForSelector('#layoutVisualBuilder');
@@ -47,7 +48,7 @@ const emptyCard=page.locator('#layoutVisualBuilder .v572-plot-card[data-visual-p
 await emptyCard.click();
 await page.waitForSelector('#v572PlotEditor.open');
 await page.locator('[data-vadd]').click();
-await page.waitForTimeout(80);
+await page.waitForSelector('.v572-editor-grid-preview [data-v585-piece="r0i0"]');
 let block=page.locator('.v572-editor-grid-preview [data-v585-piece="r0i0"]');
 await block.click();
 const beforeStyle=await block.getAttribute('style');
