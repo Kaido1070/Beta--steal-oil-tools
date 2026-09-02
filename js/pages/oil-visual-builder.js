@@ -44,6 +44,7 @@
     const rate=document.getElementById('layoutNowRate');
     const details=rate?.closest('.panel.result');
     if(!rate||!details)return null;
+    let navigatingToResult=false;
     details.id='layoutResultDetails';
     details.classList.add('v575-result-details');
     if(!bar){
@@ -55,6 +56,8 @@
       bar.innerHTML='<span><small>Current Production</small><strong data-v575-rate>0/s</strong></span><i>Details ↓</i>';
       document.body.appendChild(bar);
       bar.addEventListener('click',()=>{
+        navigatingToResult=true;
+        bar.classList.remove('show');
         details.scrollIntoView({behavior:'smooth',block:'center'});
         details.classList.remove('v575-result-focus');
         requestAnimationFrame(()=>details.classList.add('v575-result-focus'));
@@ -64,7 +67,10 @@
     const sync=()=>{
       const out=bar.querySelector('[data-v575-rate]');
       if(out)out.textContent=rate.textContent?.trim()||'0/s';
-      bar.classList.toggle('show',document.getElementById('oilView')?.classList.contains('active')===true);
+      const oilActive=document.getElementById('oilView')?.classList.contains('active')===true;
+      const beforeResult=details.getBoundingClientRect().top>window.innerHeight-36;
+      if(!beforeResult)navigatingToResult=false;
+      bar.classList.toggle('show',oilActive&&beforeResult&&!navigatingToResult);
     };
     sync();
     if(!bar.dataset.bound){
@@ -72,9 +78,12 @@
       new MutationObserver(sync).observe(rate,{childList:true,characterData:true,subtree:true});
       new MutationObserver(sync).observe(document.getElementById('oilView'),{attributes:true,attributeFilter:['class']});
       document.addEventListener('click',e=>{if(e.target.closest?.('[data-view]'))queueMicrotask(sync)});
+      window.addEventListener('scroll',sync,{passive:true});
+      window.addEventListener('resize',sync,{passive:true});
     }
     return bar;
   }
+
 
   window.STOT_VISUAL_PLOT_BUILDER=Object.freeze({render:renderVisualBuilder,open:openVisualPlotEditor,close:closeVisualPlotEditor,pack:packVisual});document.documentElement.dataset.stotVisualBuilder=STOT_CONFIG.version;ensureStickyRate();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',renderVisualBuilder,{once:true});else renderVisualBuilder();
 })();
