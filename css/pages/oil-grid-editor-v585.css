@@ -10,3 +10,19 @@
 .v585-grid-status{margin-top:6px;min-height:14px;color:#8e99ab;font-size:8px;line-height:1.35}.v585-grid-status.ok{color:#84dfaa}.v585-grid-status.bad{color:#ff929d}.v585-grid-status.warn{color:#ffd277}
 .v585-reserve-warning{position:absolute;left:50%;bottom:6px;z-index:7;transform:translateX(-50%);max-width:calc(100% - 12px);padding:4px 6px;border:1px solid rgba(255,189,79,.46);border-radius:7px;background:rgba(54,34,7,.92);color:#ffd893;font-size:7px;font-weight:850;line-height:1.15;text-align:center;white-space:nowrap;pointer-events:none}
 @media(max-width:520px){.v585-grid-tools{margin-bottom:9px}.v585-grid-actions button{min-height:36px}.v585-grid-help span{font-size:8px}.v585-reserve-warning{font-size:6.5px}}
+
+/* v5.86: keep the last editor controls scrollable above Current Production. */
+.v572-editor-sheet{scroll-padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+.v572-editor-backdrop.open #v572EditorBody{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+@supports selector(body:has(#v575StickyRate.show)){
+  .v572-editor-backdrop.open #v572EditorBody{padding-bottom:15px}
+  body:has(#v575StickyRate.show) .v572-editor-backdrop.open #v572EditorBody{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+}
+@media(max-width:520px){
+  .v572-editor-sheet{scroll-padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+  .v572-editor-backdrop.open #v572EditorBody{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+  @supports selector(body:has(#v575StickyRate.show)){
+    .v572-editor-backdrop.open #v572EditorBody{padding-bottom:15px}
+    body:has(#v575StickyRate.show) .v572-editor-backdrop.open #v572EditorBody{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+  }
+}
