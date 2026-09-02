@@ -1,0 +1,192 @@
+name: Compact Oil Editor Controls
+on:
+  push:
+    paths:
+      - '.github/workflows/compact-oil-editor-controls.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Add compact rows and directional controls
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          js=Path('js/pages/oil-grid-editor-v585.js')
+          s=js.read_text(encoding='utf-8')
+
+          anchor="""  function rotateSelected(){
+    const plot=selectedPlot();if(!plot)return;
+"""
+          insert="""  function moveSelectedBy(dx,dy){
+    const plot=selectedPlot();if(!plot)return;
+    const state=getState(plot),key=state.selected;
+    if(!key){status('Select a drill first.','bad');return;}
+    const item=currentItem(plot,key);if(!item)return;
+    const target={x:item.x+dx,y:item.y+dy,w:item.w,h:item.h};
+    if(target.x<0||target.y<0||target.x+target.w>GRID||target.y+target.h>GRID){status('That direction is outside the 5×5 plot.','bad');return;}
+    applyAnchor(plot,key,target);
+  }
+
+  function rotateSelected(){
+    const plot=selectedPlot();if(!plot)return;
+"""
+          if 'function moveSelectedBy(dx,dy)' not in s:
+              if anchor not in s: raise SystemExit('rotateSelected anchor not found')
+              s=s.replace(anchor,insert,1)
+
+          old="""      tools.innerHTML=`<div class=\"v585-grid-help\"><strong>Arrange drills</strong><span>Drag a drill, or tap it then tap a grid cell. Rotate keeps the same drill and production.</span></div><div class=\"v585-grid-actions\"><button type=\"button\" data-v585-rotate>↻ Rotate 90°</button><button type=\"button\" data-v585-auto>Auto Arrange</button></div><div class=\"v585-grid-status\" data-v585-status>Select a drill to move or rotate it.</div>`;
+      preview.insertAdjacentElement('afterend',tools);
+      tools.querySelector('[data-v585-rotate]').onclick=rotateSelected;
+      tools.querySelector('[data-v585-auto]').onclick=autoArrange;
+"""
+          new="""      tools.innerHTML=`<div class=\"v585-grid-help\"><strong>Drill Controls</strong><span>Select a drill, then move it one cell at a time.</span></div><div class=\"v585-control-row\"><div class=\"v585-dpad\" aria-label=\"Move selected drill\"><button type=\"button\" data-v585-move=\"0,-1\" aria-label=\"Move up\">↑</button><button type=\"button\" data-v585-move=\"-1,0\" aria-label=\"Move left\">←</button><span aria-hidden=\"true\">•</span><button type=\"button\" data-v585-move=\"1,0\" aria-label=\"Move right\">→</button><button type=\"button\" data-v585-move=\"0,1\" aria-label=\"Move down\">↓</button></div><div class=\"v585-side-actions\"><button type=\"button\" data-v585-rotate>↻ Rotate</button><button type=\"button\" data-v585-auto>Auto Arrange</button></div></div><div class=\"v585-grid-status\" data-v585-status>Tap a drill to control it.</div>`;
+      preview.insertAdjacentElement('afterend',tools);
+      tools.querySelectorAll('[data-v585-move]').forEach(btn=>btn.onclick=()=>{const [dx,dy]=btn.dataset.v585Move.split(',').map(Number);moveSelectedBy(dx,dy)});
+      tools.querySelector('[data-v585-rotate]').onclick=rotateSelected;
+      tools.querySelector('[data-v585-auto]').onclick=autoArrange;
+"""
+          if 'class=\"v585-dpad\"' not in s:
+              if old not in s: raise SystemExit('tools block not found')
+              s=s.replace(old,new,1)
+
+          old2="""    const state=getState(plot);
+    tools.querySelector('[data-v585-rotate]').disabled=!state.selected;
+"""
+          new2="""    const state=getState(plot),item=state.selected?currentItem(plot,state.selected):null;
+    tools.querySelector('[data-v585-rotate]').disabled=!item;
+    tools.querySelectorAll('[data-v585-move]').forEach(btn=>{
+      const [dx,dy]=btn.dataset.v585Move.split(',').map(Number);
+      btn.disabled=!item||item.x+dx<0||item.y+dy<0||item.x+dx+item.w>GRID||item.y+dy+item.h>GRID;
+    });
+"""
+          if old2 in s:
+              s=s.replace(old2,new2,1)
+          elif 'tools.querySelectorAll(\'[data-v585-move]\')' not in s:
+              raise SystemExit('disabled state block not found')
+
+          s=s.replace("status('Selected. Drag it, tap a destination cell, or rotate it.');","status('Selected. Use the arrows, drag it, or tap a destination cell.');")
+          s=s.replace("status('Selected. Use Rotate or tap a destination cell.');","status('Selected. Use the arrows, Rotate, or tap a destination cell.');")
+          js.write_text(s,encoding='utf-8')
+
+          css=Path('css/pages/oil-grid-editor-v585.css')
+          c=css.read_text(encoding='utf-8')
+          marker='/* v5.88: compact mobile drill rows + directional controls. */'
+          if marker not in c:
+              c += r'''
+
+/* v5.88: compact mobile drill rows + directional controls. */
+.v585-control-row{display:grid;grid-template-columns:112px minmax(0,1fr);gap:8px;align-items:center;margin-top:7px}
+.v585-dpad{display:grid;grid-template-columns:repeat(3,34px);grid-template-rows:repeat(3,34px);gap:3px;justify-content:center;align-items:center}
+.v585-dpad button,.v585-side-actions button{border:1px solid rgba(255,255,255,.11);border-radius:9px;background:#171d2b;color:#eef2fb;font-weight:900}
+.v585-dpad button{width:34px;height:34px;padding:0;font-size:18px;line-height:1}
+.v585-dpad button[data-v585-move="0,-1"]{grid-column:2;grid-row:1}
+.v585-dpad button[data-v585-move="-1,0"]{grid-column:1;grid-row:2}
+.v585-dpad>span{grid-column:2;grid-row:2;display:grid;place-items:center;color:#7251aa;font-size:14px}
+.v585-dpad button[data-v585-move="1,0"]{grid-column:3;grid-row:2}
+.v585-dpad button[data-v585-move="0,1"]{grid-column:2;grid-row:3}
+.v585-dpad button:disabled,.v585-side-actions button:disabled{opacity:.32}
+.v585-side-actions{display:grid;grid-template-rows:1fr 1fr;gap:6px;height:108px}
+.v585-side-actions button{min-height:0;padding:6px 8px;font-size:9px}
+
+@media(max-width:520px){
+  .v585-grid-tools{padding:7px;margin:-4px auto 7px;border-radius:10px}
+  .v585-grid-help{grid-template-columns:auto minmax(0,1fr);align-items:center;gap:7px}
+  .v585-grid-help strong{font-size:9px;white-space:nowrap}
+  .v585-grid-help span{font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .v585-control-row{grid-template-columns:102px minmax(0,1fr);gap:6px;margin-top:5px}
+  .v585-dpad{grid-template-columns:repeat(3,30px);grid-template-rows:repeat(3,30px);gap:2px}
+  .v585-dpad button{width:30px;height:30px;border-radius:8px;font-size:16px}
+  .v585-side-actions{height:94px;gap:5px}
+  .v585-side-actions button{font-size:8px;border-radius:8px}
+  .v585-grid-status{min-height:10px;margin-top:3px;font-size:7px}
+
+  .v572-editor-rows{gap:6px}
+  .v572-editor-row{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr) 54px;gap:5px;align-items:end;padding:7px;border-radius:10px}
+  .v572-editor-row>label:first-child{grid-column:1;margin:0}
+  .v572-editor-row>.v572-row-two{display:contents}
+  .v572-editor-row>.v572-row-two>label:first-child{grid-column:2;margin:0}
+  .v572-editor-row>.v572-row-two>label:last-child{grid-column:3;margin:0}
+  .v572-editor-row label{gap:2px;margin:0}
+  .v572-editor-row label>span{font-size:7px;line-height:1}
+  .v572-editor-row select,.v572-editor-row input{min-height:33px;height:33px;padding:4px 6px;border-radius:8px;font-size:10px}
+  .v572-editor-row>label:not(:first-child){grid-column:1/-1}
+  .v572-row-meta{grid-column:1/3;margin:0;min-height:25px;align-items:center;font-size:7px}
+  .v572-row-meta span{display:none}
+  .v572-row-meta b{font-size:7px;white-space:nowrap}
+  .v572-remove-row{grid-column:3;min-height:25px;height:25px;margin:0;border-radius:7px;font-size:8px;padding:0 4px}
+  .v572-editor-actions{gap:5px;margin-top:7px}
+  .v572-editor-actions button{min-height:34px;font-size:9px;border-radius:8px}
+}
+'''
+          css.write_text(c,encoding='utf-8')
+          PY
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify compact editor and arrow movement
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0 >/dev/null 2>&1
+          npx playwright install chromium >/dev/null 2>&1
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && break; sleep 1; done
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {chromium} from 'playwright';
+          const b=await chromium.launch({headless:true});
+          const p=await b.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+          await p.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
+          await p.locator('.tabs button[data-view="oil"]').click();
+          await p.waitForTimeout(500);
+          const first=p.locator('.v572-plot-card[data-visual-plot]').first();
+          await first.click();
+          await p.waitForTimeout(250);
+          await p.locator('[data-vadd]').click();
+          await p.waitForTimeout(500);
+
+          const row=p.locator('.v572-editor-row').first();
+          const rowBox=await row.boundingBox(); assert.ok(rowBox,'compact drill row missing');
+          assert.ok(rowBox.height<105,`drill row still too tall: ${rowBox.height}`);
+
+          const arrows=p.locator('#v585GridTools [data-v585-move]');
+          assert.equal(await arrows.count(),4,'expected four directional controls');
+          assert.equal(await p.locator('#v585GridTools [data-v585-rotate]').count(),1,'rotate button missing');
+
+          const drill=p.locator('.v572-editor-grid-preview [data-v585-piece]').first();
+          await drill.click();
+          await p.waitForTimeout(150);
+          const selected=p.locator('.v572-editor-grid-preview [data-v585-piece].selected');
+          assert.equal(await selected.count(),1,'drill was not selected');
+          const before=await selected.evaluate(el=>getComputedStyle(el).gridColumnStart);
+          const right=p.locator('#v585GridTools [data-v585-move="1,0"]');
+          assert.equal(await right.isDisabled(),false,'right arrow should be available on initial placement');
+          await right.click();
+          await p.waitForTimeout(250);
+          const after=await p.locator('.v572-editor-grid-preview [data-v585-piece].selected').evaluate(el=>getComputedStyle(el).gridColumnStart);
+          assert.notEqual(after,before,`right arrow did not move the drill: ${before} -> ${after}`);
+
+          const toolsBox=await p.locator('#v585GridTools').boundingBox(); assert.ok(toolsBox);
+          assert.ok(toolsBox.height<145,`controls are too tall: ${toolsBox.height}`);
+          await b.close();
+          console.log(`compact row ${rowBox.height}px; controls ${toolsBox.height}px; move ${before}->${after}`);
+          JS
+
+      - name: Commit verified compact editor
+        run: |
+          rm -f package.json package-lock.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898272+github-actions[bot]@users.noreply.github.com'
+          git add js/pages/oil-grid-editor-v585.js css/pages/oil-grid-editor-v585.css
+          git commit -m 'Compact drill editor and add directional controls'
+          git push origin HEAD:main
