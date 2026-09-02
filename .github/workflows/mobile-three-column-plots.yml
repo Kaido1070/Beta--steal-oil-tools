@@ -83,3 +83,5 @@ jobs:
           git add css/pages/oil-visual-builder.css index.html
           git commit -m 'Keep visual plots three columns on mobile v5.86'
           git push origin HEAD:main
+
+# rerun 2026-09-02
