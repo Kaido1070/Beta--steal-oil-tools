@@ -1,4 +1,4 @@
-/* STOT Compare Presets live production bar v6.06 */
+/* STOT Compare Presets live production bar v6.07 */
 (() => {
   if (window.__STOT_COMPARE_PRESET_STICKY__) return;
   window.__STOT_COMPARE_PRESET_STICKY__ = true;
@@ -103,6 +103,24 @@
       color:#fff!important;
       box-shadow:inset 0 0 0 1px rgba(190,133,255,.55)!important;
     }
+
+    /* v6.07: keep Run Time compact and show the hour unit inside the value box. */
+    #layoutcompareView #layoutTimePane>.field{position:relative!important}
+    #layoutcompareView #layoutTimePane>.field .labels small{display:none!important}
+    #layoutcompareView #layoutTimePane #layoutHours{padding-right:30px!important}
+    #layoutcompareView #layoutTimePane>.field::after{
+      content:'h';
+      position:absolute;
+      right:22px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#9ea8bc;
+      font-size:14px;
+      font-weight:850;
+      line-height:1;
+      pointer-events:none;
+    }
+
     @media(max-width:430px){
       #v601CompareSticky{width:calc(100vw - 24px);gap:6px;padding-left:8px}
       #v601CompareSticky .v601-side{display:grid;gap:2px}
@@ -111,6 +129,7 @@
       #layoutcompareView #layoutTargetPane .target-box{grid-template-columns:minmax(80px,1fr) 58px auto!important;gap:6px!important;padding:8px 9px!important}
       #layoutcompareView #layoutTargetPane #layoutTarget{width:58px!important;min-width:58px!important}
       #layoutcompareView #layoutTargetPane #layoutTargetUnits .chip{width:28px!important;min-width:28px!important;font-size:11px!important}
+      #layoutcompareView #layoutTimePane>.field::after{right:19px;font-size:13px}
     }
   `;
   document.head.appendChild(style);
