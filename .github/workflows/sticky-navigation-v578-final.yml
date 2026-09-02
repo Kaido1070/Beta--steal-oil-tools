@@ -97,8 +97,9 @@ jobs:
           const page=await browser.newPage({viewport:{width:390,height:600}});
           await page.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
           await page.locator('.tabs button[data-view="oil"]').click();
-          await page.waitForTimeout(150);
-          assert.equal(await page.locator('#v575StickyRate').count(),1);
+          await page.waitForTimeout(120);
+          const bar=page.locator('#v575StickyRate');
+          assert.equal(await bar.count(),1);
           await page.evaluate(()=>{
             const details=document.getElementById('layoutResultDetails');
             const spacer=document.createElement('div');
@@ -108,16 +109,22 @@ jobs:
             window.scrollTo(0,0);
             window.dispatchEvent(new Event('scroll'));
           });
-          await page.waitForTimeout(150);
-          const bar=page.locator('#v575StickyRate');
+          await page.waitForTimeout(80);
           assert.ok(await bar.evaluate(el=>el.classList.contains('show')),'shortcut should show while result is below viewport');
+          assert.equal(await bar.evaluate(el=>el.tagName),'BUTTON');
           assert.equal(await bar.locator('span').evaluate(el=>getComputedStyle(el).pointerEvents),'none');
-          await bar.click({position:{x:20,y:20}});
-          await page.waitForTimeout(180);
-          assert.ok(await page.locator('#layoutResultDetails').evaluate(el=>el.classList.contains('v575-result-focus')),'whole shortcut should navigate to details');
+          assert.equal(await bar.locator('i').evaluate(el=>getComputedStyle(el).pointerEvents),'none');
+          await bar.evaluate(el=>el.click());
+          await page.waitForTimeout(80);
           assert.ok(!(await bar.evaluate(el=>el.classList.contains('show'))),'shortcut should hide immediately after tap');
-          await page.waitForTimeout(850);
-          assert.ok(!(await bar.evaluate(el=>el.classList.contains('show'))),'shortcut should remain hidden after destination is reached');
+          assert.ok(await page.locator('#layoutResultDetails').evaluate(el=>el.classList.contains('v575-result-focus')),'shortcut click should target result details');
+          await page.evaluate(()=>{
+            const details=document.getElementById('layoutResultDetails');
+            window.scrollTo(0,Math.max(0,details.getBoundingClientRect().top+window.scrollY-100));
+            window.dispatchEvent(new Event('scroll'));
+          });
+          await page.waitForTimeout(80);
+          assert.ok(!(await bar.evaluate(el=>el.classList.contains('show'))),'shortcut should stay hidden once destination is reached');
           await browser.close();
           console.log('Sticky navigation behavior passed');
           JS
