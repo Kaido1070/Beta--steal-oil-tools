@@ -210,6 +210,16 @@
     applyAnchor(plot,key,{x:cell.x,y:cell.y,w:item.w,h:item.h});
   }
 
+  function moveSelectedBy(dx,dy){
+    const plot=selectedPlot();if(!plot)return;
+    const state=getState(plot),key=state.selected;
+    if(!key){status('Select a drill first.','bad');return;}
+    const item=currentItem(plot,key);if(!item)return;
+    const target={x:item.x+dx,y:item.y+dy,w:item.w,h:item.h};
+    if(target.x<0||target.y<0||target.x+target.w>GRID||target.y+target.h>GRID){status('That direction is outside the 5×5 plot.','bad');return;}
+    applyAnchor(plot,key,target);
+  }
+
   function rotateSelected(){
     const plot=selectedPlot();if(!plot)return;
     const state=getState(plot),key=state.selected;if(!key){status('Select a drill first.','bad');return;}
@@ -240,13 +250,18 @@
     let tools=document.getElementById('v585GridTools');
     if(!tools){
       tools=document.createElement('div');tools.id='v585GridTools';tools.className='v585-grid-tools';
-      tools.innerHTML=`<div class="v585-grid-help"><strong>Arrange drills</strong><span>Drag a drill, or tap it then tap a grid cell. Rotate keeps the same drill and production.</span></div><div class="v585-grid-actions"><button type="button" data-v585-rotate>↻ Rotate 90°</button><button type="button" data-v585-auto>Auto Arrange</button></div><div class="v585-grid-status" data-v585-status>Select a drill to move or rotate it.</div>`;
+      tools.innerHTML=`<div class="v585-grid-help"><strong>Drill Controls</strong><span>Select a drill, then move it one cell at a time.</span></div><div class="v585-control-row"><div class="v585-dpad" aria-label="Move selected drill"><button type="button" data-v585-move="0,-1" aria-label="Move up">↑</button><button type="button" data-v585-move="-1,0" aria-label="Move left">←</button><span aria-hidden="true">•</span><button type="button" data-v585-move="1,0" aria-label="Move right">→</button><button type="button" data-v585-move="0,1" aria-label="Move down">↓</button></div><div class="v585-side-actions"><button type="button" data-v585-rotate>↻ Rotate</button><button type="button" data-v585-auto>Auto Arrange</button></div></div><div class="v585-grid-status" data-v585-status>Tap a drill to control it.</div>`;
       preview.insertAdjacentElement('afterend',tools);
+      tools.querySelectorAll('[data-v585-move]').forEach(btn=>btn.onclick=()=>{const [dx,dy]=btn.dataset.v585Move.split(',').map(Number);moveSelectedBy(dx,dy)});
       tools.querySelector('[data-v585-rotate]').onclick=rotateSelected;
       tools.querySelector('[data-v585-auto]').onclick=autoArrange;
     }
-    const state=getState(plot);
-    tools.querySelector('[data-v585-rotate]').disabled=!state.selected;
+    const state=getState(plot),item=state.selected?currentItem(plot,state.selected):null;
+    tools.querySelector('[data-v585-rotate]').disabled=!item;
+    tools.querySelectorAll('[data-v585-move]').forEach(btn=>{
+      const [dx,dy]=btn.dataset.v585Move.split(',').map(Number);
+      btn.disabled=!item||item.x+dx<0||item.y+dy<0||item.x+dx+item.w>GRID||item.y+dy+item.h>GRID;
+    });
   }
 
   function bindEditor(){
@@ -259,7 +274,7 @@
       const current=selectedPlot();if(!current)return;
       const state=getState(current),block=e.target.closest('[data-v585-piece]');
       if(block){
-        state.selected=block.dataset.v585Piece;status('Selected. Drag it, tap a destination cell, or rotate it.');schedule();return;
+        state.selected=block.dataset.v585Piece;status('Selected. Use the arrows, drag it, or tap a destination cell.');schedule();return;
       }
       if(state.selected)moveSelectedToPoint(preview,e.clientX,e.clientY);
     });
@@ -279,7 +294,7 @@
     });
     preview.addEventListener('keydown',e=>{
       const block=e.target.closest('[data-v585-piece]');if(!block)return;
-      if(e.key==='Enter'||e.key===' '){const current=selectedPlot();if(!current)return;getState(current).selected=block.dataset.v585Piece;e.preventDefault();status('Selected. Use Rotate or tap a destination cell.');schedule();}
+      if(e.key==='Enter'||e.key===' '){const current=selectedPlot();if(!current)return;getState(current).selected=block.dataset.v585Piece;e.preventDefault();status('Selected. Use the arrows, Rotate, or tap a destination cell.');schedule();}
     });
   }
 
