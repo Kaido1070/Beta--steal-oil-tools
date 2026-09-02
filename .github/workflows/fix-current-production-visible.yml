@@ -1,0 +1,70 @@
+name: Fix Missing Current Production Card
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-current-production-visible.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Patch sticky card against current UI
+        env:
+          NEWFUNC: ICBmdW5jdGlvbiBlbnN1cmVTdGlja3lSYXRlKCl7CiAgICBjb25zdCBvaWxWaWV3PWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdvaWxWaWV3Jyk7CiAgICBpZighb2lsVmlldylyZXR1cm4gbnVsbDsKICAgIGxldCBiYXI9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Y1NzVTdGlja3lSYXRlJyk7CiAgICBsZXQgbmF2aWdhdGluZ1RvUmVzdWx0PWZhbHNlOwogICAgY29uc3QgZ2V0UmF0ZT0oKT0+ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Y1Nk5vdycpfHxkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbGF5b3V0Tm93UmF0ZScpOwogICAgY29uc3QgaXNWaXNpYmxlPWVsPT57CiAgICAgIGlmKCFlbClyZXR1cm4gZmFsc2U7CiAgICAgIGNvbnN0IGNzPWdldENvbXB1dGVkU3R5bGUoZWwpOwogICAgICBpZihjcy5kaXNwbGF5PT09J25vbmUnfHxjcy52aXNpYmlsaXR5PT09J2hpZGRlbid8fE51bWJlcihjcy5vcGFjaXR5KT09PTApcmV0dXJuIGZhbHNlOwogICAgICBjb25zdCByPWVsLmdldEJvdW5kaW5nQ2xpZW50UmVjdCgpOwogICAgICByZXR1cm4gci53aWR0aD4wJiZyLmhlaWdodD4wOwogICAgfTsKICAgIGNvbnN0IGdldFRhcmdldD0oKT0+ewogICAgICBjb25zdCB2NTY9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Y1Nk5vdycpPy5jbG9zZXN0KCcudjU2LXN1bW1hcnknKTsKICAgICAgaWYoaXNWaXNpYmxlKHY1NikpcmV0dXJuIHY1NjsKICAgICAgY29uc3QgbGVnYWN5PWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdsYXlvdXROb3dSYXRlJyk/LmNsb3Nlc3QoJy5wYW5lbC5yZXN1bHQnKTsKICAgICAgaWYoaXNWaXNpYmxlKGxlZ2FjeSkpcmV0dXJuIGxlZ2FjeTsKICAgICAgcmV0dXJuIG51bGw7CiAgICB9OwogICAgaWYoIWJhcil7CiAgICAgIGJhcj1kb2N1bWVudC5jcmVhdGVFbGVtZW50KCdidXR0b24nKTsKICAgICAgYmFyLmlkPSd2NTc1U3RpY2t5UmF0ZSc7CiAgICAgIGJhci5jbGFzc05hbWU9J3Y1NzUtc3RpY2t5LXJhdGUnOwogICAgICBiYXIudHlwZT0nYnV0dG9uJzsKICAgICAgYmFyLnNldEF0dHJpYnV0ZSgnYXJpYS1sYWJlbCcsJ0N1cnJlbnQgb2lsIHByb2R1Y3Rpb24uIFRhcCB0byB2aWV3IGRldGFpbHMuJyk7CiAgICAgIGJhci5pbm5lckhUTUw9JzxzcGFuPjxzbWFsbD5DdXJyZW50IFByb2R1Y3Rpb248L3NtYWxsPjxzdHJvbmcgZGF0YS12NTc1LXJhdGU+MC9zPC9zdHJvbmc+PC9zcGFuPjxpPkRldGFpbHMg4oaTPC9pPic7CiAgICAgIGRvY3VtZW50LmJvZHkuYXBwZW5kQ2hpbGQoYmFyKTsKICAgICAgYmFyLmFkZEV2ZW50TGlzdGVuZXIoJ2NsaWNrJywoKT0+ewogICAgICAgIGNvbnN0IHRhcmdldD1nZXRUYXJnZXQoKTsKICAgICAgICBpZighdGFyZ2V0KXJldHVybjsKICAgICAgICBuYXZpZ2F0aW5nVG9SZXN1bHQ9dHJ1ZTsKICAgICAgICBiYXIuY2xhc3NMaXN0LnJlbW92ZSgnc2hvdycpOwogICAgICAgIHRhcmdldC5jbGFzc0xpc3QuYWRkKCd2NTc1LXJlc3VsdC1kZXRhaWxzJyk7CiAgICAgICAgdGFyZ2V0LnNjcm9sbEludG9WaWV3KHtiZWhhdmlvcjonc21vb3RoJyxibG9jazonY2VudGVyJ30pOwogICAgICAgIHRhcmdldC5jbGFzc0xpc3QucmVtb3ZlKCd2NTc1LXJlc3VsdC1mb2N1cycpOwogICAgICAgIHJlcXVlc3RBbmltYXRpb25GcmFtZSgoKT0+dGFyZ2V0LmNsYXNzTGlzdC5hZGQoJ3Y1NzUtcmVzdWx0LWZvY3VzJykpOwogICAgICAgIHNldFRpbWVvdXQoKCk9PnRhcmdldC5jbGFzc0xpc3QucmVtb3ZlKCd2NTc1LXJlc3VsdC1mb2N1cycpLDkwMCk7CiAgICAgIH0pOwogICAgfQogICAgY29uc3Qgc3luYz0oKT0+ewogICAgICBjb25zdCByYXRlPWdldFJhdGUoKTsKICAgICAgY29uc3Qgb3V0PWJhci5xdWVyeVNlbGVjdG9yKCdbZGF0YS12NTc1LXJhdGVdJyk7CiAgICAgIGlmKG91dClvdXQudGV4dENvbnRlbnQ9cmF0ZT8udGV4dENvbnRlbnQ/LnRyaW0oKXx8JzAvcyc7CiAgICAgIGNvbnN0IG9pbEFjdGl2ZT1vaWxWaWV3LmNsYXNzTGlzdC5jb250YWlucygnYWN0aXZlJyk7CiAgICAgIGNvbnN0IHRhcmdldD1nZXRUYXJnZXQoKTsKICAgICAgbGV0IHRhcmdldE9uU2NyZWVuPWZhbHNlOwogICAgICBpZih0YXJnZXQpewogICAgICAgIGNvbnN0IHI9dGFyZ2V0LmdldEJvdW5kaW5nQ2xpZW50UmVjdCgpOwogICAgICAgIHRhcmdldE9uU2NyZWVuPXIuYm90dG9tPjY0JiZyLnRvcDx3aW5kb3cuaW5uZXJIZWlnaHQtNDA7CiAgICAgIH0KICAgICAgaWYoIXRhcmdldE9uU2NyZWVuKW5hdmlnYXRpbmdUb1Jlc3VsdD1mYWxzZTsKICAgICAgYmFyLmNsYXNzTGlzdC50b2dnbGUoJ3Nob3cnLG9pbEFjdGl2ZSYmIXRhcmdldE9uU2NyZWVuJiYhbmF2aWdhdGluZ1RvUmVzdWx0KTsKICAgIH07CiAgICBzeW5jKCk7CiAgICBpZighYmFyLmRhdGFzZXQuYm91bmQpewogICAgICBiYXIuZGF0YXNldC5ib3VuZD0nMSc7CiAgICAgIG5ldyBNdXRhdGlvbk9ic2VydmVyKHN5bmMpLm9ic2VydmUob2lsVmlldyx7YXR0cmlidXRlczp0cnVlLGF0dHJpYnV0ZUZpbHRlcjpbJ2NsYXNzJ10sY2hpbGRMaXN0OnRydWUsc3VidHJlZTp0cnVlLGNoYXJhY3RlckRhdGE6dHJ1ZX0pOwogICAgICBkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsZT0+e2lmKGUudGFyZ2V0LmNsb3Nlc3Q/LignW2RhdGEtdmlld10nKSlzZXRUaW1lb3V0KHN5bmMsMCl9KTsKICAgICAgd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoJ3Njcm9sbCcsc3luYyx7cGFzc2l2ZTp0cnVlfSk7CiAgICAgIHdpbmRvdy5hZGRFdmVudExpc3RlbmVyKCdyZXNpemUnLHN5bmMse3Bhc3NpdmU6dHJ1ZX0pOwogICAgICBzZXRUaW1lb3V0KHN5bmMsMCk7CiAgICAgIHNldFRpbWVvdXQoc3luYywyNTApOwogICAgfQogICAgcmV0dXJuIGJhcjsKICB9Cg==
+        run: |
+          python3 - <<'PY'
+          import os,base64
+          from pathlib import Path
+          p=Path('js/pages/oil-visual-builder.js')
+          s=p.read_text(encoding='utf-8')
+          a=s.index('  function ensureStickyRate(){')
+          b=s.index('\n\n  window.STOT_VISUAL_PLOT_BUILDER',a)
+          s=s[:a]+base64.b64decode(os.environ['NEWFUNC']).decode()+s[b:]
+          p.write_text(s,encoding='utf-8')
+          idx=Path('index.html')
+          h=idx.read_text(encoding='utf-8')
+          import re
+          h=re.sub(r'oil-visual-builder\.css\?v=[0-9.]+','oil-visual-builder.css?v=5.81',h)
+          h=re.sub(r'oil-visual-builder\.js\?v=[0-9.]+','oil-visual-builder.js?v=5.81',h)
+          idx.write_text(h,encoding='utf-8')
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test the actual current page
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium
+          python3 -m http.server 4173 >/tmp/http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && break; sleep 1; done
+          node --input-type=module - <<'JS'
+          import assert from 'node:assert/strict';
+          import {chromium} from 'playwright';
+          const b=await chromium.launch({headless:true});
+          const p=await b.newPage({viewport:{width:775,height:617}});
+          await p.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
+          await p.locator('.tabs button[data-view="oil"]').click();
+          await p.waitForTimeout(500);
+          const bar=p.locator('#v575StickyRate');
+          assert.equal(await bar.count(),1,'card must exist');
+          assert.ok(await bar.evaluate(el=>el.classList.contains('show')),'card must be visible at top of current Oil / Hour page');
+          const box=await bar.boundingBox();
+          assert.ok(box&&box.height>20&&box.y<617,'card must render on screen');
+          await b.close();
+          console.log('Current Production card is visible on actual current Oil / Hour UI');
+          JS
+      - name: Commit verified fix
+        run: |
+          rm -f package.json package-lock.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/pages/oil-visual-builder.js index.html
+          git commit -m 'Restore Current Production card on current Oil UI'
+          git push origin HEAD:main
