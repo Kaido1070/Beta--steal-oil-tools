@@ -17,15 +17,18 @@ const result=await page.evaluate(()=>{
     return false;
   }
   const tests=[];
-  layoutPlots[0].rows=[{drill:'banana',tier:0,count:5,hacker:550},{drill:'clock',tier:0,count:9,hacker:550}];
+  // Screenshot case: 4 Banana (4 cells each) + 5 Clock (1 cell each) = 21/25.
+  layoutPlots[0].rows=[{drill:'banana',tier:0,count:4,hacker:550},{drill:'clock',tier:0,count:5,hacker:550}];
   const p1=api.pack(layoutPlots[0]);tests.push({area:pieceList(layoutPlots[0]).area,reserve:has2x2(p1)});
+  // Screenshot case: 3 Demonic (6 cells each) + 1 Clock = 19/25.
   layoutPlots[0].rows=[{drill:'demonic',tier:0,count:3,hacker:550},{drill:'clock',tier:0,count:1,hacker:550}];
   const p2=api.pack(layoutPlots[0]);tests.push({area:pieceList(layoutPlots[0]).area,reserve:has2x2(p2)});
   layoutPlots[0].rows=original;
   return tests;
 });
 
-assert.ok(result[0].area<=21 && result[0].reserve,JSON.stringify(result[0]));
-assert.ok(result[1].area<=21 && result[1].reserve,JSON.stringify(result[1]));
+assert.deepEqual(result.map(x=>x.area),[21,19],JSON.stringify(result));
+assert.ok(result[0].reserve,JSON.stringify(result[0]));
+assert.ok(result[1].reserve,JSON.stringify(result[1]));
 await browser.close();
 console.log('2x2 reserve tests passed',result);
