@@ -35,3 +35,5 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m 'Use compact editor cache v5.89'
           git push origin HEAD:main
+
+# trigger v5.89
