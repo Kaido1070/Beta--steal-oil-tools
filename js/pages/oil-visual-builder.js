@@ -40,13 +40,25 @@
   const legacyUpdatePlotCard=typeof updatePlotCard==='function'?updatePlotCard:null;if(legacyUpdatePlotCard){updatePlotCard=function(){const value=legacyUpdatePlotCard.apply(this,arguments);queueMicrotask(()=>{renderVisualBuilder();if(selectedPlotId)renderVisualEditor()});return value}}
 
   function ensureStickyRate(){
+    const oilView=document.getElementById('oilView');
+    if(!oilView)return null;
     let bar=document.getElementById('v575StickyRate');
-    const rate=document.getElementById('layoutNowRate');
-    const details=rate?.closest('.panel.result');
-    if(!rate||!details)return null;
     let navigatingToResult=false;
-    details.id='layoutResultDetails';
-    details.classList.add('v575-result-details');
+    const getRate=()=>document.getElementById('v56Now')||document.getElementById('layoutNowRate');
+    const isVisible=el=>{
+      if(!el)return false;
+      const cs=getComputedStyle(el);
+      if(cs.display==='none'||cs.visibility==='hidden'||Number(cs.opacity)===0)return false;
+      const r=el.getBoundingClientRect();
+      return r.width>0&&r.height>0;
+    };
+    const getTarget=()=>{
+      const v56=document.getElementById('v56Now')?.closest('.v56-summary');
+      if(isVisible(v56))return v56;
+      const legacy=document.getElementById('layoutNowRate')?.closest('.panel.result');
+      if(isVisible(legacy))return legacy;
+      return null;
+    };
     if(!bar){
       bar=document.createElement('button');
       bar.id='v575StickyRate';
@@ -56,30 +68,40 @@
       bar.innerHTML='<span><small>Current Production</small><strong data-v575-rate>0/s</strong></span><i>Details ↓</i>';
       document.body.appendChild(bar);
       bar.addEventListener('click',()=>{
+        const target=getTarget();
+        if(!target)return;
         navigatingToResult=true;
         bar.classList.remove('show');
-        details.scrollIntoView({behavior:'smooth',block:'center'});
-        details.classList.remove('v575-result-focus');
-        requestAnimationFrame(()=>details.classList.add('v575-result-focus'));
-        setTimeout(()=>details.classList.remove('v575-result-focus'),900);
+        target.classList.add('v575-result-details');
+        target.scrollIntoView({behavior:'smooth',block:'center'});
+        target.classList.remove('v575-result-focus');
+        requestAnimationFrame(()=>target.classList.add('v575-result-focus'));
+        setTimeout(()=>target.classList.remove('v575-result-focus'),900);
       });
     }
     const sync=()=>{
+      const rate=getRate();
       const out=bar.querySelector('[data-v575-rate]');
-      if(out)out.textContent=rate.textContent?.trim()||'0/s';
-      const oilActive=document.getElementById('oilView')?.classList.contains('active')===true;
-      const beforeResult=details.getBoundingClientRect().top>window.innerHeight*.62;
-      if(!beforeResult)navigatingToResult=false;
-      bar.classList.toggle('show',oilActive&&beforeResult&&!navigatingToResult);
+      if(out)out.textContent=rate?.textContent?.trim()||'0/s';
+      const oilActive=oilView.classList.contains('active');
+      const target=getTarget();
+      let targetOnScreen=false;
+      if(target){
+        const r=target.getBoundingClientRect();
+        targetOnScreen=r.bottom>64&&r.top<window.innerHeight-40;
+      }
+      if(!targetOnScreen)navigatingToResult=false;
+      bar.classList.toggle('show',oilActive&&!targetOnScreen&&!navigatingToResult);
     };
     sync();
     if(!bar.dataset.bound){
       bar.dataset.bound='1';
-      new MutationObserver(sync).observe(rate,{childList:true,characterData:true,subtree:true});
-      new MutationObserver(sync).observe(document.getElementById('oilView'),{attributes:true,attributeFilter:['class']});
-      document.addEventListener('click',e=>{if(e.target.closest?.('[data-view]'))queueMicrotask(sync)});
+      new MutationObserver(sync).observe(oilView,{attributes:true,attributeFilter:['class'],childList:true,subtree:true,characterData:true});
+      document.addEventListener('click',e=>{if(e.target.closest?.('[data-view]'))setTimeout(sync,0)});
       window.addEventListener('scroll',sync,{passive:true});
       window.addEventListener('resize',sync,{passive:true});
+      setTimeout(sync,0);
+      setTimeout(sync,250);
     }
     return bar;
   }
