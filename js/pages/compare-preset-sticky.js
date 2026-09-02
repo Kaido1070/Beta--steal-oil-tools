@@ -1,4 +1,4 @@
-/* STOT Compare Presets live production bar v6.09 */
+/* STOT Compare Presets live production bar v6.10 */
 (() => {
   if (window.__STOT_COMPARE_PRESET_STICKY__) return;
   window.__STOT_COMPARE_PRESET_STICKY__ = true;
@@ -135,6 +135,29 @@
   `;
   document.head.appendChild(style);
 
+  function syncPresetLabels(view) {
+    if (!view) return;
+    const side = view.querySelector('[data-ab-layout].active')?.dataset.abLayout || 'A';
+    const separate = view.querySelector('[data-v524="separate"]')?.classList.contains('active');
+
+    const badge = view.querySelector('.v524-shared-badge');
+    if (badge) badge.textContent = separate ? `Preset ${side} settings` : 'Shared A + B';
+
+    const boostsTitle = view.querySelector('.v520-boosts-title');
+    const boostHint = boostsTitle?.querySelector('span:not(.v524-shared-badge)');
+    if (boostHint) boostHint.textContent = separate ? `Separate settings for Preset ${side}` : 'Same settings applied to both presets';
+
+    const editorHint = view.querySelector('#v526EditorHint');
+    if (editorHint) editorHint.textContent = separate ? `Editing Preset ${side} · boosts can differ` : `Editing Preset ${side} · boosts shared A + B`;
+
+    const status = view.querySelector('#v524Status');
+    if (status) {
+      status.innerHTML = separate
+        ? '<strong>Separate settings are On.</strong> Mole, Fruit, Heart Likes and Admin Event Lobby can be different for Preset A and Preset B.'
+        : '<strong>Shared settings are active.</strong> Mole, Fruit, Heart Likes and Admin Event Lobby are the same for Preset A and Preset B.';
+    }
+  }
+
   function enforceCompareOrder(view) {
     const builder = document.getElementById('layoutVisualBuilder');
     const comparison = view?.querySelector('.ab-compare');
@@ -169,6 +192,7 @@
 
     const sync = () => {
       enforceCompareOrder(view);
+      syncPresetLabels(view);
       const a = document.getElementById('abRateA');
       const b = document.getElementById('abRateB');
       const outA = bar.querySelector('[data-v601-a]');
@@ -190,6 +214,12 @@
       bar.classList.toggle('show', active && !!target && !targetOnScreen);
     };
 
+    const scheduleSync = () => {
+      requestAnimationFrame(sync);
+      setTimeout(sync, 0);
+      setTimeout(sync, 35);
+    };
+
     const watchText = el => {
       if (!el || el.dataset.v601Watched) return;
       el.dataset.v601Watched = '1';
@@ -201,9 +231,9 @@
     if (!view.dataset.v601Bound) {
       view.dataset.v601Bound = '1';
       new MutationObserver(sync).observe(view,{attributes:true,attributeFilter:['class']});
-      view.addEventListener('input',()=>requestAnimationFrame(sync),true);
-      view.addEventListener('change',()=>requestAnimationFrame(sync),true);
-      view.addEventListener('click',()=>requestAnimationFrame(sync),true);
+      view.addEventListener('input',scheduleSync,true);
+      view.addEventListener('change',scheduleSync,true);
+      view.addEventListener('click',scheduleSync,true);
       window.addEventListener('scroll',sync,{passive:true});
       window.addEventListener('resize',sync,{passive:true});
       document.querySelectorAll('.tabs button').forEach(btn=>btn.addEventListener('click',()=>{
