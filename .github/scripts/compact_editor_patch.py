@@ -1,0 +1,81 @@
+from pathlib import Path
+import textwrap
+
+js = Path('js/pages/oil-grid-editor-v585.js')
+s = js.read_text(encoding='utf-8')
+
+anchor = "  function rotateSelected(){\n    const plot=selectedPlot();if(!plot)return;\n"
+insert = "  function moveSelectedBy(dx,dy){\n    const plot=selectedPlot();if(!plot)return;\n    const state=getState(plot),key=state.selected;\n    if(!key){status('Select a drill first.','bad');return;}\n    const item=currentItem(plot,key);if(!item)return;\n    const target={x:item.x+dx,y:item.y+dy,w:item.w,h:item.h};\n    if(target.x<0||target.y<0||target.x+target.w>GRID||target.y+target.h>GRID){status('That direction is outside the 5×5 plot.','bad');return;}\n    applyAnchor(plot,key,target);\n  }\n\n  function rotateSelected(){\n    const plot=selectedPlot();if(!plot)return;\n"
+if 'function moveSelectedBy(dx,dy)' not in s:
+    if anchor not in s:
+        raise SystemExit('rotateSelected anchor not found')
+    s = s.replace(anchor, insert, 1)
+
+old = "      tools.innerHTML=`<div class=\"v585-grid-help\"><strong>Arrange drills</strong><span>Drag a drill, or tap it then tap a grid cell. Rotate keeps the same drill and production.</span></div><div class=\"v585-grid-actions\"><button type=\"button\" data-v585-rotate>↻ Rotate 90°</button><button type=\"button\" data-v585-auto>Auto Arrange</button></div><div class=\"v585-grid-status\" data-v585-status>Select a drill to move or rotate it.</div>`;\n      preview.insertAdjacentElement('afterend',tools);\n      tools.querySelector('[data-v585-rotate]').onclick=rotateSelected;\n      tools.querySelector('[data-v585-auto]').onclick=autoArrange;\n"
+new = "      tools.innerHTML=`<div class=\"v585-grid-help\"><strong>Drill Controls</strong><span>Select a drill, then move it one cell at a time.</span></div><div class=\"v585-control-row\"><div class=\"v585-dpad\" aria-label=\"Move selected drill\"><button type=\"button\" data-v585-move=\"0,-1\" aria-label=\"Move up\">↑</button><button type=\"button\" data-v585-move=\"-1,0\" aria-label=\"Move left\">←</button><span aria-hidden=\"true\">•</span><button type=\"button\" data-v585-move=\"1,0\" aria-label=\"Move right\">→</button><button type=\"button\" data-v585-move=\"0,1\" aria-label=\"Move down\">↓</button></div><div class=\"v585-side-actions\"><button type=\"button\" data-v585-rotate>↻ Rotate</button><button type=\"button\" data-v585-auto>Auto Arrange</button></div></div><div class=\"v585-grid-status\" data-v585-status>Tap a drill to control it.</div>`;\n      preview.insertAdjacentElement('afterend',tools);\n      tools.querySelectorAll('[data-v585-move]').forEach(btn=>btn.onclick=()=>{const [dx,dy]=btn.dataset.v585Move.split(',').map(Number);moveSelectedBy(dx,dy)});\n      tools.querySelector('[data-v585-rotate]').onclick=rotateSelected;\n      tools.querySelector('[data-v585-auto]').onclick=autoArrange;\n"
+if 'class="v585-dpad"' not in s:
+    if old not in s:
+        raise SystemExit('tools block not found')
+    s = s.replace(old, new, 1)
+
+old2 = "    const state=getState(plot);\n    tools.querySelector('[data-v585-rotate]').disabled=!state.selected;\n"
+new2 = "    const state=getState(plot),item=state.selected?currentItem(plot,state.selected):null;\n    tools.querySelector('[data-v585-rotate]').disabled=!item;\n    tools.querySelectorAll('[data-v585-move]').forEach(btn=>{\n      const [dx,dy]=btn.dataset.v585Move.split(',').map(Number);\n      btn.disabled=!item||item.x+dx<0||item.y+dy<0||item.x+dx+item.w>GRID||item.y+dy+item.h>GRID;\n    });\n"
+if old2 in s:
+    s = s.replace(old2, new2, 1)
+elif "tools.querySelectorAll('[data-v585-move]')" not in s:
+    raise SystemExit('disabled state block not found')
+
+s = s.replace("status('Selected. Drag it, tap a destination cell, or rotate it.');", "status('Selected. Use the arrows, drag it, or tap a destination cell.');")
+s = s.replace("status('Selected. Use Rotate or tap a destination cell.');", "status('Selected. Use the arrows, Rotate, or tap a destination cell.');")
+js.write_text(s, encoding='utf-8')
+
+css = Path('css/pages/oil-grid-editor-v585.css')
+c = css.read_text(encoding='utf-8')
+marker = '/* v5.88: compact mobile drill rows + directional controls. */'
+patch = textwrap.dedent('''
+
+/* v5.88: compact mobile drill rows + directional controls. */
+.v585-control-row{display:grid;grid-template-columns:112px minmax(0,1fr);gap:8px;align-items:center;margin-top:7px}
+.v585-dpad{display:grid;grid-template-columns:repeat(3,34px);grid-template-rows:repeat(3,34px);gap:3px;justify-content:center;align-items:center}
+.v585-dpad button,.v585-side-actions button{border:1px solid rgba(255,255,255,.11);border-radius:9px;background:#171d2b;color:#eef2fb;font-weight:900}
+.v585-dpad button{width:34px;height:34px;padding:0;font-size:18px;line-height:1}
+.v585-dpad button[data-v585-move="0,-1"]{grid-column:2;grid-row:1}
+.v585-dpad button[data-v585-move="-1,0"]{grid-column:1;grid-row:2}
+.v585-dpad>span{grid-column:2;grid-row:2;display:grid;place-items:center;color:#7251aa;font-size:14px}
+.v585-dpad button[data-v585-move="1,0"]{grid-column:3;grid-row:2}
+.v585-dpad button[data-v585-move="0,1"]{grid-column:2;grid-row:3}
+.v585-dpad button:disabled,.v585-side-actions button:disabled{opacity:.32}
+.v585-side-actions{display:grid;grid-template-rows:1fr 1fr;gap:6px;height:108px}
+.v585-side-actions button{min-height:0;padding:6px 8px;font-size:9px}
+@media(max-width:520px){
+  .v585-grid-tools{padding:7px;margin:-4px auto 7px;border-radius:10px}
+  .v585-grid-help{grid-template-columns:auto minmax(0,1fr);align-items:center;gap:7px}
+  .v585-grid-help strong{font-size:9px;white-space:nowrap}
+  .v585-grid-help span{font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .v585-control-row{grid-template-columns:102px minmax(0,1fr);gap:6px;margin-top:5px}
+  .v585-dpad{grid-template-columns:repeat(3,30px);grid-template-rows:repeat(3,30px);gap:2px}
+  .v585-dpad button{width:30px;height:30px;border-radius:8px;font-size:16px}
+  .v585-side-actions{height:94px;gap:5px}
+  .v585-side-actions button{font-size:8px;border-radius:8px}
+  .v585-grid-status{min-height:10px;margin-top:3px;font-size:7px}
+  .v572-editor-rows{gap:6px}
+  .v572-editor-row{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr) 54px;gap:5px;align-items:end;padding:7px;border-radius:10px}
+  .v572-editor-row>label:first-child{grid-column:1;margin:0}
+  .v572-editor-row>.v572-row-two{display:contents}
+  .v572-editor-row>.v572-row-two>label:first-child{grid-column:2;margin:0}
+  .v572-editor-row>.v572-row-two>label:last-child{grid-column:3;margin:0}
+  .v572-editor-row label{gap:2px;margin:0}
+  .v572-editor-row label>span{font-size:7px;line-height:1}
+  .v572-editor-row select,.v572-editor-row input{min-height:33px;height:33px;padding:4px 6px;border-radius:8px;font-size:10px}
+  .v572-editor-row>label:not(:first-child){grid-column:1/-1}
+  .v572-row-meta{grid-column:1/3;margin:0;min-height:25px;align-items:center;font-size:7px}
+  .v572-row-meta span{display:none}
+  .v572-row-meta b{font-size:7px;white-space:nowrap}
+  .v572-remove-row{grid-column:3;min-height:25px;height:25px;margin:0;border-radius:7px;font-size:8px;padding:0 4px}
+  .v572-editor-actions{gap:5px;margin-top:7px}
+  .v572-editor-actions button{min-height:34px;font-size:9px;border-radius:8px}
+}
+''')
+if marker not in c:
+    c += patch
+css.write_text(c, encoding='utf-8')
