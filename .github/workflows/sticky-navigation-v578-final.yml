@@ -29,12 +29,10 @@ jobs:
           new_click="""      bar.addEventListener('click',()=>{\n        details.scrollIntoView({behavior:'smooth',block:'center'});\n        bar.classList.remove('show');\n        details.classList.remove('v575-result-focus');\n"""
           if old_click not in s: raise SystemExit('sticky click block missing')
           s=s.replace(old_click,new_click,1)
-
           old_sync="""    const sync=()=>{\n      const out=bar.querySelector('[data-v575-rate]');\n      if(out)out.textContent=rate.textContent?.trim()||'0/s';\n      bar.classList.toggle('show',document.getElementById('oilView')?.classList.contains('active')===true);\n    };\n    sync();\n    if(!bar.dataset.bound){\n      bar.dataset.bound='1';\n      new MutationObserver(sync).observe(rate,{childList:true,characterData:true,subtree:true});\n      new MutationObserver(sync).observe(document.getElementById('oilView'),{attributes:true,attributeFilter:['class']});\n      document.addEventListener('click',e=>{if(e.target.closest?.('[data-view]'))queueMicrotask(sync)});\n    }\n"""
           new_sync="""    const sync=()=>{\n      const out=bar.querySelector('[data-v575-rate]');\n      if(out)out.textContent=rate.textContent?.trim()||'0/s';\n      const oilActive=document.getElementById('oilView')?.classList.contains('active')===true;\n      const beforeResult=details.getBoundingClientRect().top>window.innerHeight-36;\n      bar.classList.toggle('show',oilActive&&beforeResult);\n    };\n    sync();\n    if(!bar.dataset.bound){\n      bar.dataset.bound='1';\n      new MutationObserver(sync).observe(rate,{childList:true,characterData:true,subtree:true});\n      new MutationObserver(sync).observe(document.getElementById('oilView'),{attributes:true,attributeFilter:['class']});\n      document.addEventListener('click',e=>{if(e.target.closest?.('[data-view]'))queueMicrotask(sync)});\n      window.addEventListener('scroll',sync,{passive:true});\n      window.addEventListener('resize',sync,{passive:true});\n    }\n"""
           if old_sync not in s: raise SystemExit('sticky sync block missing')
-          s=s.replace(old_sync,new_sync,1)
-          s=s.replace('/* STOT Oil visual plot builder — v5.75 */','/* STOT Oil visual plot builder — v5.78 */',1)
+          s=s.replace(old_sync,new_sync,1).replace('/* STOT Oil visual plot builder — v5.75 */','/* STOT Oil visual plot builder — v5.78 */',1)
           js.write_text(s,encoding='utf-8')
 
           css=Path('css/pages/oil-visual-builder.css')
@@ -61,9 +59,10 @@ jobs:
           test=Path('tests/smoke-beta.mjs')
           t=test.read_text(encoding='utf-8').replace("'5.77'","'5.78'")
           t=t.replace('stot-v5.77-layout-save-v1','stot-v5.78-layout-save-v1')
-          # The old smoke assumed the shortcut is always visible in Oil. It is now contextual.
-          t=t.replace("assert.ok(await page.locator('#v575StickyRate').evaluate(el => el.classList.contains('show')));\n","")
-          test.write_text(t,encoding='utf-8')
+          old="""assert.equal(await page.locator('#v575StickyRate').count(), 1);\nawait page.locator('.tabs button[data-view=\"oil\"]').click();\nawait page.waitForTimeout(80);\nassert.ok(await page.locator('#v575StickyRate').evaluate(el => el.classList.contains('show')));\nconst stickyBox = await page.locator('#v575StickyRate').boundingBox();\nassert.ok(stickyBox && stickyBox.height <= 52, 'Sticky production card is too tall');\nconst oilPaddingBottom = await page.locator('#oilView').evaluate(el => parseFloat(getComputedStyle(el).paddingBottom));\nassert.ok(oilPaddingBottom >= 70, 'Oil view needs bottom spacing for sticky card');\nassert.equal((await page.locator('#v575StickyRate [data-v575-rate]').textContent())?.trim(), (await page.locator('#layoutNowRate').textContent())?.trim());\nassert.equal(await page.locator('#layoutResultDetails').count(), 1);\nawait page.locator('#v575StickyRate').click();\nawait page.waitForTimeout(80);\nassert.ok(await page.locator('#layoutResultDetails').evaluate(el => el.classList.contains('v575-result-focus')));\n"""
+          new="""assert.equal(await page.locator('#v575StickyRate').count(), 1);\nawait page.locator('.tabs button[data-view=\"oil\"]').click();\nawait page.waitForTimeout(80);\nconst stickyBox = await page.locator('#v575StickyRate').boundingBox();\nassert.ok(stickyBox && stickyBox.height <= 52, 'Sticky production card is too tall');\nconst oilPaddingBottom = await page.locator('#oilView').evaluate(el => parseFloat(getComputedStyle(el).paddingBottom));\nassert.ok(oilPaddingBottom >= 70, 'Oil view needs bottom spacing for sticky card');\nassert.equal((await page.locator('#v575StickyRate [data-v575-rate]').textContent())?.trim(), (await page.locator('#layoutNowRate').textContent())?.trim());\nassert.equal(await page.locator('#layoutResultDetails').count(), 1);\n"""
+          if old not in t: raise SystemExit('old sticky smoke block missing')
+          test.write_text(t.replace(old,new,1),encoding='utf-8')
           PY
 
       - name: Build v5.78
@@ -91,7 +90,7 @@ jobs:
 
       - name: Verify sticky shortcut behavior
         run: |
-          cat > /tmp/sticky-test.mjs <<'JS'
+          cat > sticky-test.mjs <<'JS'
           import assert from 'node:assert/strict';
           import { chromium } from 'playwright';
           const browser=await chromium.launch({headless:true});
@@ -122,7 +121,8 @@ jobs:
           await browser.close();
           console.log('Sticky navigation behavior passed');
           JS
-          node /tmp/sticky-test.mjs
+          node sticky-test.mjs
+          rm sticky-test.mjs
 
       - name: Commit tested fix
         run: |
