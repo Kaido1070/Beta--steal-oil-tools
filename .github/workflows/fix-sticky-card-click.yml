@@ -1,0 +1,99 @@
+name: Fix Current Production Card Click
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-sticky-card-click.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Patch click behavior
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('js/pages/oil-visual-builder.js')
+          s=p.read_text(encoding='utf-8')
+          old="""      bar.addEventListener('click',()=>{\n        const target=getTarget();\n        if(!target)return;\n        navigatingToResult=true;\n        bar.classList.remove('show');\n        target.classList.add('v575-result-details');\n        target.scrollIntoView({behavior:'smooth',block:'center'});\n        target.classList.remove('v575-result-focus');\n        requestAnimationFrame(()=>target.classList.add('v575-result-focus'));\n        setTimeout(()=>target.classList.remove('v575-result-focus'),900);\n      });"""
+          new="""      bar.addEventListener('click',e=>{\n        e.preventDefault();\n        e.stopPropagation();\n        const target=getTarget();\n        if(!target)return;\n        navigatingToResult=true;\n        bar.classList.remove('show');\n        target.classList.add('v575-result-details');\n        target.scrollIntoView({behavior:'smooth',block:'center'});\n        target.classList.remove('v575-result-focus');\n        requestAnimationFrame(()=>target.classList.add('v575-result-focus'));\n        setTimeout(()=>target.classList.remove('v575-result-focus'),900);\n        setTimeout(()=>{navigatingToResult=false;sync()},1400);\n      });"""
+          if old not in s:
+              raise SystemExit('click handler pattern not found')
+          s=s.replace(old,new,1)
+          old2="""      if(!targetOnScreen)navigatingToResult=false;\n      bar.classList.toggle('show',oilActive&&!targetOnScreen&&!navigatingToResult);"""
+          new2="""      if(navigatingToResult){\n        bar.classList.remove('show');\n        if(targetOnScreen)navigatingToResult=false;\n        else return;\n      }\n      bar.classList.toggle('show',oilActive&&!targetOnScreen);"""
+          if old2 not in s:
+              raise SystemExit('sync pattern not found')
+          s=s.replace(old2,new2,1)
+          p.write_text(s,encoding='utf-8')
+
+          c=Path('css/pages/oil-visual-builder.css')
+          css=c.read_text(encoding='utf-8')
+          patch='\n/* v5.81: keep sticky production card above page layers and physically clickable. */\n.v575-sticky-rate{z-index:2147483000!important}\n.v575-sticky-rate.show{pointer-events:auto!important}\n'
+          if 'v5.81: keep sticky production card' not in css:
+              css+=patch
+          c.write_text(css,encoding='utf-8')
+
+          i=Path('index.html')
+          html=i.read_text(encoding='utf-8')
+          import re
+          html=re.sub(r'(oil-visual-builder\.css\?v=)[0-9.]+',r'\g<1>5.81',html)
+          html=re.sub(r'(oil-visual-builder\.js\?v=)[0-9.]+',r'\g<1>5.81',html)
+          i.write_text(html,encoding='utf-8')
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium
+      - name: Start site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0; sleep 1; done
+          exit 1
+      - name: Test real pointer click
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {chromium} from 'playwright';
+          const b=await chromium.launch({headless:true});
+          const p=await b.newPage({viewport:{width:775,height:617}});
+          await p.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
+          await p.locator('.tabs button[data-view="oil"]').click();
+          await p.waitForTimeout(250);
+          const bar=p.locator('#v575StickyRate');
+          await p.evaluate(()=>window.scrollTo(0,0));
+          await p.waitForTimeout(150);
+          assert.equal(await bar.count(),1);
+          assert.ok(await bar.evaluate(e=>e.classList.contains('show')),'bar must be visible');
+          const box=await bar.boundingBox();
+          assert.ok(box&&box.width>100&&box.height>20,'bar needs a real hit box');
+          const hit=await p.evaluate(({x,y})=>{const e=document.elementFromPoint(x,y);return {id:e?.id||'',cls:e?.className||'',tag:e?.tagName||''}}, {x:box.x+box.width/2,y:box.y+box.height/2});
+          assert.equal(hit.id,'v575StickyRate','bar must own its center hit target');
+          const before=await p.evaluate(()=>scrollY);
+          await p.mouse.click(box.x+box.width/2,box.y+box.height/2);
+          await p.waitForTimeout(900);
+          const after=await p.evaluate(()=>scrollY);
+          assert.ok(after>before+20,`real click must scroll down: ${before} -> ${after}`);
+          assert.ok(!(await bar.evaluate(e=>e.classList.contains('show'))),'bar must hide during/after navigation');
+          const focused=await p.locator('.v575-result-focus').count();
+          assert.ok(focused>=1,'destination must receive focus highlight');
+          await b.close();
+          console.log('real pointer click passed');
+          JS
+      - name: Commit verified interaction fix
+        run: |
+          rm -f package.json package-lock.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/pages/oil-visual-builder.js css/pages/oil-visual-builder.css index.html
+          git commit -m 'Make Current Production card clickable'
+          git push origin HEAD:main
