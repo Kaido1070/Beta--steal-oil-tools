@@ -1,4 +1,4 @@
-/* STOT Drill Compare page runtime — version from js/site-config.js — extracted from js/app.js  */
+/* STOT Drill Compare page runtime — version from js/site-config.js — extracted from js/app.js */
 let compareA="demonic",compareB="angel";
 const compareState={tier:1,area:1,mole:0,fruit:0,countA:1,countB:1,hours:5,likes:0};
 function compareValue(d,key){
@@ -113,19 +113,45 @@ $("#swapCompare").onclick=()=>{[compareA,compareB]=[compareB,compareA];renderCom
 [["#compareCountA","countA"],["#compareCountB","countB"],["#compareHours","hours"],["#compareLikes","likes"]].forEach(([sel,key])=>$(sel).addEventListener("input",e=>{let raw=Number(e.target.value);if(!Number.isFinite(raw))raw=0;let v=Math.max(0,raw);if(key==="countA"||key==="countB")v=Math.max(1,Math.floor(v));if(key==="hours")v=Math.min(20,v);compareState[key]=v;if(String(e.target.value)!==String(v))e.target.value=v;renderCompare()}));
 $("#compareShare").onclick=()=>{const a=drills.find(d=>d.id===compareA)||drills[0],b=drills.find(d=>d.id===compareB)||drills[1];const sa=compareStats(a,"A"),sb=compareStats(b,"B");const tierName={1:"Basic",2:"Gold",3:"Diamond",5:"Rainbow",10:"Galaxy"}[compareState.tier]||`×${compareState.tier}`;const crossover=crossoverText(a,b,sa,sb);const lines=["Drill Compare",`${I18N.itemName(a)} ×${sa.count} vs ${I18N.itemName(b)} ×${sb.count}`,`Tier: ${tierName}`,`Production Area: ×${compareState.area}`,`Mole: ${compareState.mole||"None"}`,`Fruit: ${compareState.fruit||"None"}`,`Run Time: ${fmt(compareState.hours)}h`,`${I18N.itemName(a)} — Start ${fmt(sa.start)}/s • End ${fmt(sa.end)}/s • Total ${fmt(sa.total)} • Space ${compareSpace(a,sa.count)}`,`${I18N.itemName(b)} — Start ${fmt(sb.start)}/s • End ${fmt(sb.end)}/s • Total ${fmt(sb.total)} • Space ${compareSpace(b,sb.count)}`,crossover?`Crossover: ${crossover}`:""] .filter(Boolean);const html=`<div class="share-section"><div class="share-section-title">Comparison Setup</div><div class="share-setup-grid"><div class="share-setup-item"><span>Drill Tier</span><strong>${tierName}</strong></div><div class="share-setup-item"><span>Production Area</span><strong>×${compareState.area}</strong></div><div class="share-setup-item"><span>Mole</span><strong>${compareState.mole||"None"}</strong></div><div class="share-setup-item"><span>Fruit</span><strong>${compareState.fruit||"None"}</strong></div><div class="share-setup-item"><span>Run Time</span><strong>${fmt(compareState.hours)}h</strong></div></div></div><div class="share-drill-columns"><div class="share-drill-card"><div class="share-drill-title">${I18N.itemName(a)} ×${sa.count}</div><div class="share-line"><span>Start Oil/s</span><strong>${fmt(sa.start)}/s</strong></div><div class="share-line"><span>After Time</span><strong>${fmt(sa.end)}/s</strong></div><div class="share-line"><span>Total Oil</span><strong>${fmt(sa.total)}</strong></div><div class="share-line"><span>Total Space</span><strong>${compareSpace(a,sa.count)}</strong></div></div><div class="share-drill-card"><div class="share-drill-title">${I18N.itemName(b)} ×${sb.count}</div><div class="share-line"><span>Start Oil/s</span><strong>${fmt(sb.start)}/s</strong></div><div class="share-line"><span>After Time</span><strong>${fmt(sb.end)}/s</strong></div><div class="share-line"><span>Total Oil</span><strong>${fmt(sb.total)}</strong></div><div class="share-line"><span>Total Space</span><strong>${compareSpace(b,sb.count)}</strong></div></div></div>${crossover?`<div class="share-section share-crossover"><strong>${crossover}</strong></div>`:""}`;openSharePreview("Drill Comparison",html,lines.join("\n"))};
 
-/* Initial Drill Compare render now belongs to this page module. */
 renderCompare();
 document.documentElement.dataset.stotComparePage=STOT_CONFIG.version;
 
-/* v5.97 Compare UI refresh — visual hints + compact controls, no observers. */
+/* v5.98 Compare UI — real atlas thumbnails + compact inputs, no observers. */
 (()=>{
-  if(window.__STOT_COMPARE_UI_V597__)return;
-  window.__STOT_COMPARE_UI_V597__=true;
+  if(window.__STOT_COMPARE_UI_V598__)return;
+  window.__STOT_COMPARE_UI_V598__=true;
 
-  const visualHTML=item=>{
-    if(!item)return '';
-    const name=I18N.itemName(item);
-    return item.image?`<img src="${item.image}" alt="${name}" loading="lazy">`:`<span>${initials(name)}</span>`;
+  const DRILL_IDS=['basic','strong','enhanced','speed','reinforced','industrial','double-industrial','turbo','mega','ice','lava','rocket','mega-laser','scifi-double','scifi-quad','lunar','alien-tech','ufo','solar','antimatter','black-hole','angel','demonic','candy','volcano','disco','hacker','super-rocket','pagoda','drake','ketchup-mustard','heart','clock','banana'];
+  const PET_NAMES=['Penny','Snooze','Breezy','Bandit','Clover','Vault','Dash','Sunny','Tank','Mole','Astro','Nova','Piper','Volt','Fruit'];
+  const drillIndex=Object.fromEntries(DRILL_IDS.map((id,i)=>[id,i]));
+  const petIndex=Object.fromEntries(PET_NAMES.map((name,i)=>[name.toLowerCase(),i]));
+
+  const atlasInfo=(kind,index)=>{
+    if(kind==='drill'){
+      const starts=[0,9,18,26];
+      const group=index<9?0:index<18?1:index<26?2:3;
+      return {src:`assets/images/drills/drills-${group}.webp?v=5.55`,cols:3,rows:3,local:index-starts[group]};
+    }
+    const group=index<8?0:1;
+    return {src:`assets/images/pets/pets-${group}.webp?v=5.55`,cols:4,rows:2,local:index-group*8};
+  };
+
+  const paintAtlas=(el,kind,index,fallback='')=>{
+    if(!el)return;
+    if(!Number.isInteger(index)||index<0){
+      el.style.backgroundImage='';
+      el.style.backgroundSize='';
+      el.style.backgroundPosition='';
+      el.textContent=fallback;
+      return;
+    }
+    const {src,cols,rows,local}=atlasInfo(kind,index);
+    const col=local%cols,row=Math.floor(local/cols);
+    el.style.backgroundImage=`url('${src}')`;
+    el.style.backgroundRepeat='no-repeat';
+    el.style.backgroundSize=`${cols*100}% ${rows*100}%`;
+    el.style.backgroundPosition=`${cols===1?0:col*100/(cols-1)}% ${rows===1?0:row*100/(rows-1)}%`;
+    el.textContent='';
   };
 
   const ensurePickerThumb=(selectId,thumbId)=>{
@@ -143,22 +169,27 @@ document.documentElement.dataset.stotComparePage=STOT_CONFIG.version;
     }
   };
 
-  const ensureInlineIcon=(inputId,item,iconId)=>{
+  const ensureInlineIcon=(inputId,iconId)=>{
     const input=$(inputId),label=input?.closest('.compare-control'),title=label?.querySelector(':scope > span');
-    if(!title||title.querySelector('.compare-inline-icon'))return;
-    const icon=document.createElement('i');
-    icon.className='compare-inline-icon';
-    icon.id=iconId;
-    icon.innerHTML=visualHTML(item);
-    title.prepend(icon);
+    if(!title)return;
+    let icon=title.querySelector('.compare-inline-icon');
+    if(!icon){
+      icon=document.createElement('i');
+      icon.className='compare-inline-icon';
+      icon.id=iconId;
+      title.prepend(icon);
+    }
   };
 
   const enhanceStatic=()=>{
+    const tag=document.querySelector('#compareView > .section-intro .section-tag');
+    if(tag&&tag.textContent.trim()==='Drills only')tag.remove();
+
     ensurePickerThumb('#compareA','compareAThumb');
     ensurePickerThumb('#compareB','compareBThumb');
-    ensureInlineIcon('#compareMole',pets.find(p=>p.id==='mole'),'compareMoleIcon');
-    ensureInlineIcon('#compareFruit',pets.find(p=>p.id==='fruit'),'compareFruitIcon');
-    ensureInlineIcon('#compareLikes',drills.find(d=>d.special==='heart'),'compareHeartIcon');
+    ensureInlineIcon('#compareMole','compareMoleIcon');
+    ensureInlineIcon('#compareFruit','compareFruitIcon');
+    ensureInlineIcon('#compareLikes','compareHeartIcon');
 
     const counts=document.querySelector('#compareView .compare-count-panel');
     const time=document.querySelector('#compareView .compare-time-panel');
@@ -177,19 +208,25 @@ document.documentElement.dataset.stotComparePage=STOT_CONFIG.version;
   const syncVisuals=()=>{
     const a=drills.find(d=>d.id===compareA)||drills[0];
     const b=drills.find(d=>d.id===compareB)||drills[1];
-    const aThumb=document.getElementById('compareAThumb');
-    const bThumb=document.getElementById('compareBThumb');
-    if(aThumb)aThumb.innerHTML=visualHTML(a);
-    if(bThumb)bThumb.innerHTML=visualHTML(b);
+    paintAtlas(document.getElementById('compareAThumb'),'drill',drillIndex[a?.id],a?initials(I18N.itemName(a)):'');
+    paintAtlas(document.getElementById('compareBThumb'),'drill',drillIndex[b?.id],b?initials(I18N.itemName(b)):'');
+    paintAtlas(document.getElementById('compareMoleIcon'),'pet',petIndex.mole,'M');
+    paintAtlas(document.getElementById('compareFruitIcon'),'pet',petIndex.fruit,'F');
+    paintAtlas(document.getElementById('compareHeartIcon'),'drill',drillIndex.heart,'H');
   };
 
-  enhanceStatic();
-  syncVisuals();
+  const refreshUI=()=>{enhanceStatic();syncVisuals();};
+  refreshUI();
+
   const baseRender=renderCompare;
   renderCompare=function(){
     const result=baseRender.apply(this,arguments);
-    enhanceStatic();
-    syncVisuals();
+    refreshUI();
     return result;
   };
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(refreshUI,0),{once:true});
+  else setTimeout(refreshUI,0);
+  window.addEventListener('load',refreshUI,{once:true});
+  window.addEventListener('pageshow',refreshUI,{passive:true});
 })();
