@@ -1,0 +1,127 @@
+name: Fix Compare Presets Final
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-compare-presets-final.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply structural and visual fixes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # 1) Make Visual Plot Builder follow #layoutAreas whenever the editor
+          # moves between Oil / Hour and Compare Presets.
+          js = Path('js/pages/oil-visual-builder.js')
+          text = js.read_text()
+          old = "function ensureShell(){let shell=document.getElementById('layoutVisualBuilder');if(!shell){shell=document.createElement('section');shell.id='layoutVisualBuilder';shell.className='panel v572-visual-builder';const host=document.getElementById('layoutAreas');host?.parentNode?.insertBefore(shell,host)}document.getElementById('layoutAreas')?.classList.add('v572-legacy-layout');return shell}"
+          new = "function ensureShell(){const host=document.getElementById('layoutAreas');let shell=document.getElementById('layoutVisualBuilder');if(!host)return shell;if(!shell){shell=document.createElement('section');shell.id='layoutVisualBuilder';shell.className='panel v572-visual-builder'}if(shell.parentElement!==host.parentElement||shell.nextElementSibling!==host)host.parentNode?.insertBefore(shell,host);host.classList.add('v572-legacy-layout');return shell}"
+          if old not in text:
+              raise SystemExit('ensureShell source did not match expected version')
+          js.write_text(text.replace(old, new, 1))
+
+          # 2) Replace the previous Compare Presets polish block with one
+          # canonical page-scoped block. Drill Compare CSS above it is untouched.
+          css = Path('css/pages/compare.css')
+          text = css.read_text()
+          marker = '/* v5.99 Compare Presets polish'
+          if marker in text:
+              text = text.split(marker, 1)[0].rstrip() + '\n\n'
+
+          block = r'''/* v6.00 Compare Presets canonical layout — scoped only to #layoutcompareView. */
+#layoutcompareView .v56-compare-intro{padding:9px 11px!important;margin:0 0 8px!important}
+#layoutcompareView .v56-compare-intro .v56-hero{display:block!important}
+#layoutcompareView .v56-compare-intro h2{margin:0!important;font-size:16px!important;line-height:1.15!important}
+#layoutcompareView .v56-compare-intro p{margin:4px 0 0!important;font-size:8.5px!important;line-height:1.4!important;color:var(--muted)!important}
+#layoutcompareView .v56-compare-intro .v56-back{display:none!important}
+
+#layoutcompareView .v533-condition{padding:9px!important;margin:0 0 8px!important}
+#layoutcompareView .v533-condition-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin:0 0 7px!important}
+#layoutcompareView .v533-condition-head strong{font-size:11px!important}
+#layoutcompareView .v533-condition-head span{font-size:7.5px!important;color:var(--muted)!important;text-align:right!important}
+#layoutcompareView .v533-condition .layout-control-card{padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+#layoutcompareView .v533-condition .layout-control-head,#layoutcompareView .v533-condition .layout-control-card::before{display:none!important}
+#layoutcompareView .v543-calc-intro{display:none!important}
+#layoutcompareView #layoutModeTabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;margin:0 0 7px!important}
+#layoutcompareView #layoutModeTabs button{min-width:0!important;min-height:46px!important;height:46px!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:2px!important;padding:6px 9px!important;text-align:left!important;white-space:normal!important;border-radius:10px!important;overflow:hidden!important}
+#layoutcompareView #layoutModeTabs button strong,#layoutcompareView #layoutModeTabs button small{display:none!important}
+#layoutcompareView #layoutModeTabs button::before{display:block;font-size:11px;font-weight:950;line-height:1.05;white-space:nowrap}
+#layoutcompareView #layoutModeTabs button::after{display:block;font-size:7px;font-weight:650;line-height:1.15;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#layoutcompareView #layoutModeTabs button[data-layoutmode="time"]::before{content:"Time → Oil"}
+#layoutcompareView #layoutModeTabs button[data-layoutmode="time"]::after{content:"How much oil you’ll make"}
+#layoutcompareView #layoutModeTabs button[data-layoutmode="target"]::before{content:"Oil → Time"}
+#layoutcompareView #layoutModeTabs button[data-layoutmode="target"]::after{content:"When you’ll reach your target"}
+#layoutcompareView .layout-mode-pane .field{padding:7px 9px!important;grid-template-columns:minmax(0,1fr) 96px!important;min-height:0!important}
+#layoutcompareView .layout-mode-pane .field .labels strong{font-size:10.5px!important}
+#layoutcompareView .layout-mode-pane .field .labels small{font-size:7.5px!important}
+#layoutcompareView .layout-mode-pane .field input{height:36px!important}
+#layoutcompareView #layoutTargetPane .target-box{margin-top:0!important}
+
+#layoutcompareView #v524CompareSettings{padding:8px 9px!important;margin:0 0 8px!important}
+#layoutcompareView #v524CompareSettings .v524-settings-head{display:grid!important;grid-template-columns:minmax(0,1fr) 104px!important;align-items:center!important;gap:8px!important}
+#layoutcompareView #v524CompareSettings .v524-settings-copy strong{font-size:10.5px!important;line-height:1.2!important}
+#layoutcompareView #v524CompareSettings .v524-settings-copy small{margin-top:2px!important;font-size:7.3px!important;line-height:1.3!important;color:var(--muted)!important}
+#layoutcompareView #v524CompareSettings .v524-toggle{width:104px!important;min-width:0!important;padding:3px!important;gap:3px!important}
+#layoutcompareView #v524CompareSettings .v524-toggle button{min-height:32px!important;padding:0 6px!important;font-size:8.5px!important}
+#layoutcompareView #v524CompareSettings .v524-status{display:none!important}
+
+#layoutcompareView #v526EditorSwitch{padding:8px 9px!important;margin:0 0 8px!important}
+#layoutcompareView #v526EditorSwitch .v526-editor-switch-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:7px!important;margin-bottom:6px!important}
+#layoutcompareView #v526EditorSwitch .v526-editor-switch-head strong{font-size:10.5px!important}
+#layoutcompareView #v526EditorSwitch .v526-editor-switch-head span{font-size:7.3px!important;line-height:1.25!important;color:var(--muted)!important;text-align:right!important}
+#layoutcompareView #v526EditorSwitch .ab-layout-switch{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important}
+#layoutcompareView #v526EditorSwitch .ab-layout-switch button{min-height:36px!important;font-size:9.5px!important;border-radius:9px!important}
+
+#layoutcompareView .v539-compare-boosts{margin:0 0 8px!important;padding:9px!important}
+#layoutcompareView .v539-compare-boosts .v520-boosts-title{margin:0 0 4px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important}
+#layoutcompareView .v539-compare-boosts .v520-boosts-title strong{font-size:11px!important}
+#layoutcompareView .v539-compare-boosts .v520-boosts-title .v543-optional-hint{display:none!important}
+#layoutcompareView .v539-compare-boosts .v520-boosts-title>span:not(.v524-shared-badge):not(.v543-optional-hint){font-size:7.5px!important;color:var(--muted)!important}
+#layoutcompareView .v536-quick-fill{margin:0 0 8px!important}
+#layoutcompareView .v536-advanced{margin:0 0 8px!important}
+#layoutcompareView .layout-note{margin:6px 2px 8px!important;font-size:8px!important;line-height:1.35!important;color:var(--muted)!important}
+#layoutcompareView #layoutVisualBuilder{display:block!important;margin:0 0 8px!important}
+#layoutcompareView .ab-compare{margin:0 0 8px!important}
+#layoutcompareView .v56-compare-actions{margin:0 0 8px!important}
+
+@media(max-width:430px){
+  #layoutcompareView #layoutModeTabs button{padding:6px 7px!important}
+  #layoutcompareView #layoutModeTabs button::before{font-size:10.5px}
+  #layoutcompareView #layoutModeTabs button::after{font-size:6.7px}
+  #layoutcompareView #v524CompareSettings .v524-settings-copy small{max-width:235px}
+}
+'''
+          css.write_text(text + block + '\n')
+
+          # Sanity checks
+          check = js.read_text()
+          assert "shell.parentElement!==host.parentElement" in check
+          check_css = css.read_text()
+          assert check_css.count('v6.00 Compare Presets canonical layout') == 1
+          assert 'v5.99 Compare Presets polish' not in check_css
+          PY
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/pages/oil-visual-builder.js css/pages/compare.css
+          git commit -m 'Fix Compare Presets structure and compact layout'
+          git push
