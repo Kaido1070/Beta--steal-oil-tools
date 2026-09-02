@@ -1,4 +1,4 @@
-/* STOT Compare Presets live production bar v6.03 */
+/* STOT Compare Presets live production bar v6.04 */
 (() => {
   if (window.__STOT_COMPARE_PRESET_STICKY__) return;
   window.__STOT_COMPARE_PRESET_STICKY__ = true;
@@ -22,11 +22,70 @@
     #v601CompareSticky small{font-size:8px;line-height:1;color:#9aa6bb;font-weight:850;letter-spacing:.06em;white-space:nowrap}
     #v601CompareSticky strong{font-size:16px;line-height:1.05;color:#f7f8ff;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     #v601CompareSticky i{font-style:normal;border-radius:9px;background:#211b3e;color:#cfbdff;padding:8px 9px;font-size:8px;font-weight:950;white-space:nowrap}
+
+    /* v6.04: compact Target Oil editor — same behavior, much less vertical space. */
+    #layoutTargetPane .target-box{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr) auto!important;
+      align-items:center!important;
+      gap:8px!important;
+      padding:8px!important;
+      margin:0!important;
+    }
+    #layoutTargetPane .target-box>.field{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr) 68px!important;
+      align-items:center!important;
+      gap:8px!important;
+      margin:0!important;
+      min-width:0!important;
+    }
+    #layoutTargetPane .target-box>.field .field-head{
+      display:block!important;
+      margin:0!important;
+      min-width:0!important;
+    }
+    #layoutTargetPane .target-box>.field .field-head .icon{display:none!important}
+    #layoutTargetPane .target-box>.field .labels{display:block!important;min-width:0!important}
+    #layoutTargetPane .target-box>.field .labels strong{font-size:14px!important;line-height:1.1!important;white-space:nowrap!important}
+    #layoutTargetPane .target-box>.field .labels small{display:none!important}
+    #layoutTargetPane #layoutTarget{
+      width:68px!important;
+      min-width:68px!important;
+      min-height:40px!important;
+      height:40px!important;
+      padding:0 8px!important;
+      text-align:center!important;
+      font-size:18px!important;
+      border-radius:9px!important;
+    }
+    #layoutTargetPane #layoutTargetUnits{
+      display:grid!important;
+      grid-template-columns:repeat(4,32px)!important;
+      gap:4px!important;
+      margin:0!important;
+      align-items:center!important;
+    }
+    #layoutTargetPane #layoutTargetUnits .chip{
+      min-width:32px!important;
+      width:32px!important;
+      min-height:40px!important;
+      height:40px!important;
+      padding:0!important;
+      border-radius:9px!important;
+      font-size:13px!important;
+      line-height:1!important;
+    }
     @media(max-width:430px){
       #v601CompareSticky{width:calc(100vw - 24px);gap:6px;padding-left:8px}
       #v601CompareSticky .v601-side{display:grid;gap:2px}
       #v601CompareSticky strong{font-size:14px}
       #v601CompareSticky i{padding:8px 7px}
+      #layoutTargetPane .target-box{gap:6px!important;padding:7px!important}
+      #layoutTargetPane .target-box>.field{grid-template-columns:minmax(0,1fr) 62px!important;gap:6px!important}
+      #layoutTargetPane #layoutTarget{width:62px!important;min-width:62px!important}
+      #layoutTargetPane #layoutTargetUnits{grid-template-columns:repeat(4,29px)!important;gap:3px!important}
+      #layoutTargetPane #layoutTargetUnits .chip{width:29px!important;min-width:29px!important;font-size:12px!important}
     }
   `;
   document.head.appendChild(style);
