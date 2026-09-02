@@ -1,4 +1,4 @@
-/* STOT Compare Presets live production bar v6.08 */
+/* STOT Compare Presets live production bar v6.09 */
 (() => {
   if (window.__STOT_COMPARE_PRESET_STICKY__) return;
   window.__STOT_COMPARE_PRESET_STICKY__ = true;
@@ -104,12 +104,12 @@
       box-shadow:inset 0 0 0 1px rgba(190,133,255,.55)!important;
     }
 
-    /* v6.08: show the full hour unit inside the runtime value box. */
+    /* v6.09: full runtime unit with correct singular/plural. */
     #layoutcompareView #layoutTimePane>.field{position:relative!important}
     #layoutcompareView #layoutTimePane>.field .labels small{display:none!important}
     #layoutcompareView #layoutTimePane #layoutHours{padding-right:58px!important}
     #layoutcompareView #layoutTimePane>.field::after{
-      content:'hours';
+      content:attr(data-runtime-unit);
       position:absolute;
       right:18px;
       top:50%;
@@ -175,6 +175,10 @@
       const outB = bar.querySelector('[data-v601-b]');
       if (outA) outA.textContent = a?.textContent?.trim() || '0/s';
       if (outB) outB.textContent = b?.textContent?.trim() || '0/s';
+
+      const runtimeField = view.querySelector('#layoutTimePane>.field');
+      const runtimeInput = document.getElementById('layoutHours');
+      if (runtimeField) runtimeField.dataset.runtimeUnit = Number(runtimeInput?.value) === 1 ? 'hour' : 'hours';
 
       const active = view.classList.contains('active');
       const target = view.querySelector('.ab-compare');
