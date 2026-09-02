@@ -36,13 +36,96 @@ jobs:
           fi
           grep -Fq '.v572-plot-map{grid-template-columns:repeat(3,minmax(0,1fr))}' css/pages/oil-visual-builder.css
 
-      - name: Cache bust all local CSS and JS
+      - name: Prepare cache-safe build
         env:
           ASSET_VERSION: ${{ github.sha }}
         run: |
-          python3 -c 'import os,re,pathlib; p=pathlib.Path("index.html"); s=p.read_text(encoding="utf-8"); v=os.environ["ASSET_VERSION"][:12]; s=re.sub(r"((?:css|js)/[^\"?]+\.(?:css|js))\?v=[^\"]+", lambda m: f"{m.group(1)}?v={v}", s); p.write_text(s, encoding="utf-8")'
+          python3 <<'PY'
+          import json
+          import os
+          import pathlib
+          import re
+
+          sha = os.environ['ASSET_VERSION']
+          short = sha[:12]
+          path = pathlib.Path('index.html')
+          html = path.read_text(encoding='utf-8')
+
+          # Every CSS/JS URL is unique for this deployment.
+          html = re.sub(
+              r'((?:css|js)/[^"?]+\.(?:css|js))\?v=[^"]+',
+              lambda m: f'{m.group(1)}?v={short}',
+              html,
+          )
+
+          # Make the deployed HTML know exactly which build it belongs to.
+          html, count = re.subn(
+              r'(<meta name="stot-source-commit" content=")[^"]*(">)',
+              lambda m: f'{m.group(1)}{sha}{m.group(2)}',
+              html,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit('stot-source-commit meta tag not found')
+
+          # Safari can keep index.html longer than the versioned assets. This tiny
+          # guard checks a separately cache-busted build marker and, only when a
+          # newer deployment exists, reloads the same page under a unique URL.
+          guard = r'''
+          <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+          <meta http-equiv="Pragma" content="no-cache">
+          <meta http-equiv="Expires" content="0">
+          <script id="stot-build-guard">
+          (()=>{
+            const current=document.querySelector('meta[name="stot-source-commit"]')?.content||'';
+            const reloadKey='stot-auto-build-reload';
+            let checking=false;
+            const checkBuild=async()=>{
+              if(checking)return;
+              checking=true;
+              try{
+                const marker=new URL('build-version.json',document.baseURI);
+                marker.searchParams.set('_',Date.now().toString());
+                const response=await fetch(marker.href,{cache:'no-store',headers:{'Cache-Control':'no-cache'}});
+                if(!response.ok)return;
+                const data=await response.json();
+                const latest=String(data.build||'');
+                if(!latest||latest===current)return;
+                if(sessionStorage.getItem(reloadKey)===latest)return;
+                sessionStorage.setItem(reloadKey,latest);
+                const next=new URL(location.href);
+                next.searchParams.set('build',latest.slice(0,12));
+                location.replace(next.href);
+              }catch(_){
+                /* Offline or transient network errors should never block the app. */
+              }finally{
+                checking=false;
+              }
+            };
+            addEventListener('pageshow',()=>{checkBuild();setTimeout(checkBuild,1200)},{passive:true});
+            addEventListener('focus',checkBuild,{passive:true});
+            document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkBuild()},{passive:true});
+          })();
+          </script>
+          '''.strip()
+
+          if 'id="stot-build-guard"' not in html:
+              needle = re.search(r'<meta name="stot-source-commit" content="[^"]*">', html)
+              if not needle:
+                  raise SystemExit('Cannot place build guard')
+              html = html[:needle.end()] + '\n' + guard + html[needle.end():]
+
+          path.write_text(html, encoding='utf-8')
+          pathlib.Path('build-version.json').write_text(
+              json.dumps({'build': sha, 'short': short}, separators=(',', ':')),
+              encoding='utf-8',
+          )
+          PY
+
           grep -Fq "oil-visual-builder.css?v=${ASSET_VERSION:0:12}" index.html
           grep -Fq "oil-grid-editor-v585.css?v=${ASSET_VERSION:0:12}" index.html
+          grep -Fq 'id="stot-build-guard"' index.html
+          grep -Fq "\"build\":\"${ASSET_VERSION}\"" build-version.json
 
       - name: Configure and enable Pages
         uses: actions/configure-pages@v5
