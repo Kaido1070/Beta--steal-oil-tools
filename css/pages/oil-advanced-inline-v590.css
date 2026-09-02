@@ -194,3 +194,145 @@
   #oilView .v519-combined-summary .metric strong{font-size:16px!important}
   #oilView .v519-combined-summary .actions .action{width:100%!important;min-height:38px!important}
 }
+
+/* v5.92: Oil Preset share preview fits in one mobile viewport. */
+@media(max-width:620px){
+  #sharePreview.v592-oil-share-compact{
+    align-items:center!important;
+    padding:max(6px,env(safe-area-inset-top)) 6px max(6px,env(safe-area-inset-bottom))!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-sheet{
+    width:100%!important;
+    max-height:calc(100dvh - max(12px,env(safe-area-inset-top)) - max(12px,env(safe-area-inset-bottom)))!important;
+    height:auto!important;
+    overflow:hidden!important;
+    padding:10px!important;
+    border-radius:18px!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-brand{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    margin:0 0 7px!important;
+    padding:0 0 7px!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-game-name{
+    max-width:none!important;
+    font-size:16px!important;
+    line-height:1!important;
+    letter-spacing:.01em!important;
+    white-space:nowrap!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-credit{
+    flex:0 0 auto!important;
+    margin:0!important;
+    font-size:9px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-sheet-head{
+    grid-template-columns:minmax(0,1fr) 34px!important;
+    gap:7px!important;
+    align-items:center!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-sheet-head h2{
+    font-size:18px!important;
+    line-height:1!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-close{
+    width:34px!important;
+    height:34px!important;
+    border-radius:10px!important;
+    font-size:18px!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-content{
+    margin-top:7px!important;
+    gap:6px!important;
+    overflow:hidden!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-content>.share-section{
+    padding:7px!important;
+    border-radius:10px!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-content>.share-section:nth-child(n+3){
+    display:none!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-section-title{
+    margin:0 0 5px!important;
+    font-size:8px!important;
+    line-height:1!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-setup-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:4px!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-setup-item{
+    min-height:42px!important;
+    padding:5px 6px!important;
+    border-radius:8px!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-setup-item span{
+    margin-bottom:2px!important;
+    font-size:9px!important;
+    line-height:1.05!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-setup-item strong{
+    font-size:12px!important;
+    line-height:1.05!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-content>.share-section:nth-child(2){
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:4px!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-content>.share-section:nth-child(2)>.share-section-title{
+    grid-column:1/-1!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-content>.share-section:nth-child(2)>.share-line{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    gap:2px!important;
+    min-height:42px!important;
+    margin:0!important;
+    padding:5px 7px!important;
+    border:1px solid #263046!important;
+    border-radius:8px!important;
+    background:#0e141f!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-content>.share-section:nth-child(2)>.share-line span{
+    color:#8f9bb0!important;
+    font-size:9px!important;
+    line-height:1.05!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-content>.share-section:nth-child(2)>.share-line strong{
+    width:100%!important;
+    margin:0!important;
+    color:#f3f5f8!important;
+    font-size:13px!important;
+    line-height:1.05!important;
+    text-align:left!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-sheet-actions{
+    grid-template-columns:minmax(0,1fr) 92px!important;
+    gap:6px!important;
+    margin-top:7px!important;
+  }
+  #sharePreview.v592-oil-share-compact .share-sheet-actions button{
+    height:38px!important;
+    min-height:38px!important;
+    border-radius:10px!important;
+    font-size:13px!important;
+  }
+}
+@media(max-width:380px){
+  #sharePreview.v592-oil-share-compact .share-game-name{font-size:14px!important}
+  #sharePreview.v592-oil-share-compact .share-credit{font-size:8px!important}
+  #sharePreview.v592-oil-share-compact .share-setup-item{min-height:39px!important;padding:4px 5px!important}
+  #sharePreview.v592-oil-share-compact .share-content>.share-section:nth-child(2)>.share-line{min-height:39px!important;padding:4px 6px!important}
+}
