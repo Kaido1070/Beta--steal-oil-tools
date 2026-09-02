@@ -1,3 +1,4 @@
+# Compact editor v5.88 patch
 from pathlib import Path
 import textwrap
 
