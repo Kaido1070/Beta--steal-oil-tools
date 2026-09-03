@@ -206,10 +206,9 @@
     }
 
     const sync = () => {
-      enforceCompareOrder(view);
-      if (view.classList.contains('active')) window.STOT_VISUAL_PLOT_BUILDER?.render?.();
-      // render() has its own fallback placement. Re-assert the Compare-specific
-      // order afterwards so delayed legacy layout patches cannot lift the builder.
+      // Ordering and builder rendering are deliberately separate. The Visual
+      // Builder owns its own rendering; this component only keeps Compare's
+      // top-level sections in the requested visible order.
       enforceCompareOrder(view);
       syncPresetLabels(view);
       const a = document.getElementById('abRateA');
@@ -251,8 +250,7 @@
       view.dataset.v601Bound = '1';
       new MutationObserver(sync).observe(view,{attributes:true,attributeFilter:['class']});
       // Legacy Compare patches still move direct children after initial render.
-      // Watch only the top-level child list so the required order is restored
-      // without observing inner builder rendering or the rest of the document.
+      // Watch only the top-level child list; inner builder rendering is ignored.
       new MutationObserver(scheduleSync).observe(view,{childList:true});
       view.addEventListener('input',scheduleSync,true);
       view.addEventListener('change',scheduleSync,true);
