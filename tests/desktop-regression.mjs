@@ -147,7 +147,7 @@ assert.ok(largeVisuals.every(v=>v.imgOk||v.bg!=='none'),'A large Compare Drill v
 
 // Database / Events / Codes.
 await nav('database','#databaseView');
-assert.ok(await page.locator('#dbList .drill-card').count()>0,'Database drill cards missing');
+assert.ok(await page.locator('#drillList .drill-card').count()>0,'Database drill cards missing');
 for(const [tab,root] of [['refineries','#refineryList'],['pets','#petList']]){
   await page.locator(`#databaseTabs [data-dbview="${tab}"]`).click(); await wait(100);
   assert.ok(await page.locator(`${root} .drill-card`).count()>0,`${tab} cards missing`);
