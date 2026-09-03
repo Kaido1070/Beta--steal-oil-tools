@@ -80,13 +80,36 @@ await page.locator('[data-ab-layout="A"]').click();
 await wait(120);
 assert.equal(await text('.v524-shared-badge'), 'Preset A settings');
 
-// Sticky comparison bar fits and is tappable.
+// Sticky comparison bar must stay attached to the viewport bottom, including
+// after focus/viewport changes that resemble the iOS Safari keyboard cycle.
 await page.evaluate(() => window.scrollTo(0, 0));
-await wait(120);
+await wait(160);
 const compareSticky = page.locator('#v601CompareSticky');
 assert.equal(await compareSticky.count(), 1, 'Compare Presets sticky bar missing');
-const stickyBox = await compareSticky.boundingBox();
+assert.equal(await compareSticky.evaluate(el => el.parentElement === document.body), true, 'Compare sticky bar must remain a direct child of body');
+assert.equal(await compareSticky.evaluate(el => getComputedStyle(el).position), 'fixed', 'Compare sticky bar lost fixed positioning');
+assert.equal(await compareSticky.evaluate(el => el.classList.contains('show')), true, 'Compare sticky bar should be visible while results are off-screen');
+let stickyBox = await compareSticky.boundingBox();
 assert.ok(stickyBox && stickyBox.width <= 390, 'Compare Presets sticky bar overflows viewport');
+assert.ok(stickyBox && stickyBox.y + stickyBox.height >= 790, `Compare sticky bar rose away from screen bottom: ${JSON.stringify(stickyBox)}`);
+assert.ok(stickyBox && stickyBox.y + stickyBox.height <= 845, `Compare sticky bar extends below viewport: ${JSON.stringify(stickyBox)}`);
+
+const quickCount = page.locator('#v536QuickCount');
+if (await quickCount.count()) {
+  await quickCount.focus();
+  await wait(80);
+  await page.evaluate(() => document.activeElement?.blur());
+  await wait(420);
+}
+await page.setViewportSize({ width: 390, height: 560 });
+await wait(140);
+await page.setViewportSize({ width: 390, height: 844 });
+await wait(420);
+stickyBox = await compareSticky.boundingBox();
+assert.equal(await compareSticky.evaluate(el => el.parentElement === document.body), true, 'Compare sticky bar left body after viewport change');
+assert.equal(await compareSticky.evaluate(el => getComputedStyle(el).position), 'fixed', 'Compare sticky bar lost fixed positioning after viewport change');
+assert.ok(stickyBox && stickyBox.y + stickyBox.height >= 790, `Compare sticky bar did not return to screen bottom after viewport restore: ${JSON.stringify(stickyBox)}`);
+assert.ok(stickyBox && stickyBox.y + stickyBox.height <= 845, `Compare sticky bar exceeds restored viewport: ${JSON.stringify(stickyBox)}`);
 
 // Oil mobile controls and current-production sticky.
 await nav('oil', '#oilView');
@@ -117,5 +140,5 @@ if (previewBox) {
 await page.keyboard.press('Escape');
 
 assert.equal(pageErrors.length, 0, `Mobile page errors (${engineName}):\n${pageErrors.join('\n')}`);
-console.log(`MOBILE REGRESSION PASS (${engineName}): separate builders, 3-column plots, compact calculator rows, sticky bars, A/B labels, share preview`);
+console.log(`MOBILE REGRESSION PASS (${engineName}): separate builders, 3-column plots, compact calculator rows, bottom-anchored sticky bars, A/B labels, share preview`);
 await browser.close();
