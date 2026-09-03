@@ -8,8 +8,8 @@
   },
   "scripts": {
     "test": "npm run test:regression",
-    "test:regression": "node tests/regression.mjs && node tests/mobile-regression.mjs",
-    "test:desktop": "node tests/regression.mjs",
+    "test:regression": "node tests/desktop-regression.mjs && node tests/mobile-regression.mjs",
+    "test:desktop": "node tests/desktop-regression.mjs",
     "test:mobile": "node tests/mobile-regression.mjs",
     "test:deployment": "node tests/deployment-regression.mjs",
     "test:legacy-smoke": "node tests/smoke-beta.mjs"
