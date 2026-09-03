@@ -1,0 +1,54 @@
+name: Stage 1 Regression Tests
+
+on:
+  push:
+    branches: [stage1/regression-tests]
+    paths:
+      - tests/**
+      - package.json
+      - index.html
+      - js/**
+      - css/**
+      - assets/images/**
+      - .github/workflows/stage1-regression.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/stot-http.log
+          exit 1
+
+      - name: Desktop regression
+        run: npm run test:desktop
+
+      - name: Mobile regression
+        run: npm run test:mobile
+
+      - name: Deployment regression
+        run: npm run test:deployment
