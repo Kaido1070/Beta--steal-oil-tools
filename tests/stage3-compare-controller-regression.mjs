@@ -82,9 +82,13 @@ await assertStable('after legacy reorder window');
 await wait(2600);
 await assertStable('after long idle');
 
-// Re-enter Compare so tab-driven legacy handlers run again.
+// Re-enter Compare so tab-driven legacy handlers run again. Moving shared editor
+// controls out to Oil is allowed while leaving Compare, so begin a fresh violation
+// window only after Oil has settled. From this point onward, any violation belongs
+// to the Compare re-entry path itself and represents user-visible flicker risk.
 await page.locator('.tabs button[data-view="oil"]').click();
-await wait(100);
+await wait(250);
+await page.evaluate(() => { window.__stage3OrderViolations = 0; });
 await page.locator('.tabs button[data-view="layoutcompare"]').click();
 await wait(900);
 await assertStable('after re-entry');
