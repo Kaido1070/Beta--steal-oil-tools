@@ -1,0 +1,92 @@
+name: Apply Compare Builder Order Hotfix
+
+on:
+  push:
+    branches:
+      - hotfix/compare-builder-order
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hotfix/compare-builder-order
+
+      - name: Patch Compare Visual Builder order
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          builder = Path('js/pages/oil-visual-builder.js')
+          text = builder.read_text()
+          old = """    if(compareView){
+      if(compareShell.parentElement!==compareView)compareView.appendChild(compareShell);
+      const comparison=compareView.querySelector('.ab-compare');
+      const compareAnchor=directChildOf(compareView,comparison);
+      if(compareAnchor&&compareShell.nextElementSibling!==compareAnchor)compareView.insertBefore(compareShell,compareAnchor);
+    }
+"""
+          new = """    if(compareView){
+      if(compareShell.parentElement!==compareView)compareView.appendChild(compareShell);
+      const advancedAnchor=directChildOf(compareView,document.getElementById('v536AdvancedTools'));
+      const comparison=compareView.querySelector('.ab-compare');
+      const compareAnchor=directChildOf(compareView,comparison);
+      // Compare Presets order is intentionally:
+      // Advanced Tools -> Visual Plot Builder -> Preset Comparison.
+      if(advancedAnchor&&compareShell.previousElementSibling!==advancedAnchor){
+        advancedAnchor.insertAdjacentElement('afterend',compareShell);
+      }else if(!advancedAnchor&&compareAnchor&&compareShell.nextElementSibling!==compareAnchor){
+        compareView.insertBefore(compareShell,compareAnchor);
+      }
+    }
+"""
+          if old not in text:
+              raise SystemExit('Expected Compare builder placement block not found')
+          builder.write_text(text.replace(old, new, 1))
+
+          test = Path('tests/visual-builder-ownership-regression.mjs')
+          text = test.read_text()
+          old = """  assert.equal(await page.evaluate(() => document.getElementById('layoutVisualBuilder') !== document.getElementById('layoutVisualBuilderCompare')), true, `${label}: Oil and Compare are sharing one builder node`);
+}
+"""
+          new = """  assert.equal(await page.evaluate(() => document.getElementById('layoutVisualBuilder') !== document.getElementById('layoutVisualBuilderCompare')), true, `${label}: Oil and Compare are sharing one builder node`);
+  const order = await page.locator('#layoutcompareView').evaluate(view => {
+    const directChild = node => {
+      let current = node;
+      while (current && current.parentElement !== view) current = current.parentElement;
+      return current?.parentElement === view ? current : null;
+    };
+    const advanced = directChild(view.querySelector('#v536AdvancedTools'));
+    const builder = directChild(view.querySelector('#layoutVisualBuilderCompare'));
+    const comparison = directChild(view.querySelector('.ab-compare'));
+    const children = [...view.children];
+    return {
+      advanced: children.indexOf(advanced),
+      builder: children.indexOf(builder),
+      comparison: children.indexOf(comparison)
+    };
+  });
+  assert.ok(order.advanced >= 0, `${label}: Advanced Tools is not mounted in Compare Presets`);
+  assert.equal(order.builder, order.advanced + 1, `${label}: Visual Plot Builder must sit directly below Advanced Tools`);
+  assert.ok(order.comparison > order.builder, `${label}: Preset Comparison must stay below Visual Plot Builder`);
+}
+"""
+          if old not in text:
+              raise SystemExit('Expected Compare builder assertion block not found')
+          test.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Remove temporary workflow and commit
+        shell: bash
+        run: |
+          rm .github/workflows/hotfix-compare-builder-order.yml
+          git config user.name "1Yono"
+          git config user.email "f8h0f8@gmail.com"
+          git add js/pages/oil-visual-builder.js tests/visual-builder-ownership-regression.mjs .github/workflows/hotfix-compare-builder-order.yml
+          git commit -m "Fix Compare Visual Builder order"
+          git push origin HEAD:hotfix/compare-builder-order
