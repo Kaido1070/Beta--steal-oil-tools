@@ -80,19 +80,24 @@ await page.locator('#layoutModeTabs [data-layoutmode="time"]').click();
 assert.equal(await page.locator('#v575StickyRate').count(),1,'Current Production sticky missing');
 assert.equal(await txt('#v575StickyRate [data-v575-rate]'),await txt('#layoutNowRate'),'Current Production sticky stale');
 assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentElement?.id||''),'oilView','Oil builder left Oil / Hour');
-assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el=>el.parentElement?.id||''),'layoutcompareView','Compare builder left Compare Presets');
+assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare').count(),1,'Compare builder left Compare Presets');
 assert.equal(await page.evaluate(()=>document.getElementById('layoutVisualBuilder')!==document.getElementById('layoutVisualBuilderCompare')),true,'Oil and Compare are sharing one builder node');
 
 // Compare Presets: separate builder, A/B labels, all independent boost fields, shared mode and both calculation modes.
 await nav('layoutcompare','#layoutcompareView'); await wait(220);
 assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentElement?.id||''),'oilView','Oil builder moved into Compare Presets');
-assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el=>el.parentElement?.id||''),'layoutcompareView','Compare builder is not fixed in Compare Presets');
+assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare').count(),1,'Compare builder is not inside Compare Presets');
 const compareOrderOk=await page.evaluate(()=>{
-  const builder=document.getElementById('layoutVisualBuilderCompare');
-  const comparison=document.querySelector('#layoutcompareView .ab-compare');
-  return !!builder&&!!comparison&&!!(builder.compareDocumentPosition(comparison)&Node.DOCUMENT_POSITION_FOLLOWING);
+  const view=document.getElementById('layoutcompareView');
+  const advanced=view?.querySelector('#v536AdvancedTools');
+  const builder=view?.querySelector('#layoutVisualBuilderCompare');
+  const comparison=view?.querySelector('.ab-compare');
+  return !!advanced&&!!builder&&!!comparison&&
+    builder.parentElement===advanced.parentElement&&
+    builder.previousElementSibling===advanced&&
+    !!(builder.compareDocumentPosition(comparison)&Node.DOCUMENT_POSITION_FOLLOWING);
 });
-assert.equal(compareOrderOk,true,'Comparison is not after Compare builder');
+assert.equal(compareOrderOk,true,'Compare order must be Advanced Tools -> Visual Plot Builder -> Preset Comparison');
 assert.equal(await page.locator('#layoutVisualBuilderCompare .v572-plot-card').count(),15,'Compare builder does not contain 15 plot cards');
 await page.locator('[data-v524="separate"]').click(); await wait(100);
 await page.locator('[data-ab-layout="B"]').click(); await wait(120);

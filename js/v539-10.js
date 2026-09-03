@@ -16,6 +16,7 @@
       controls:document.querySelector('.layout-controls'),
       quick:byId('v536QuickFill'),
       advanced:byId('v536AdvancedTools'),
+      compareVisual:byId('layoutVisualBuilderCompare'),
       areas:byId('layoutAreas'),
       note:document.querySelector('.layout-note')
     };
@@ -75,7 +76,10 @@
 
   function mountCompare(){
     const view=byId('layoutcompareView'); if(!view) return;
-    const {calc,boosts,controls,quick,advanced,areas,note}=liveParts();
+    // The separated Compare builder is lazy. Create/mount it before collecting
+    // live parts so the first Compare ordering pass cannot miss it.
+    window.STOT_VISUAL_PLOT_BUILDER?.mount?.();
+    const {calc,boosts,controls,quick,advanced,compareVisual,areas,note}=liveParts();
     const intro=view.querySelector('.v56-compare-intro');
     const condition=byId('v533Condition')||byId('v529Condition');
     const conditionHost=byId('v533ConditionHost')||byId('v529ConditionHost');
@@ -91,7 +95,7 @@
     boosts.classList.add('v539-compare-boosts');
 
     let anchor=intro;
-    for(const el of [condition,settings,editor,boosts,quick,advanced,areas,note,comparison,actions]){
+    for(const el of [condition,settings,editor,boosts,quick,advanced,compareVisual,areas,note,comparison,actions]){
       if(!el) continue;
       anchor.insertAdjacentElement('afterend',el); anchor=el;
     }

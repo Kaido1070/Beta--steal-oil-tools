@@ -159,8 +159,24 @@
   }
 
   function enforceCompareOrder(view) {
-    const comparison = view?.querySelector('.ab-compare');
-    const actions = view?.querySelector('.v56-compare-actions');
+    if (!view) return;
+    const advanced = view.querySelector('#v536AdvancedTools');
+    const builder = view.querySelector('#layoutVisualBuilderCompare');
+    const comparison = view.querySelector('.ab-compare');
+    const actions = view.querySelector('.v56-compare-actions');
+
+    // Visible Compare Presets order must be:
+    // Advanced Tools -> Visual Plot Builder -> Preset Comparison.
+    // These nodes live inside the compare-page container, so order the actual
+    // elements instead of their outer #layoutcompareView ancestors.
+    if (advanced && builder &&
+        (builder.parentElement !== advanced.parentElement || builder.previousElementSibling !== advanced)) {
+      advanced.insertAdjacentElement('afterend', builder);
+    }
+    if (builder && comparison) {
+      const comparisonFollowsBuilder = !!(builder.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING);
+      if (!comparisonFollowsBuilder) builder.insertAdjacentElement('afterend', comparison);
+    }
     if (comparison && actions && actions.previousElementSibling !== comparison) {
       comparison.insertAdjacentElement('afterend', actions);
     }
@@ -188,8 +204,10 @@
     }
 
     const sync = () => {
+      // Ordering and builder rendering are deliberately separate. The Visual
+      // Builder owns its own rendering; this component only keeps Compare's
+      // sections in the requested visible order.
       enforceCompareOrder(view);
-      if (view.classList.contains('active')) window.STOT_VISUAL_PLOT_BUILDER?.render?.();
       syncPresetLabels(view);
       const a = document.getElementById('abRateA');
       const b = document.getElementById('abRateB');

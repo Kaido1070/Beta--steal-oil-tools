@@ -19,15 +19,35 @@ async function assertOilBuilder(label) {
 }
 async function assertCompareBuilder(label) {
   assert.equal(await page.locator('#layoutVisualBuilderCompare').count(), 1, `${label}: Compare builder missing`);
-  assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el => el.parentElement?.id || ''), 'layoutcompareView', `${label}: Compare builder left Compare Presets`);
+  assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare').count(), 1, `${label}: Compare builder left Compare Presets`);
   assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare .v572-plot-card').count(), 15, `${label}: expected all 15 Compare plot cards`);
   assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare').isVisible(), true, `${label}: Compare builder is not visible`);
   assert.equal(await page.evaluate(() => document.getElementById('layoutVisualBuilder') !== document.getElementById('layoutVisualBuilderCompare')), true, `${label}: Oil and Compare are sharing one builder node`);
+
+  const order = await page.locator('#layoutcompareView').evaluate(view => {
+    const advanced = view.querySelector('#v536AdvancedTools');
+    const builder = view.querySelector('#layoutVisualBuilderCompare');
+    const comparison = view.querySelector('.ab-compare');
+    return {
+      advancedFound: !!advanced,
+      builderFound: !!builder,
+      comparisonFound: !!comparison,
+      sameParent: !!advanced && !!builder && advanced.parentElement === builder.parentElement,
+      builderDirectlyAfterAdvanced: !!advanced && !!builder && builder.previousElementSibling === advanced,
+      comparisonFollowsBuilder: !!builder && !!comparison && !!(builder.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING)
+    };
+  });
+  assert.equal(order.advancedFound, true, `${label}: Advanced Tools is not mounted in Compare Presets`);
+  assert.equal(order.builderFound, true, `${label}: Visual Plot Builder is not mounted in Compare Presets`);
+  assert.equal(order.comparisonFound, true, `${label}: Preset Comparison is not mounted in Compare Presets`);
+  assert.equal(order.sameParent, true, `${label}: Visual Plot Builder must be in the same visible flow as Advanced Tools`);
+  assert.equal(order.builderDirectlyAfterAdvanced, true, `${label}: Visual Plot Builder must sit directly below Advanced Tools`);
+  assert.equal(order.comparisonFollowsBuilder, true, `${label}: Preset Comparison must stay below Visual Plot Builder`);
 }
 async function assertBothFixed(label) {
   await assertOilBuilder(label);
   assert.equal(await page.locator('#layoutVisualBuilderCompare').count(), 1, `${label}: Compare builder missing after it was created`);
-  assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el => el.parentElement?.id || ''), 'layoutcompareView', `${label}: Compare builder left Compare Presets`);
+  assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare').count(), 1, `${label}: Compare builder left Compare Presets`);
   assert.equal(await page.evaluate(() => document.getElementById('layoutVisualBuilder') !== document.getElementById('layoutVisualBuilderCompare')), true, `${label}: builders are not separate DOM nodes`);
 }
 
@@ -62,7 +82,7 @@ await assertOilBuilder('3.2s after Quick Fill');
 assert.equal(await page.evaluate(() => window.__oilBuilderRef === document.getElementById('layoutVisualBuilder')), true, 'Oil builder DOM node was replaced or transferred');
 
 // Compare Presets lazily creates a second, different permanent builder on its
-// first visit. The Oil builder must stay parked in Oil / Hour.
+// first visit. It must sit directly below Advanced Tools and above Preset Comparison.
 await nav('layoutcompare', '#layoutcompareView');
 await wait(700);
 await assertCompareBuilder('initial Compare Presets');
