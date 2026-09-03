@@ -158,9 +158,27 @@
     }
   }
 
+  function directChildOf(root, node) {
+    let current = node;
+    while (current && current.parentElement !== root) current = current.parentElement;
+    return current?.parentElement === root ? current : null;
+  }
+
   function enforceCompareOrder(view) {
-    const comparison = view?.querySelector('.ab-compare');
-    const actions = view?.querySelector('.v56-compare-actions');
+    const advanced = directChildOf(view, view?.querySelector('#v536AdvancedTools'));
+    const builder = directChildOf(view, view?.querySelector('#layoutVisualBuilderCompare'));
+    const comparison = directChildOf(view, view?.querySelector('.ab-compare'));
+    const actions = directChildOf(view, view?.querySelector('.v56-compare-actions'));
+
+    // Required visible order in Compare Presets:
+    // Advanced Tools -> Visual Plot Builder -> Preset Comparison.
+    if (advanced && builder && builder.previousElementSibling !== advanced) {
+      advanced.insertAdjacentElement('afterend', builder);
+    }
+    if (builder && comparison) {
+      const comparisonFollowsBuilder = !!(builder.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING);
+      if (!comparisonFollowsBuilder) builder.insertAdjacentElement('afterend', comparison);
+    }
     if (comparison && actions && actions.previousElementSibling !== comparison) {
       comparison.insertAdjacentElement('afterend', actions);
     }
@@ -190,6 +208,9 @@
     const sync = () => {
       enforceCompareOrder(view);
       if (view.classList.contains('active')) window.STOT_VISUAL_PLOT_BUILDER?.render?.();
+      // render() has its own fallback placement. Re-assert the Compare-specific
+      // order afterwards so delayed legacy layout patches cannot lift the builder.
+      enforceCompareOrder(view);
       syncPresetLabels(view);
       const a = document.getElementById('abRateA');
       const b = document.getElementById('abRateB');
