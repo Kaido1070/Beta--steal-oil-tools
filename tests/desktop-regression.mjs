@@ -9,7 +9,6 @@ const consoleErrors = [];
 const knownIssues = [];
 page.on('pageerror', e => pageErrors.push(String(e)));
 page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
-await page.addInitScript(() => localStorage.clear());
 
 const wait = (ms=100)=>page.waitForTimeout(ms);
 const txt = async sel => ((await page.locator(sel).textContent()) || '').replace(/\s+/g,' ').trim();
@@ -21,7 +20,11 @@ async function nav(view,id){
 }
 async function known(name,fn){try{await fn();console.log(`KNOWN CHECK PASSING: ${name}`)}catch(e){knownIssues.push(`${name}: ${e.message}`);console.log(`KNOWN CURRENT BUG: ${name}: ${e.message}`)}}
 
+// Start from a clean storage state exactly once. Do not clear on later reloads,
+// because persistence across reload is part of this regression suite.
 await page.goto(BASE_URL,{waitUntil:'networkidle'});
+await page.evaluate(()=>localStorage.clear());
+await page.reload({waitUntil:'networkidle'});
 await wait(250);
 assert.notEqual(await page.locator('body').evaluate(el=>getComputedStyle(el).visibility),'hidden');
 
