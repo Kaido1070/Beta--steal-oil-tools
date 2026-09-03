@@ -158,13 +158,7 @@
     }
   }
 
-  let ownerRepairQueued = false;
-
-  function enforceVisualBuilderOwner(view) {
-    // Placement is owned exclusively by oil-visual-builder.js. This file may
-    // request a mount, but it must never move #layoutVisualBuilder directly.
-    window.STOT_VISUAL_PLOT_BUILDER?.mount?.();
-
+  function enforceCompareOrder(view) {
     const comparison = view?.querySelector('.ab-compare');
     const actions = view?.querySelector('.v56-compare-actions');
     if (comparison && actions && actions.previousElementSibling !== comparison) {
@@ -172,22 +166,8 @@
     }
   }
 
-  function scheduleVisualBuilderOwner(view) {
-    if (ownerRepairQueued) return;
-    ownerRepairQueued = true;
-    requestAnimationFrame(() => {
-      ownerRepairQueued = false;
-      enforceVisualBuilderOwner(view);
-    });
-  }
-
-  function enforceCompareOrder(view) {
-    enforceVisualBuilderOwner(view);
-  }
-
   function setup() {
     const view = document.getElementById('layoutcompareView');
-    const oilView = document.getElementById('oilView');
     if (!view) return false;
 
     let bar = document.getElementById('v601CompareSticky');
@@ -208,7 +188,8 @@
     }
 
     const sync = () => {
-      enforceVisualBuilderOwner(view);
+      enforceCompareOrder(view);
+      if (view.classList.contains('active')) window.STOT_VISUAL_PLOT_BUILDER?.render?.();
       syncPresetLabels(view);
       const a = document.getElementById('abRateA');
       const b = document.getElementById('abRateB');
@@ -248,30 +229,17 @@
     if (!view.dataset.v601Bound) {
       view.dataset.v601Bound = '1';
       new MutationObserver(sync).observe(view,{attributes:true,attributeFilter:['class']});
-
-      // Legacy patches still move layoutAreas between Oil / Hour and the
-      // Compare editor host. Observe those moves and ask the single owner to
-      // remount the visual builder in the correct active view.
-      const ownerObserver = new MutationObserver(() => scheduleVisualBuilderOwner(view));
-      ownerObserver.observe(view,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});
-      if (oilView) ownerObserver.observe(oilView,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});
-
       view.addEventListener('input',scheduleSync,true);
       view.addEventListener('change',scheduleSync,true);
       view.addEventListener('click',scheduleSync,true);
       window.addEventListener('scroll',sync,{passive:true});
       window.addEventListener('resize',sync,{passive:true});
       document.querySelectorAll('.tabs button').forEach(btn=>btn.addEventListener('click',()=>{
-        scheduleVisualBuilderOwner(view);
         setTimeout(sync,0);
         setTimeout(sync,100);
         setTimeout(sync,260);
       }));
     }
-
-    window.STOT_VISUAL_BUILDER_OWNER = Object.freeze({
-      sync: () => enforceVisualBuilderOwner(view)
-    });
 
     sync();
     setTimeout(sync,80);
