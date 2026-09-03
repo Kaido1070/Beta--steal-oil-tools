@@ -1,8 +1,10 @@
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 import assert from 'node:assert/strict';
 
 const BASE_URL = process.env.STOT_TEST_URL || 'http://127.0.0.1:4173/';
-const browser = await chromium.launch({ headless: true });
+const engineName = (process.env.STOT_BROWSER || 'chromium').toLowerCase();
+const engine = engineName === 'webkit' ? webkit : chromium;
+const browser = await engine.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 const pageErrors = [];
 page.on('pageerror', error => pageErrors.push(String(error)));
@@ -13,6 +15,7 @@ async function nav(view, id) {
   await page.locator(`.tabs button[data-view="${view}"]`).click();
   await wait(160);
   assert.ok(await page.locator(id).evaluate(el => el.classList.contains('active')), `${id} did not become active`);
+  assert.equal(await page.locator('.view.active').count(), 1, `Multiple active views after ${view}`);
 }
 async function text(sel) {
   return ((await page.locator(sel).textContent()) || '').replace(/\s+/g, ' ').trim();
@@ -20,6 +23,7 @@ async function text(sel) {
 
 await page.goto(BASE_URL, { waitUntil: 'networkidle' });
 await wait(250);
+assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
 // Compare Presets mobile layout.
 await nav('layoutcompare', '#layoutcompareView');
@@ -63,7 +67,7 @@ await page.locator('[data-ab-layout="A"]').click();
 await wait(120);
 assert.equal(await text('.v524-shared-badge'), 'Preset A settings');
 
-// Sticky comparison bar fits and is tappable when shown.
+// Sticky comparison bar fits and is tappable.
 await page.evaluate(() => window.scrollTo(0, 0));
 await wait(120);
 const compareSticky = page.locator('#v601CompareSticky');
@@ -96,6 +100,6 @@ if (previewBox) {
 }
 await page.keyboard.press('Escape');
 
-assert.equal(pageErrors.length, 0, `Mobile page errors:\n${pageErrors.join('\n')}`);
-console.log('MOBILE REGRESSION PASS: 3-column plots, compact calculator rows, sticky bars, A/B labels, share preview');
+assert.equal(pageErrors.length, 0, `Mobile page errors (${engineName}):\n${pageErrors.join('\n')}`);
+console.log(`MOBILE REGRESSION PASS (${engineName}): 3-column plots, compact calculator rows, sticky bars, A/B labels, share preview`);
 await browser.close();
