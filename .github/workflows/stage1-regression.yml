@@ -63,6 +63,15 @@ jobs:
       - name: Visual Builder ownership regression
         run: node tests/visual-builder-ownership-regression.mjs
 
+      - name: Stage 3 Compare controller — Desktop Chromium
+        run: node tests/stage3-compare-controller-regression.mjs
+
+      - name: Stage 3 Compare controller — Mobile Chromium
+        run: STOT_MOBILE=1 node tests/stage3-compare-controller-regression.mjs
+
+      - name: Stage 3 Compare controller — Mobile WebKit
+        run: STOT_BROWSER=webkit STOT_MOBILE=1 node tests/stage3-compare-controller-regression.mjs
+
       - name: Mobile Chromium regression
         run: npm run test:mobile
 
