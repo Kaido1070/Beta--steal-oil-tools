@@ -158,33 +158,63 @@
     }
   }
 
-  function restoreOilBuilder(builder) {
+  let ownerRepairing = false;
+  let ownerRepairQueued = false;
+
+  function enforceVisualBuilderOwner(view) {
+    if (ownerRepairing) return;
+
+    const builder = document.getElementById('layoutVisualBuilder');
     const oilView = document.getElementById('oilView');
     const host = document.getElementById('layoutAreas');
-    if (!builder || !host || !oilView?.classList.contains('active')) return;
-    const parent = host.parentElement;
-    if (!parent) return;
-    if (builder.parentElement !== parent || builder.nextElementSibling !== host) parent.insertBefore(builder, host);
+    const comparison = view?.querySelector('.ab-compare');
+    const actions = view?.querySelector('.v56-compare-actions');
+    if (!builder || !view) return;
+
+    const compareActive = view.classList.contains('active');
+    const oilActive = oilView?.classList.contains('active');
+    if (!compareActive && !oilActive) return;
+
+    ownerRepairing = true;
+    try {
+      if (compareActive) {
+        if (!comparison) return;
+        if (builder.parentElement !== view || builder.nextElementSibling !== comparison) {
+          view.insertBefore(builder, comparison);
+        }
+        if (actions && actions.previousElementSibling !== comparison) {
+          comparison.insertAdjacentElement('afterend', actions);
+        }
+        return;
+      }
+
+      if (oilActive && host?.parentElement) {
+        const parent = host.parentElement;
+        if (builder.parentElement !== parent || builder.nextElementSibling !== host) {
+          parent.insertBefore(builder, host);
+        }
+      }
+    } finally {
+      ownerRepairing = false;
+    }
+  }
+
+  function scheduleVisualBuilderOwner(view) {
+    if (ownerRepairQueued) return;
+    ownerRepairQueued = true;
+    requestAnimationFrame(() => {
+      ownerRepairQueued = false;
+      enforceVisualBuilderOwner(view);
+    });
   }
 
   function enforceCompareOrder(view) {
-    const builder = document.getElementById('layoutVisualBuilder');
-    const comparison = view?.querySelector('.ab-compare');
-    const actions = view?.querySelector('.v56-compare-actions');
-    if (!view || !builder || !comparison) return;
-
-    if (!view.classList.contains('active')) {
-      restoreOilBuilder(builder);
-      return;
-    }
-
-    if (builder.parentElement !== view) view.appendChild(builder);
-    if (comparison.previousElementSibling !== builder) builder.insertAdjacentElement('afterend', comparison);
-    if (actions && actions.previousElementSibling !== comparison) comparison.insertAdjacentElement('afterend', actions);
+    enforceVisualBuilderOwner(view);
   }
 
   function setup() {
     const view = document.getElementById('layoutcompareView');
+    const oilView = document.getElementById('oilView');
     if (!view) return false;
 
     let bar = document.getElementById('v601CompareSticky');
@@ -205,7 +235,7 @@
     }
 
     const sync = () => {
-      enforceCompareOrder(view);
+      enforceVisualBuilderOwner(view);
       syncPresetLabels(view);
       const a = document.getElementById('abRateA');
       const b = document.getElementById('abRateB');
@@ -245,17 +275,30 @@
     if (!view.dataset.v601Bound) {
       view.dataset.v601Bound = '1';
       new MutationObserver(sync).observe(view,{attributes:true,attributeFilter:['class']});
+
+      // Final ownership guard: if any legacy render or delayed patch moves the
+      // shared builder into the wrong view, immediately restore it to whichever
+      // of Oil / Hour or Compare Presets is currently active.
+      const ownerObserver = new MutationObserver(() => scheduleVisualBuilderOwner(view));
+      ownerObserver.observe(view,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});
+      if (oilView) ownerObserver.observe(oilView,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});
+
       view.addEventListener('input',scheduleSync,true);
       view.addEventListener('change',scheduleSync,true);
       view.addEventListener('click',scheduleSync,true);
       window.addEventListener('scroll',sync,{passive:true});
       window.addEventListener('resize',sync,{passive:true});
       document.querySelectorAll('.tabs button').forEach(btn=>btn.addEventListener('click',()=>{
+        scheduleVisualBuilderOwner(view);
         setTimeout(sync,0);
         setTimeout(sync,100);
         setTimeout(sync,260);
       }));
     }
+
+    window.STOT_VISUAL_BUILDER_OWNER = Object.freeze({
+      sync: () => enforceVisualBuilderOwner(view)
+    });
 
     sync();
     setTimeout(sync,80);
