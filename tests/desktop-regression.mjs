@@ -79,14 +79,16 @@ await page.locator('#layoutModeTabs [data-layoutmode="time"]').click();
 
 assert.equal(await page.locator('#v575StickyRate').count(),1,'Current Production sticky missing');
 assert.equal(await txt('#v575StickyRate [data-v575-rate]'),await txt('#layoutNowRate'),'Current Production sticky stale');
-await known('Oil / Hour owns Visual Plot Builder while active',async()=>{
-  assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentElement?.id||''),'oilView');
-});
+assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentElement?.id||''),'oilView','Oil builder left Oil / Hour');
+assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el=>el.parentElement?.id||''),'layoutcompareView','Compare builder left Compare Presets');
+assert.equal(await page.evaluate(()=>document.getElementById('layoutVisualBuilder')!==document.getElementById('layoutVisualBuilderCompare')),true,'Oil and Compare are sharing one builder node');
 
-// Compare Presets: ownership/order, A/B labels, all independent boost fields, shared mode and both calculation modes.
+// Compare Presets: separate builder, A/B labels, all independent boost fields, shared mode and both calculation modes.
 await nav('layoutcompare','#layoutcompareView'); await wait(220);
-assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentElement?.id||''),'layoutcompareView');
-assert.equal(await page.locator('#layoutVisualBuilder + .ab-compare').count(),1,'Comparison is not after builder');
+assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentElement?.id||''),'oilView','Oil builder moved into Compare Presets');
+assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el=>el.parentElement?.id||''),'layoutcompareView','Compare builder is not fixed in Compare Presets');
+assert.equal(await page.locator('#layoutVisualBuilderCompare + .ab-compare').count(),1,'Comparison is not after Compare builder');
+assert.equal(await page.locator('#layoutVisualBuilderCompare .v572-plot-card').count(),15,'Compare builder does not contain 15 plot cards');
 await page.locator('[data-v524="separate"]').click(); await wait(100);
 await page.locator('[data-ab-layout="B"]').click(); await wait(120);
 assert.equal(await txt('.v524-shared-badge'),'Preset B settings','Preset B label wrong');
