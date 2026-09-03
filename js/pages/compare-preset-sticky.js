@@ -158,21 +158,19 @@
     }
   }
 
-  function directChildOf(root, node) {
-    let current = node;
-    while (current && current.parentElement !== root) current = current.parentElement;
-    return current?.parentElement === root ? current : null;
-  }
-
   function enforceCompareOrder(view) {
-    const advanced = directChildOf(view, view?.querySelector('#v536AdvancedTools'));
-    const builder = directChildOf(view, view?.querySelector('#layoutVisualBuilderCompare'));
-    const comparison = directChildOf(view, view?.querySelector('.ab-compare'));
-    const actions = directChildOf(view, view?.querySelector('.v56-compare-actions'));
+    if (!view) return;
+    const advanced = view.querySelector('#v536AdvancedTools');
+    const builder = view.querySelector('#layoutVisualBuilderCompare');
+    const comparison = view.querySelector('.ab-compare');
+    const actions = view.querySelector('.v56-compare-actions');
 
-    // Required visible order in Compare Presets:
+    // Visible Compare Presets order must be:
     // Advanced Tools -> Visual Plot Builder -> Preset Comparison.
-    if (advanced && builder && builder.previousElementSibling !== advanced) {
+    // These nodes live inside the compare-page container, so order the actual
+    // elements instead of their outer #layoutcompareView ancestors.
+    if (advanced && builder &&
+        (builder.parentElement !== advanced.parentElement || builder.previousElementSibling !== advanced)) {
       advanced.insertAdjacentElement('afterend', builder);
     }
     if (builder && comparison) {
@@ -208,7 +206,7 @@
     const sync = () => {
       // Ordering and builder rendering are deliberately separate. The Visual
       // Builder owns its own rendering; this component only keeps Compare's
-      // top-level sections in the requested visible order.
+      // sections in the requested visible order.
       enforceCompareOrder(view);
       syncPresetLabels(view);
       const a = document.getElementById('abRateA');
