@@ -99,9 +99,16 @@ await nav('compare','#compareView');
 await page.locator('#compareA').selectOption('clock'); await page.locator('#compareB').selectOption('basic'); await wait(120);
 assert.match(await txt('#compareCards'),/Clock/i);
 assert.match(await txt('#compareInsight'),/Result:/i);
-const compareImgs=page.locator('#compareCards .compare-card img');
-assert.ok(await compareImgs.count()>=2,'Compare images missing');
-for(const img of await compareImgs.all()) assert.ok(await img.evaluate(el=>el.complete&&el.naturalWidth>0),'Compare image failed');
+for(const id of ['#compareAThumb','#compareBThumb']){
+  assert.equal(await page.locator(id).count(),1,`${id} missing`);
+  assert.notEqual(await page.locator(id).evaluate(el=>getComputedStyle(el).backgroundImage),'none',`${id} atlas image missing`);
+}
+const largeVisuals=await page.locator('#compareCards .compare-logo').evaluateAll(nodes=>nodes.map(el=>{
+  const img=el.querySelector('img');
+  return {imgOk:!!img&&img.complete&&img.naturalWidth>0,bg:getComputedStyle(el).backgroundImage};
+}));
+assert.equal(largeVisuals.length,2,'Expected two large Compare Drill visuals');
+assert.ok(largeVisuals.every(v=>v.imgOk||v.bg!=='none'),'A large Compare Drill visual is missing');
 
 // Database / Events / Codes.
 await nav('database','#databaseView');
