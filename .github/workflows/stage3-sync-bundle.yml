@@ -1,0 +1,65 @@
+name: Stage 3 Sync Compare Runtime
+
+on:
+  push:
+    branches: [stage3/compare-consolidation]
+    paths:
+      - js/v539-08.js
+      - js/v539-10.js
+      - .github/workflows/stage3-sync-bundle.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage3/compare-consolidation
+          fetch-depth: 0
+
+      - name: Sync Compare patch sources into runtime bundle
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          bundle_path = Path('js/beta-patches.bundle.js')
+          bundle = bundle_path.read_text(encoding='utf-8')
+
+          for source_name in ('js/v539-08.js', 'js/v539-10.js'):
+              marker = f'/* ===== {source_name} ===== */'
+              start = bundle.find(marker)
+              if start < 0:
+                  raise SystemExit(f'Missing bundle marker: {marker}')
+              next_start = bundle.find('/* ===== ', start + len(marker))
+              if next_start < 0:
+                  raise SystemExit(f'Missing next bundle marker after: {marker}')
+
+              source = Path(source_name).read_text(encoding='utf-8').rstrip()
+              replacement = (
+                  marker + '\n'
+                  + 'try {\n'
+                  + source + '\n'
+                  + f'}} catch (error) {{ console.error("STOT patch failed: {source_name}", error); }}\n\n'
+              )
+              bundle = bundle[:start] + replacement + bundle[next_start:]
+
+          bundle_path.write_text(bundle, encoding='utf-8')
+          PY
+          node --check js/beta-patches.bundle.js
+          grep -q 'function stage3(){return window.STOT_COMPARE_PRESETS_CONTROLLER}' js/beta-patches.bundle.js
+          grep -q 'controller&&view?.classList.contains("active")' js/beta-patches.bundle.js
+
+      - name: Commit synced runtime bundle
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/beta-patches.bundle.js
+          if git diff --cached --quiet; then
+            echo "Runtime bundle already synchronized"
+          else
+            git commit -m "Stage 3: sync Compare runtime bundle"
+            git push origin HEAD:stage3/compare-consolidation
+          fi
