@@ -48,8 +48,6 @@
       memo.add(key);return false;
     }
     if(!dfs(0))return null;
-    // Reserved refinery pieces participate in packing but are intentionally not
-    // rendered. Their cells therefore stay visibly empty and contiguous.
     return placed.filter(item=>item&&!item.reserve);
   }
 
@@ -58,36 +56,62 @@
   function visualPlotHtml(plot){const number=plotNumber(plot),meta=displayMeta(plot),packed=packVisual(plot),used=pieceList(plot).area,valid=packed!==null,occupied=valid?packed.map(placementHtml).join(''):'';return `<button class="v572-plot-card ${areaClass(plot)}${selectedPlotId===plot.id?' selected':''}${valid?'':' invalid'}" data-visual-plot="${plot.id}" type="button" aria-label="Edit plot ${number}, ${esc(meta.areaName)}"><span class="v572-plot-head"><strong>${number} <em>${esc(meta.areaName)}</em></strong><i>×${meta.mult}</i></span><span class="v572-grid-stage">${gridCells()}<span class="v572-grid-placements">${occupied}</span>${valid?'':`<span class="v572-invalid-label">Doesn't fit</span>`}</span><span class="v572-plot-foot"><span>${used?`${used}/25 cells`:'Empty'}</span><span>${plot.rows.length?`${plot.rows.length} drill type${plot.rows.length===1?'':'s'}`:'Tap to build'}</span></span></button>`}
   function summaryHtml(){return `<div class="v572-map-summary">${LAYOUT_AREAS.map(area=>`<span class="v572-summary-item ${AREA_CLASS[area.id]||''}"><i></i><b>${esc(area.name)}</b><small>${area.plots} Plot${area.plots===1?'':'s'} · ×${area.mult}</small></span>`).join('')}</div>`}
 
-  // Single source of truth for Visual Plot Builder placement.
-  // Compare Presets owns the builder only while that view is active; otherwise
-  // it stays immediately before layoutAreas in Oil / Hour. No other script
-  // should move #layoutVisualBuilder directly.
-  function ensureShell(){
-    const host=document.getElementById('layoutAreas');
-    let shell=document.getElementById('layoutVisualBuilder');
-    if(!host)return shell;
-    if(!shell){shell=document.createElement('section');shell.id='layoutVisualBuilder';shell.className='panel v572-visual-builder'}
-
+  // Oil / Hour and Compare Presets use two completely separate DOM builders.
+  // Neither builder is ever shared or transferred to the other page.
+  function ensureShells(){
+    const oilView=document.getElementById('oilView');
     const compareView=document.getElementById('layoutcompareView');
-    const comparison=compareView?.querySelector('.ab-compare');
-    const compareActive=compareView?.classList.contains('active');
+    const host=document.getElementById('layoutAreas');
 
-    if(compareActive&&comparison){
-      // Preserve the existing Compare Presets layout: builder and comparison
-      // are direct siblings in layoutcompareView, with comparison immediately
-      // after the builder.
-      if(shell.parentElement!==compareView)compareView.appendChild(shell);
-      if(comparison.previousElementSibling!==shell)shell.insertAdjacentElement('afterend',comparison);
-    }else if(host.parentElement){
-      const parent=host.parentElement;
-      if(shell.parentElement!==parent||shell.nextElementSibling!==host)parent.insertBefore(shell,host);
+    let oilShell=document.getElementById('layoutVisualBuilder');
+    if(!oilShell){
+      oilShell=document.createElement('section');
+      oilShell.id='layoutVisualBuilder';
+      oilShell.className='panel v572-visual-builder';
+      oilShell.dataset.builderScope='oil';
+    }
+    if(oilView){
+      if(oilShell.parentElement!==oilView)oilView.appendChild(oilShell);
+      if(host?.parentElement===oilView&&oilShell.nextElementSibling!==host)oilView.insertBefore(oilShell,host);
     }
 
-    host.classList.add('v572-legacy-layout');
-    return shell;
+    let compareShell=document.getElementById('layoutVisualBuilderCompare');
+    if(!compareShell){
+      compareShell=document.createElement('section');
+      compareShell.id='layoutVisualBuilderCompare';
+      compareShell.className='panel v572-visual-builder';
+      compareShell.dataset.builderScope='compare';
+    }
+    if(compareView){
+      if(compareShell.parentElement!==compareView)compareView.appendChild(compareShell);
+      const comparison=compareView.querySelector('.ab-compare');
+      if(comparison&&comparison.previousElementSibling!==compareShell)compareView.insertBefore(compareShell,comparison);
+    }
+
+    host?.classList.add('v572-legacy-layout');
+    return {oilShell,compareShell};
   }
 
-  function renderVisualBuilder(){if(visualRendering)return;visualRendering=true;try{const shell=ensureShell();if(!shell)return;shell.innerHTML=`<div class="v572-builder-head"><div><h2>Visual Plot Builder</h2><p>Tap any plot to add drills. The 5×5 map updates instantly with the space each drill uses.</p></div><span>${layoutPlots.filter(p=>p.rows.length).length}/15 used</span></div>${summaryHtml()}<div class="v572-plot-map">${layoutPlots.map(visualPlotHtml).join('')}</div>`;shell.querySelectorAll('[data-visual-plot]').forEach(btn=>btn.onclick=()=>openVisualPlotEditor(btn.dataset.visualPlot))}finally{visualRendering=false}}
+  function renderShell(shell){
+    if(!shell)return;
+    shell.innerHTML=`<div class="v572-builder-head"><div><h2>Visual Plot Builder</h2><p>Tap any plot to add drills. The 5×5 map updates instantly with the space each drill uses.</p></div><span>${layoutPlots.filter(p=>p.rows.length).length}/15 used</span></div>${summaryHtml()}<div class="v572-plot-map">${layoutPlots.map(visualPlotHtml).join('')}</div>`;
+    shell.querySelectorAll('[data-visual-plot]').forEach(btn=>btn.onclick=()=>openVisualPlotEditor(btn.dataset.visualPlot));
+    shell.dataset.v572Rendered='1';
+  }
+
+  function renderVisualBuilder(){
+    if(visualRendering)return;
+    visualRendering=true;
+    try{
+      const {oilShell,compareShell}=ensureShells();
+      const compareActive=document.getElementById('layoutcompareView')?.classList.contains('active');
+      const oilActive=document.getElementById('oilView')?.classList.contains('active');
+      if(compareActive)renderShell(compareShell);
+      else if(oilActive)renderShell(oilShell);
+      else if(!oilShell?.dataset.v572Rendered)renderShell(oilShell);
+    }finally{visualRendering=false}
+  }
+
   function editorRowHtml(plot,row,index){const drill=drills.find(d=>d.id===row.drill)||drills[0],[w,h]=fpSize(drill.footprint);return `<div class="v572-editor-row" data-vrow="${index}"><label><span>Drill</span><select data-vdrill>${drillOptions(row.drill)}</select></label><div class="v572-row-two"><label><span>Tier</span><select data-vtier>${tierOptions(row.tier)}</select></label><label><span>Count</span><input data-vcount type="number" min="1" max="25" value="${row.count}" inputmode="numeric"></label></div><div class="v572-row-meta"><span>${esc(drill.name)}</span><b>${w}×${h} · ${w*h} cell${w*h===1?'':'s'} each</b></div>${drill.special==='hacker'?`<label><span>Hacker Oil/s</span><input data-vhacker type="number" min="0" value="${row.hacker||550}" inputmode="numeric"></label>`:''}<button class="v572-remove-row" data-vremove type="button">Remove</button></div>`}
   function ensureEditor(){let modal=document.getElementById('v572PlotEditor');if(modal)return modal;modal=document.createElement('div');modal.id='v572PlotEditor';modal.className='v572-editor-backdrop';modal.setAttribute('aria-hidden','true');modal.innerHTML='<div class="v572-editor-sheet" role="dialog" aria-modal="true" aria-labelledby="v572EditorTitle"><div id="v572EditorBody"></div></div>';document.body.appendChild(modal);modal.addEventListener('click',e=>{if(e.target===modal)closeVisualPlotEditor()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&selectedPlotId)closeVisualPlotEditor()});return modal}
   function renderVisualEditor(){if(!selectedPlotId)return;const plot=layoutPlots.find(p=>p.id===selectedPlotId);if(!plot)return;const modal=ensureEditor(),body=modal.querySelector('#v572EditorBody'),used=pieceList(plot).area,valid=canPack5x5(plot),number=plotNumber(plot);body.innerHTML=`<div class="v572-editor-head"><div><small>Selected Plot</small><h3 id="v572EditorTitle">${number} ${esc(displayMeta(plot).areaName)} <span>×${displayMeta(plot).mult}</span></h3></div><button data-vclose type="button" aria-label="Close">×</button></div><div class="v572-editor-status ${valid?'ok':'bad'}"><strong>${valid?`${used} / 25 cells`:`Doesn't fit in 5×5`}</strong><span>${plot.rows.length?`${plot.rows.length} drill type${plot.rows.length===1?'':'s'}`:'Empty plot'}</span></div><div class="v572-editor-grid-preview">${gridCells()}<span class="v572-grid-placements">${(packVisual(plot)||[]).map(placementHtml).join('')}</span></div><div class="v572-editor-rows">${plot.rows.length?plot.rows.map((row,i)=>editorRowHtml(plot,row,i)).join(''):'<div class="v572-empty-editor">No drills yet. Add one below.</div>'}</div><div class="v572-editor-actions"><button data-vadd class="primary" type="button">+ Add Drill</button><button data-vcopy type="button">Copy Plot</button><button data-vpaste type="button" ${layoutCopiedRows?'':'disabled'}>Paste</button><button data-vclear type="button" ${plot.rows.length?'':'disabled'}>Clear Plot</button></div>`;
@@ -169,6 +193,8 @@
     return bar;
   }
 
-
-  window.STOT_VISUAL_PLOT_BUILDER=Object.freeze({render:renderVisualBuilder,open:openVisualPlotEditor,close:closeVisualPlotEditor,pack:packVisual,mount:ensureShell});document.documentElement.dataset.stotVisualBuilder=STOT_CONFIG.version;ensureStickyRate();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',renderVisualBuilder,{once:true});else renderVisualBuilder();
+  window.STOT_VISUAL_PLOT_BUILDER=Object.freeze({render:renderVisualBuilder,open:openVisualPlotEditor,close:closeVisualPlotEditor,pack:packVisual,mount:ensureShells});
+  document.documentElement.dataset.stotVisualBuilder=STOT_CONFIG.version;
+  ensureStickyRate();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',renderVisualBuilder,{once:true});else renderVisualBuilder();
 })();
