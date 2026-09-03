@@ -1,4 +1,4 @@
-/* STOT Compare Presets live production bar v6.10 */
+/* STOT Compare Presets live production bar v6.11 */
 (() => {
   if (window.__STOT_COMPARE_PRESET_STICKY__) return;
   window.__STOT_COMPARE_PRESET_STICKY__ = true;
@@ -6,14 +6,15 @@
   const style = document.createElement('style');
   style.textContent = `
     #v601CompareSticky{
-      position:fixed;z-index:2147482999;left:50%;bottom:max(6px,env(safe-area-inset-bottom));
-      transform:translate(-50%,calc(100% + 22px));
+      position:fixed!important;z-index:2147482999!important;left:50%!important;right:auto!important;top:auto!important;bottom:max(6px,env(safe-area-inset-bottom))!important;
+      margin:0!important;transform:translate(-50%,calc(100% + 22px));
       width:min(470px,calc(100vw - 28px));min-height:48px;
       display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:center;gap:8px;
       padding:6px 8px 6px 10px;border:1px solid rgba(157,92,255,.72);border-radius:13px;
       background:rgba(8,13,23,.96);box-shadow:0 12px 34px rgba(0,0,0,.34);
       color:#f4f2ff;opacity:0;pointer-events:none;transition:transform .2s ease,opacity .2s ease;
       -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);text-align:left;touch-action:manipulation;
+      -webkit-backface-visibility:hidden;backface-visibility:hidden;
     }
     #v601CompareSticky.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
     #v601CompareSticky>*{pointer-events:none;user-select:none;-webkit-user-select:none}
@@ -182,6 +183,30 @@
     }
   }
 
+  function pinStickyBar(bar) {
+    if (!bar) return;
+    if (bar.parentElement !== document.body) document.body.appendChild(bar);
+    bar.style.setProperty('position','fixed','important');
+    bar.style.setProperty('left','50%','important');
+    bar.style.setProperty('right','auto','important');
+    bar.style.setProperty('top','auto','important');
+    bar.style.setProperty('bottom','max(6px,env(safe-area-inset-bottom))','important');
+    bar.style.setProperty('margin','0','important');
+    bar.style.setProperty('z-index','2147482999','important');
+  }
+
+  // iOS Safari can leave a fixed control at the former visual-viewport bottom
+  // after the software keyboard closes. Re-applying the viewport anchor after
+  // VisualViewport/focus changes forces the bar back to the real screen bottom.
+  function repairStickyViewport(bar) {
+    if (!bar) return;
+    pinStickyBar(bar);
+    bar.style.removeProperty('bottom');
+    void bar.offsetHeight;
+    bar.style.setProperty('bottom','max(6px,env(safe-area-inset-bottom))','important');
+    bar.style.setProperty('top','auto','important');
+  }
+
   function setup() {
     const view = document.getElementById('layoutcompareView');
     if (!view) return false;
@@ -202,11 +227,13 @@
         target.scrollIntoView({behavior:'smooth',block:'center'});
       });
     }
+    pinStickyBar(bar);
 
     const sync = () => {
       // Ordering and builder rendering are deliberately separate. The Visual
       // Builder owns its own rendering; this component only keeps Compare's
       // sections in the requested visible order.
+      pinStickyBar(bar);
       enforceCompareOrder(view);
       syncPresetLabels(view);
       const a = document.getElementById('abRateA');
@@ -228,12 +255,20 @@
         targetOnScreen = r.bottom > 64 && r.top < window.innerHeight - 40;
       }
       bar.classList.toggle('show', active && !!target && !targetOnScreen);
+      pinStickyBar(bar);
     };
 
     const scheduleSync = () => {
       requestAnimationFrame(sync);
       setTimeout(sync, 0);
       setTimeout(sync, 35);
+    };
+
+    const repairAfterViewportChange = () => {
+      repairStickyViewport(bar);
+      requestAnimationFrame(() => repairStickyViewport(bar));
+      setTimeout(() => repairStickyViewport(bar), 80);
+      setTimeout(sync, 100);
     };
 
     const watchText = el => {
@@ -244,14 +279,28 @@
     watchText(document.getElementById('abRateA'));
     watchText(document.getElementById('abRateB'));
 
+    if (!bar.dataset.v601BodyGuard) {
+      bar.dataset.v601BodyGuard = '1';
+      new MutationObserver(() => pinStickyBar(bar)).observe(document.body,{childList:true});
+    }
+
     if (!view.dataset.v601Bound) {
       view.dataset.v601Bound = '1';
       new MutationObserver(sync).observe(view,{attributes:true,attributeFilter:['class']});
       view.addEventListener('input',scheduleSync,true);
       view.addEventListener('change',scheduleSync,true);
       view.addEventListener('click',scheduleSync,true);
+      view.addEventListener('focusout',() => {
+        setTimeout(repairAfterViewportChange,0);
+        setTimeout(repairAfterViewportChange,160);
+        setTimeout(repairAfterViewportChange,360);
+      },true);
       window.addEventListener('scroll',sync,{passive:true});
-      window.addEventListener('resize',sync,{passive:true});
+      window.addEventListener('resize',repairAfterViewportChange,{passive:true});
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize',repairAfterViewportChange,{passive:true});
+        window.visualViewport.addEventListener('scroll',repairAfterViewportChange,{passive:true});
+      }
       document.querySelectorAll('.tabs button').forEach(btn=>btn.addEventListener('click',()=>{
         setTimeout(sync,0);
         setTimeout(sync,100);
