@@ -158,44 +158,17 @@
     }
   }
 
-  let ownerRepairing = false;
   let ownerRepairQueued = false;
 
   function enforceVisualBuilderOwner(view) {
-    if (ownerRepairing) return;
+    // Placement is owned exclusively by oil-visual-builder.js. This file may
+    // request a mount, but it must never move #layoutVisualBuilder directly.
+    window.STOT_VISUAL_PLOT_BUILDER?.mount?.();
 
-    const builder = document.getElementById('layoutVisualBuilder');
-    const oilView = document.getElementById('oilView');
-    const host = document.getElementById('layoutAreas');
     const comparison = view?.querySelector('.ab-compare');
     const actions = view?.querySelector('.v56-compare-actions');
-    if (!builder || !view) return;
-
-    const compareActive = view.classList.contains('active');
-    const oilActive = oilView?.classList.contains('active');
-    if (!compareActive && !oilActive) return;
-
-    ownerRepairing = true;
-    try {
-      if (compareActive) {
-        if (!comparison) return;
-        if (builder.parentElement !== view || builder.nextElementSibling !== comparison) {
-          view.insertBefore(builder, comparison);
-        }
-        if (actions && actions.previousElementSibling !== comparison) {
-          comparison.insertAdjacentElement('afterend', actions);
-        }
-        return;
-      }
-
-      if (oilActive && host?.parentElement) {
-        const parent = host.parentElement;
-        if (builder.parentElement !== parent || builder.nextElementSibling !== host) {
-          parent.insertBefore(builder, host);
-        }
-      }
-    } finally {
-      ownerRepairing = false;
+    if (comparison && actions && actions.previousElementSibling !== comparison) {
+      comparison.insertAdjacentElement('afterend', actions);
     }
   }
 
@@ -276,9 +249,9 @@
       view.dataset.v601Bound = '1';
       new MutationObserver(sync).observe(view,{attributes:true,attributeFilter:['class']});
 
-      // Final ownership guard: if any legacy render or delayed patch moves the
-      // shared builder into the wrong view, immediately restore it to whichever
-      // of Oil / Hour or Compare Presets is currently active.
+      // Legacy patches still move layoutAreas between Oil / Hour and the
+      // Compare editor host. Observe those moves and ask the single owner to
+      // remount the visual builder in the correct active view.
       const ownerObserver = new MutationObserver(() => scheduleVisualBuilderOwner(view));
       ownerObserver.observe(view,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});
       if (oilView) ownerObserver.observe(oilView,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});
