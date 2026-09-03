@@ -11,17 +11,22 @@ async function nav(view, id) {
   await wait(250);
   assert.equal(await page.locator(id).evaluate(el => el.classList.contains('active')), true, `${id} not active`);
 }
-async function assertOilBuilderStable(label) {
-  assert.equal(await page.locator('#layoutVisualBuilder').count(), 1, `${label}: Visual Plot Builder missing`);
-  assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el => el.parentElement?.id || ''), 'oilView', `${label}: Visual Plot Builder left Oil / Hour`);
-  assert.equal(await page.locator('#oilView #layoutVisualBuilder .v572-plot-card').count(), 15, `${label}: expected all 15 plot cards in Oil / Hour`);
-  assert.equal(await page.locator('#oilView #layoutVisualBuilder').isVisible(), true, `${label}: Visual Plot Builder is not visible in Oil / Hour`);
+async function assertFixedParents(label) {
+  assert.equal(await page.locator('#layoutVisualBuilder').count(), 1, `${label}: Oil builder missing`);
+  assert.equal(await page.locator('#layoutVisualBuilderCompare').count(), 1, `${label}: Compare builder missing`);
+  assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el => el.parentElement?.id || ''), 'oilView', `${label}: Oil builder left Oil / Hour`);
+  assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el => el.parentElement?.id || ''), 'layoutcompareView', `${label}: Compare builder left Compare Presets`);
+  assert.equal(await page.evaluate(() => document.getElementById('layoutVisualBuilder') !== document.getElementById('layoutVisualBuilderCompare')), true, `${label}: builders are not separate DOM nodes`);
 }
-async function assertCompareBuilderStable(label) {
-  assert.equal(await page.locator('#layoutVisualBuilder').count(), 1, `${label}: Visual Plot Builder missing`);
-  assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el => el.parentElement?.id || ''), 'layoutcompareView', `${label}: Visual Plot Builder left Compare Presets`);
-  assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilder .v572-plot-card').count(), 15, `${label}: Compare Presets lost plot cards`);
-  assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilder').isVisible(), true, `${label}: Visual Plot Builder is not visible in Compare Presets`);
+async function assertOilBuilder(label) {
+  await assertFixedParents(label);
+  assert.equal(await page.locator('#oilView #layoutVisualBuilder .v572-plot-card').count(), 15, `${label}: expected all 15 Oil plot cards`);
+  assert.equal(await page.locator('#oilView #layoutVisualBuilder').isVisible(), true, `${label}: Oil builder is not visible`);
+}
+async function assertCompareBuilder(label) {
+  await assertFixedParents(label);
+  assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare .v572-plot-card').count(), 15, `${label}: expected all 15 Compare plot cards`);
+  assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare').isVisible(), true, `${label}: Compare builder is not visible`);
 }
 
 await page.goto(BASE_URL, { waitUntil: 'networkidle' });
@@ -29,22 +34,18 @@ await page.evaluate(() => localStorage.clear());
 await page.reload({ waitUntil: 'networkidle' });
 await wait(400);
 
-// Oil / Hour must own the builder whenever Oil / Hour is active.
+await page.evaluate(() => {
+  window.__oilBuilderRef = document.getElementById('layoutVisualBuilder');
+  window.__compareBuilderRef = document.getElementById('layoutVisualBuilderCompare');
+});
+
+// Oil / Hour has its own permanent builder.
 await nav('oil', '#oilView');
 await wait(800);
-await assertOilBuilderStable('initial Oil / Hour');
+await assertOilBuilder('initial Oil / Hour');
 
-// Simulate a stale/legacy Compare patch forcibly stealing the builder while Oil
-// is active. The ownership guard must immediately put it back without user action.
-await page.evaluate(() => {
-  const builder = document.getElementById('layoutVisualBuilder');
-  const compare = document.getElementById('layoutcompareView');
-  if (builder && compare) compare.appendChild(builder);
-});
-await wait(350);
-await assertOilBuilderStable('after forced wrong move into Compare Presets');
-
-// Reproduce the user's sequence: seed a plot, then Quick Fill.
+// Reproduce the user's sequence: edit a plot, then Quick Fill, then wait for
+// delayed render timers. The Oil builder must remain the exact same DOM node.
 await page.evaluate(() => window.STOT_VISUAL_PLOT_BUILDER?.open('forest-1'));
 await wait(100);
 assert.equal(await page.locator('#v572PlotEditor.open').count(), 1, 'Plot editor did not open');
@@ -57,31 +58,33 @@ const fillEmpty = page.getByRole('button', { name: 'Fill Empty Plots', exact: tr
 assert.equal(await fillEmpty.count(), 1, 'Fill Empty Plots button missing');
 await fillEmpty.click();
 await wait(300);
-await assertOilBuilderStable('immediately after Quick Fill');
-
-// Catch delayed 1-2 second ownership bugs and any later repair timers.
+await assertOilBuilder('immediately after Quick Fill');
 await wait(3200);
-await assertOilBuilderStable('3.2s after Quick Fill');
+await assertOilBuilder('3.2s after Quick Fill');
+assert.equal(await page.evaluate(() => window.__oilBuilderRef === document.getElementById('layoutVisualBuilder')), true, 'Oil builder DOM node was replaced or transferred');
 
-// Compare Presets may own the shared builder only while Compare Presets is active.
+// Compare Presets gets a different permanent builder. Entering Compare must not
+// move, reuse, replace, or detach the Oil builder.
 await nav('layoutcompare', '#layoutcompareView');
 await wait(700);
-await assertCompareBuilderStable('initial Compare Presets');
+await assertCompareBuilder('initial Compare Presets');
+assert.equal(await page.evaluate(() => window.__oilBuilderRef === document.getElementById('layoutVisualBuilder')), true, 'Oil builder changed after entering Compare');
+assert.equal(await page.evaluate(() => window.__compareBuilderRef === document.getElementById('layoutVisualBuilderCompare')), true, 'Compare builder DOM node changed');
 
-// Simulate Oil's legacy renderer forcibly moving the builder back beside
-// layoutAreas while Compare Presets is active. The owner must repair this too.
-await page.evaluate(() => {
-  const builder = document.getElementById('layoutVisualBuilder');
-  const host = document.getElementById('layoutAreas');
-  if (builder && host?.parentElement) host.parentElement.insertBefore(builder, host);
-});
-await wait(350);
-await assertCompareBuilderStable('after forced wrong move into Oil / Hour');
+// Exercise Compare A/B rendering and allow every delayed timer to run.
+await page.locator('[data-ab-layout="B"]').click();
+await wait(200);
+await page.locator('[data-ab-layout="A"]').click();
+await wait(3200);
+await assertCompareBuilder('after Compare A/B and delayed timers');
 
-// Returning to Oil / Hour must return the builder and keep it there beyond all delayed timers.
+// Returning to Oil must reveal the original Oil builder. Compare's builder must
+// stay parked in Compare Presets instead of following us back.
 await nav('oil', '#oilView');
 await wait(3200);
-await assertOilBuilderStable('after returning from Compare Presets');
+await assertOilBuilder('after returning from Compare Presets');
+assert.equal(await page.evaluate(() => window.__oilBuilderRef === document.getElementById('layoutVisualBuilder')), true, 'Oil builder is not the original node after return');
+assert.equal(await page.evaluate(() => window.__compareBuilderRef === document.getElementById('layoutVisualBuilderCompare')), true, 'Compare builder moved or was replaced after return');
 
-console.log('VISUAL BUILDER OWNERSHIP REGRESSION PASS');
+console.log('VISUAL BUILDER INDEPENDENCE REGRESSION PASS');
 await browser.close();
