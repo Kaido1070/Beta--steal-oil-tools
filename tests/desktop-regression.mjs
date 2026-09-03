@@ -25,7 +25,24 @@ await page.goto(BASE_URL,{waitUntil:'networkidle'});
 await wait(250);
 assert.notEqual(await page.locator('body').evaluate(el=>getComputedStyle(el).visibility),'hidden');
 
+// Navigation baseline: every public tool opens and exactly one view stays active.
 for(const [view,id] of [['sale','#saleView'],['oil','#oilView'],['drills','#drillsView'],['compare','#compareView'],['layoutcompare','#layoutcompareView'],['database','#databaseView'],['events','#eventsView'],['codes','#codesView']]) await nav(view,id);
+
+// Drills page: real controls must change the calculation and picker must work.
+await nav('drills','#drillsView');
+const basicRate=await txt('#drillMainRate');
+await page.locator('#tierButtons [data-tier="10"]').click(); await wait(70);
+const galaxyRate=await txt('#drillMainRate');
+assert.notEqual(galaxyRate,basicRate,'Changing Drill Tier did not change production');
+await page.locator('#areaButtons [data-area="10"]').click(); await wait(70);
+assert.notEqual(await txt('#drillMainRate'),galaxyRate,'Changing Production Area did not change production');
+await page.locator('#drillPickerBtn').click();
+await page.locator('#pickerSearch').fill('Clock'); await wait(80);
+assert.equal(await page.locator('#pickerList [data-pick="clock"]').count(),1,'Clock Drill was not found in picker');
+await page.locator('#pickerList [data-pick="clock"]').click(); await wait(80);
+assert.match(await txt('#drillPickerBtn'),/Clock/i,'Drill picker did not select Clock Drill');
+await page.locator('#drillHours').fill('2'); await wait(80);
+assert.match(await txt('#drillMainLabel'),/Rate After/i,'Dynamic Clock Drill calculation did not activate');
 
 // Oil / Hour baseline.
 await nav('oil','#oilView');
@@ -63,7 +80,7 @@ await known('Oil / Hour owns Visual Plot Builder while active',async()=>{
   assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentElement?.id||''),'oilView');
 });
 
-// Compare Presets.
+// Compare Presets: ownership/order, A/B labels, all independent boost fields, shared mode and both calculation modes.
 await nav('layoutcompare','#layoutcompareView'); await wait(220);
 assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentElement?.id||''),'layoutcompareView');
 assert.equal(await page.locator('#layoutVisualBuilder + .ab-compare').count(),1,'Comparison is not after builder');
@@ -73,18 +90,34 @@ assert.equal(await txt('.v524-shared-badge'),'Preset B settings','Preset B label
 await page.locator('[data-ab-layout="A"]').click(); await wait(120);
 assert.equal(await txt('.v524-shared-badge'),'Preset A settings','Preset A label wrong');
 
-await page.locator('#layoutMole').fill('20'); await wait(100);
-await page.locator('[data-ab-layout="B"]').click(); await wait(100);
-await page.locator('#layoutMole').fill('80'); await wait(140);
+// Preset A independent boost setup.
+await page.locator('#layoutMole').fill('20');
+await page.locator('#layoutFruit').fill('30');
+await page.locator('#layoutLikes').fill('400');
+await page.locator('#layoutX2 [data-layoutx2="2"]').click();
+await wait(160);
+
+// Preset B independent boost setup.
+await page.locator('[data-ab-layout="B"]').click(); await wait(120);
+await page.locator('#layoutMole').fill('80');
+await page.locator('#layoutFruit').fill('90');
+await page.locator('#layoutLikes').fill('900');
+await page.locator('#layoutX2 [data-layoutx2="1"]').click();
+await wait(180);
+
 const states=await page.evaluate(()=>window.STOT_LAYOUT_PERSIST?.exportState?.().compareStates);
 assert.ok(states?.A&&states?.B,'Compare state unavailable');
-assert.equal(String(states.A.setup?.mole),'20','Preset A Mole not independent');
-assert.equal(String(states.B.setup?.mole),'80','Preset B Mole not independent');
+for(const [key,a,b] of [['mole','20','80'],['fruit','30','90'],['likes','400','900']]){
+  assert.equal(String(states.A.setup?.[key]),a,`Preset A ${key} not independent`);
+  assert.equal(String(states.B.setup?.[key]),b,`Preset B ${key} not independent`);
+}
+assert.equal(Number(states.A.setup?.lobby),2,'Preset A lobby setting not independent');
+assert.equal(Number(states.B.setup?.lobby),1,'Preset B lobby setting not independent');
 
-await page.locator('[data-v524="shared"]').click(); await wait(140);
+await page.locator('[data-v524="shared"]').click(); await wait(160);
 assert.equal(await txt('.v524-shared-badge'),'Shared A + B');
 const shared=await page.evaluate(()=>window.STOT_LAYOUT_PERSIST?.exportState?.().compareStates);
-assert.equal(String(shared.A.setup?.mole),String(shared.B.setup?.mole),'Shared mode did not synchronize boosts');
+for(const key of ['mole','fruit','likes','lobby']) assert.equal(String(shared.A.setup?.[key]),String(shared.B.setup?.[key]),`Shared mode did not synchronize ${key}`);
 
 await page.locator('#layoutModeTabs [data-layoutmode="time"]').click(); await page.locator('#layoutHours').fill('1'); await wait(100);
 assert.equal(await txt('#v523ModeBadge'),'Time → Oil');
@@ -93,8 +126,10 @@ await page.locator('#layoutModeTabs [data-layoutmode="target"]').click(); await 
 assert.equal(await txt('#v523ModeBadge'),'Oil → Time');
 assert.doesNotMatch(await page.locator('#layoutcompareView').innerText(),/\bLayouts?\b/,'Visible Compare Presets terminology still says Layout');
 assert.equal(await page.locator('#v601CompareSticky').count(),1,'Compare Presets sticky missing');
+assert.equal(await txt('#v601CompareSticky [data-v601-a]'),await txt('#abRateA'),'Compare sticky A rate stale');
+assert.equal(await txt('#v601CompareSticky [data-v601-b]'),await txt('#abRateB'),'Compare sticky B rate stale');
 
-// Compare Drills.
+// Compare Drills: selections, calculations and atlas-backed visuals.
 await nav('compare','#compareView');
 await page.locator('#compareA').selectOption('clock'); await page.locator('#compareB').selectOption('basic'); await wait(120);
 assert.match(await txt('#compareCards'),/Clock/i);
@@ -112,6 +147,7 @@ assert.ok(largeVisuals.every(v=>v.imgOk||v.bg!=='none'),'A large Compare Drill v
 
 // Database / Events / Codes.
 await nav('database','#databaseView');
+assert.ok(await page.locator('#dbList .drill-card').count()>0,'Database drill cards missing');
 for(const [tab,root] of [['refineries','#refineryList'],['pets','#petList']]){
   await page.locator(`#databaseTabs [data-dbview="${tab}"]`).click(); await wait(100);
   assert.ok(await page.locator(`${root} .drill-card`).count()>0,`${tab} cards missing`);
@@ -119,10 +155,16 @@ for(const [tab,root] of [['refineries','#refineryList'],['pets','#petList']]){
 await nav('events','#eventsView'); assert.ok(await page.locator('#eventList .event-card').count()>0,'Events missing');
 await nav('codes','#codesView'); assert.ok(await page.locator('#codesList .code-card').count()>0,'Codes missing');
 
-const storage=await page.evaluate(()=>({namespace:window.STOT_CONFIG?.storageNamespace,schema:window.STOT_CONFIG?.storageSchema,keys:Object.keys(localStorage)}));
-assert.equal(storage.namespace,'stot'); assert.equal(storage.schema,1); assert.ok(storage.keys.length>0,'Persistence wrote no storage keys');
+// Current storage contract must remain stable through Stage 1.
+const storage=await page.evaluate(()=>({namespace:window.STOT_CONFIG?.storageNamespace,schema:window.STOT_CONFIG?.storageSchema,keys:Object.keys(localStorage).sort()}));
+assert.equal(storage.namespace,'stot');
+assert.equal(storage.schema,1);
+assert.ok(storage.keys.length>0,'Persistence wrote no storage keys');
+const keysBeforeReload=storage.keys;
 await page.reload({waitUntil:'networkidle'}); await wait(180);
 assert.notEqual(await page.locator('body').evaluate(el=>getComputedStyle(el).visibility),'hidden');
+const keysAfterReload=await page.evaluate(()=>Object.keys(localStorage).sort());
+for(const key of keysBeforeReload) assert.ok(keysAfterReload.includes(key),`Storage key disappeared after reload: ${key}`);
 
 assert.equal(pageErrors.length,0,`Page errors:\n${pageErrors.join('\n')}`);
 const breaking=consoleErrors.filter(x=>/STOT .*failed|Uncaught|ReferenceError|TypeError/i.test(x));
