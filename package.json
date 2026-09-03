@@ -7,7 +7,13 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test:regression",
+    "test:regression": "node tests/desktop-regression.mjs && npm run test:mobile && npm run test:mobile:webkit",
+    "test:desktop": "node tests/desktop-regression.mjs",
+    "test:mobile": "STOT_BROWSER=chromium node tests/mobile-regression.mjs",
+    "test:mobile:webkit": "STOT_BROWSER=webkit node tests/mobile-regression.mjs",
+    "test:deployment": "node tests/deployment-regression.mjs",
+    "test:legacy-smoke": "node tests/smoke-beta.mjs"
   },
   "repository": {
     "type": "git",
