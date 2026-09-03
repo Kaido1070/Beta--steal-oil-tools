@@ -76,6 +76,9 @@
 
   function mountCompare(){
     const view=byId('layoutcompareView'); if(!view) return;
+    // The separated Compare builder is lazy. Create/mount it before collecting
+    // live parts so the first Compare ordering pass cannot miss it.
+    window.STOT_VISUAL_PLOT_BUILDER?.mount?.();
     const {calc,boosts,controls,quick,advanced,compareVisual,areas,note}=liveParts();
     const intro=view.querySelector('.v56-compare-intro');
     const condition=byId('v533Condition')||byId('v529Condition');
