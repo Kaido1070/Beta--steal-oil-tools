@@ -158,11 +158,25 @@
     }
   }
 
+  function restoreOilBuilder(builder) {
+    const oilView = document.getElementById('oilView');
+    const host = document.getElementById('layoutAreas');
+    if (!builder || !host || !oilView?.classList.contains('active')) return;
+    const parent = host.parentElement;
+    if (!parent) return;
+    if (builder.parentElement !== parent || builder.nextElementSibling !== host) parent.insertBefore(builder, host);
+  }
+
   function enforceCompareOrder(view) {
     const builder = document.getElementById('layoutVisualBuilder');
     const comparison = view?.querySelector('.ab-compare');
     const actions = view?.querySelector('.v56-compare-actions');
     if (!view || !builder || !comparison) return;
+
+    if (!view.classList.contains('active')) {
+      restoreOilBuilder(builder);
+      return;
+    }
 
     if (builder.parentElement !== view) view.appendChild(builder);
     if (comparison.previousElementSibling !== builder) builder.insertAdjacentElement('afterend', comparison);
