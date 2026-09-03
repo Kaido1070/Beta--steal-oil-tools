@@ -29,10 +29,10 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install Playwright
+      - name: Install Playwright browsers
         run: |
           npm install --no-save playwright@1.55.0
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
 
       - name: Start local site
         run: |
@@ -44,11 +44,14 @@ jobs:
           cat /tmp/stot-http.log
           exit 1
 
-      - name: Desktop regression
+      - name: Desktop Chromium regression
         run: npm run test:desktop
 
-      - name: Mobile regression
+      - name: Mobile Chromium regression
         run: npm run test:mobile
+
+      - name: Mobile WebKit regression
+        run: npm run test:mobile:webkit
 
       - name: Deployment regression
         run: npm run test:deployment
