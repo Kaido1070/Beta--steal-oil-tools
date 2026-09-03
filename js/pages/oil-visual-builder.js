@@ -71,10 +71,18 @@
     const compareView=document.getElementById('layoutcompareView');
     const comparison=compareView?.querySelector('.ab-compare');
     const compareActive=compareView?.classList.contains('active');
-    const targetParent=compareActive&&comparison?compareView:host.parentElement;
-    const targetBefore=compareActive&&comparison?comparison:host;
 
-    if(targetParent&&targetBefore&&(shell.parentElement!==targetParent||shell.nextElementSibling!==targetBefore))targetParent.insertBefore(shell,targetBefore);
+    if(compareActive&&comparison){
+      // Preserve the existing Compare Presets layout: builder and comparison
+      // are direct siblings in layoutcompareView, with comparison immediately
+      // after the builder.
+      if(shell.parentElement!==compareView)compareView.appendChild(shell);
+      if(comparison.previousElementSibling!==shell)shell.insertAdjacentElement('afterend',comparison);
+    }else if(host.parentElement){
+      const parent=host.parentElement;
+      if(shell.parentElement!==parent||shell.nextElementSibling!==host)parent.insertBefore(shell,host);
+    }
+
     host.classList.add('v572-legacy-layout');
     return shell;
   }
