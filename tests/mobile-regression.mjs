@@ -30,7 +30,18 @@ await nav('layoutcompare', '#layoutcompareView');
 await wait(220);
 assert.equal(await page.locator('#layoutVisualBuilderCompare .v572-plot-card').count(), 15, 'Expected 15 Compare Visual Plot cards');
 assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el => el.parentElement?.id || ''), 'oilView', 'Oil builder moved into Compare on mobile');
-assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el => el.parentElement?.id || ''), 'layoutcompareView', 'Compare builder left Compare Presets on mobile');
+assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare').count(), 1, 'Compare builder left Compare Presets on mobile');
+const compareOrderOk = await page.evaluate(() => {
+  const view = document.getElementById('layoutcompareView');
+  const advanced = view?.querySelector('#v536AdvancedTools');
+  const builder = view?.querySelector('#layoutVisualBuilderCompare');
+  const comparison = view?.querySelector('.ab-compare');
+  return !!advanced && !!builder && !!comparison &&
+    builder.parentElement === advanced.parentElement &&
+    builder.previousElementSibling === advanced &&
+    !!(builder.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING);
+});
+assert.equal(compareOrderOk, true, 'Mobile Compare order must be Advanced Tools -> Visual Plot Builder -> Preset Comparison');
 const grid = page.locator('#layoutVisualBuilderCompare .v572-plot-map');
 assert.equal(await grid.count(), 1, 'Compare Visual Plot map missing');
 const columns = await grid.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length);
@@ -80,7 +91,7 @@ assert.ok(stickyBox && stickyBox.width <= 390, 'Compare Presets sticky bar overf
 // Oil mobile controls and current-production sticky.
 await nav('oil', '#oilView');
 assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el => el.parentElement?.id || ''), 'oilView', 'Oil builder is not fixed in Oil / Hour on mobile');
-assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el => el.parentElement?.id || ''), 'layoutcompareView', 'Compare builder followed navigation back to Oil');
+assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare').count(), 1, 'Compare builder followed navigation back to Oil');
 assert.equal(await page.locator('#oilView #layoutVisualBuilder .v572-plot-card').count(), 15, 'Expected 15 Oil Visual Plot cards');
 assert.equal(await page.locator('#v536QuickFill').count(), 1, 'Quick Fill missing on mobile');
 assert.equal(await page.locator('#v536AdvancedTools').count(), 1, 'Advanced Tools missing on mobile');
