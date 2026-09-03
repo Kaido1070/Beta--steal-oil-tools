@@ -159,14 +159,11 @@
   }
 
   function enforceCompareOrder(view) {
-    const builder = document.getElementById('layoutVisualBuilder');
     const comparison = view?.querySelector('.ab-compare');
     const actions = view?.querySelector('.v56-compare-actions');
-    if (!view || !builder || !comparison) return;
-
-    if (builder.parentElement !== view) view.appendChild(builder);
-    if (comparison.previousElementSibling !== builder) builder.insertAdjacentElement('afterend', comparison);
-    if (actions && actions.previousElementSibling !== comparison) comparison.insertAdjacentElement('afterend', actions);
+    if (comparison && actions && actions.previousElementSibling !== comparison) {
+      comparison.insertAdjacentElement('afterend', actions);
+    }
   }
 
   function setup() {
@@ -192,6 +189,7 @@
 
     const sync = () => {
       enforceCompareOrder(view);
+      if (view.classList.contains('active')) window.STOT_VISUAL_PLOT_BUILDER?.render?.();
       syncPresetLabels(view);
       const a = document.getElementById('abRateA');
       const b = document.getElementById('abRateB');

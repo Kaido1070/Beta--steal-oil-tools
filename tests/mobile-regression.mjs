@@ -25,16 +25,18 @@ await page.goto(BASE_URL, { waitUntil: 'networkidle' });
 await wait(250);
 assert.notEqual(await page.locator('body').evaluate(el => getComputedStyle(el).visibility), 'hidden');
 
-// Compare Presets mobile layout.
+// Compare Presets mobile layout uses its own permanent builder.
 await nav('layoutcompare', '#layoutcompareView');
 await wait(220);
-assert.equal(await page.locator('#layoutVisualBuilder .v572-plot-card').count(), 15, 'Expected 15 Visual Plot cards');
-const grid = page.locator('#layoutVisualBuilder .v572-plot-map');
-assert.equal(await grid.count(), 1, 'Visual Plot map missing');
+assert.equal(await page.locator('#layoutVisualBuilderCompare .v572-plot-card').count(), 15, 'Expected 15 Compare Visual Plot cards');
+assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el => el.parentElement?.id || ''), 'oilView', 'Oil builder moved into Compare on mobile');
+assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el => el.parentElement?.id || ''), 'layoutcompareView', 'Compare builder left Compare Presets on mobile');
+const grid = page.locator('#layoutVisualBuilderCompare .v572-plot-map');
+assert.equal(await grid.count(), 1, 'Compare Visual Plot map missing');
 const columns = await grid.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length);
 assert.equal(columns, 3, `Visual Plot Builder must remain 3 columns on mobile; got ${columns}`);
 
-const firstGrid = page.locator('#layoutVisualBuilder .v572-grid-cells').first();
+const firstGrid = page.locator('#layoutVisualBuilderCompare .v572-grid-cells').first();
 assert.equal(await firstGrid.locator('span').count(), 25, 'Each plot must contain a 5x5 cell grid');
 const firstGridBox = await firstGrid.boundingBox();
 assert.ok(firstGridBox && Math.abs(firstGridBox.width - firstGridBox.height) <= 3, '5x5 visual grid is no longer square');
@@ -77,6 +79,9 @@ assert.ok(stickyBox && stickyBox.width <= 390, 'Compare Presets sticky bar overf
 
 // Oil mobile controls and current-production sticky.
 await nav('oil', '#oilView');
+assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el => el.parentElement?.id || ''), 'oilView', 'Oil builder is not fixed in Oil / Hour on mobile');
+assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el => el.parentElement?.id || ''), 'layoutcompareView', 'Compare builder followed navigation back to Oil');
+assert.equal(await page.locator('#oilView #layoutVisualBuilder .v572-plot-card').count(), 15, 'Expected 15 Oil Visual Plot cards');
 assert.equal(await page.locator('#v536QuickFill').count(), 1, 'Quick Fill missing on mobile');
 assert.equal(await page.locator('#v536AdvancedTools').count(), 1, 'Advanced Tools missing on mobile');
 for (const id of ['#layoutPasteEmpty', '#layoutPasteAll', '#layoutClearAll']) {
@@ -101,5 +106,5 @@ if (previewBox) {
 await page.keyboard.press('Escape');
 
 assert.equal(pageErrors.length, 0, `Mobile page errors (${engineName}):\n${pageErrors.join('\n')}`);
-console.log(`MOBILE REGRESSION PASS (${engineName}): 3-column plots, compact calculator rows, sticky bars, A/B labels, share preview`);
+console.log(`MOBILE REGRESSION PASS (${engineName}): separate builders, 3-column plots, compact calculator rows, sticky bars, A/B labels, share preview`);
 await browser.close();
