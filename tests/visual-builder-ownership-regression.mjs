@@ -23,6 +23,26 @@ async function assertCompareBuilder(label) {
   assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare .v572-plot-card').count(), 15, `${label}: expected all 15 Compare plot cards`);
   assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare').isVisible(), true, `${label}: Compare builder is not visible`);
   assert.equal(await page.evaluate(() => document.getElementById('layoutVisualBuilder') !== document.getElementById('layoutVisualBuilderCompare')), true, `${label}: Oil and Compare are sharing one builder node`);
+
+  const order = await page.locator('#layoutcompareView').evaluate(view => {
+    const directChild = node => {
+      let current = node;
+      while (current && current.parentElement !== view) current = current.parentElement;
+      return current?.parentElement === view ? current : null;
+    };
+    const advanced = directChild(view.querySelector('#v536AdvancedTools'));
+    const builder = directChild(view.querySelector('#layoutVisualBuilderCompare'));
+    const comparison = directChild(view.querySelector('.ab-compare'));
+    const children = [...view.children];
+    return {
+      advanced: children.indexOf(advanced),
+      builder: children.indexOf(builder),
+      comparison: children.indexOf(comparison)
+    };
+  });
+  assert.ok(order.advanced >= 0, `${label}: Advanced Tools is not mounted in Compare Presets`);
+  assert.equal(order.builder, order.advanced + 1, `${label}: Visual Plot Builder must sit directly below Advanced Tools`);
+  assert.ok(order.comparison > order.builder, `${label}: Preset Comparison must stay below Visual Plot Builder`);
 }
 async function assertBothFixed(label) {
   await assertOilBuilder(label);
@@ -62,7 +82,7 @@ await assertOilBuilder('3.2s after Quick Fill');
 assert.equal(await page.evaluate(() => window.__oilBuilderRef === document.getElementById('layoutVisualBuilder')), true, 'Oil builder DOM node was replaced or transferred');
 
 // Compare Presets lazily creates a second, different permanent builder on its
-// first visit. The Oil builder must stay parked in Oil / Hour.
+// first visit. It must sit directly below Advanced Tools and above Preset Comparison.
 await nav('layoutcompare', '#layoutcompareView');
 await wait(700);
 await assertCompareBuilder('initial Compare Presets');
