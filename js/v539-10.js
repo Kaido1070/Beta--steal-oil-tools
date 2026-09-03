@@ -1,7 +1,11 @@
 (() => {
   /* v5.39 — Older compare-layout patches physically moved the calculator and
      boosts out of Oil / Hour. Keep one real set of controls, but mount it in
-     the correct page every time the user switches views. */
+     the correct page every time the user switches views.
+
+     Stage 3 rule: this compatibility layer may move the shared calculator and
+     boosts between pages, but Compare DOM ordering belongs exclusively to
+     STOT_COMPARE_PRESETS_CONTROLLER once that controller is available. */
   if(window.__STOT_V539_UI__) return;
   window.__STOT_V539_UI__=true;
 
@@ -89,11 +93,21 @@
     const actions=view.querySelector('.v56-compare-actions');
     if(!intro || !condition || !calc || !settings || !editor || !boosts || !comparison) return;
 
+    // Compatibility ownership only: move the shared controls to Compare.
+    // Do not reorder the Compare page once the Stage 3 controller exists.
     if(conditionHost && calc.parentElement!==conditionHost) conditionHost.appendChild(calc);
     if(controls) controls.classList.add('v539-empty-controls');
     boosts.classList.remove('v539-oil-boosts');
     boosts.classList.add('v539-compare-boosts');
 
+    if(window.STOT_COMPARE_PRESETS_CONTROLLER?.mount){
+      hideKnownLegacyShells(view,condition);
+      window.STOT_COMPARE_PRESETS_CONTROLLER.mount();
+      return;
+    }
+
+    // Pre-Stage-3 startup fallback only. This path is retained so initial load
+    // still works if this compatibility file executes before the controller.
     let anchor=intro;
     for(const el of [condition,settings,editor,boosts,quick,advanced,compareVisual,areas,note,comparison,actions]){
       if(!el) continue;
