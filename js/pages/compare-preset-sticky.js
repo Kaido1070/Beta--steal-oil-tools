@@ -249,9 +249,6 @@
     if (!view.dataset.v601Bound) {
       view.dataset.v601Bound = '1';
       new MutationObserver(sync).observe(view,{attributes:true,attributeFilter:['class']});
-      // Legacy Compare patches still move direct children after initial render.
-      // Watch only the top-level child list; inner builder rendering is ignored.
-      new MutationObserver(scheduleSync).observe(view,{childList:true});
       view.addEventListener('input',scheduleSync,true);
       view.addEventListener('change',scheduleSync,true);
       view.addEventListener('click',scheduleSync,true);
