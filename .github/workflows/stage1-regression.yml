@@ -60,6 +60,9 @@ jobs:
       - name: Desktop Chromium regression
         run: npm run test:desktop
 
+      - name: Visual Builder ownership regression
+        run: node tests/visual-builder-ownership-regression.mjs
+
       - name: Mobile Chromium regression
         run: npm run test:mobile
 
