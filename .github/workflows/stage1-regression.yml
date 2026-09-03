@@ -2,7 +2,20 @@ name: Stage 1 Regression Tests
 
 on:
   push:
-    branches: [stage1/regression-tests]
+    branches:
+      - main
+      - 'stage*/**'
+    paths:
+      - tests/**
+      - package.json
+      - index.html
+      - js/**
+      - css/**
+      - assets/images/**
+      - .github/workflows/stage1-regression.yml
+  pull_request:
+    branches:
+      - main
     paths:
       - tests/**
       - package.json
