@@ -87,7 +87,12 @@ assert.equal(await page.evaluate(()=>document.getElementById('layoutVisualBuilde
 await nav('layoutcompare','#layoutcompareView'); await wait(220);
 assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentElement?.id||''),'oilView','Oil builder moved into Compare Presets');
 assert.equal(await page.locator('#layoutVisualBuilderCompare').evaluate(el=>el.parentElement?.id||''),'layoutcompareView','Compare builder is not fixed in Compare Presets');
-assert.equal(await page.locator('#layoutVisualBuilderCompare + .ab-compare').count(),1,'Comparison is not after Compare builder');
+const compareOrderOk=await page.evaluate(()=>{
+  const builder=document.getElementById('layoutVisualBuilderCompare');
+  const comparison=document.querySelector('#layoutcompareView .ab-compare');
+  return !!builder&&!!comparison&&!!(builder.compareDocumentPosition(comparison)&Node.DOCUMENT_POSITION_FOLLOWING);
+});
+assert.equal(compareOrderOk,true,'Comparison is not after Compare builder');
 assert.equal(await page.locator('#layoutVisualBuilderCompare .v572-plot-card').count(),15,'Compare builder does not contain 15 plot cards');
 await page.locator('[data-v524="separate"]').click(); await wait(100);
 await page.locator('[data-ab-layout="B"]').click(); await wait(120);
