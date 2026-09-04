@@ -1,6 +1,6 @@
 # Stage 4 — Oil / Hour Consolidation
 
-Status: **in progress**
+Status: **implementation complete — final regression / release pending**
 
 ## Goal
 Make Oil / Hour have one authoritative page controller without changing user-visible behavior, calculations, storage schema, or Compare Presets ownership.
@@ -12,22 +12,33 @@ Make Oil / Hour have one authoritative page controller without changing user-vis
 - Storage keys/schema remain compatible.
 - Existing Oil calculations, dynamic drills, refinery reserve, and 5×5 packing behavior remain unchanged.
 
-## Current responsibility map
-- Core Oil calculations / layout rows: existing Oil runtime.
-- Visual builder + Oil sticky production bar: `js/pages/oil-visual-builder.js`.
-- Manual grid positioning: `js/pages/oil-grid-editor-v585.js`.
-- Advanced Tools + Oil flow polish: `js/pages/oil-advanced-inline-v590.js`.
-- Legacy ordering / compatibility: bundled legacy patches plus historical `js/beta-oil-order.js`.
-- First-visit behavior: legacy first-visit runtime.
+## Final responsibility map
+- `STOT_OIL_PAGE_CONTROLLER`: authoritative Oil shell, DOM order, calculator/boost presentation, Advanced Tools shell/behavior, plot duplicate action, and Oil-only presentation ownership.
+- `STOT_OIL_QUICK_FILL`: authoritative Oil Quick Fill, multi-row template packing, refinery reservation, and Fill Empty Plots behavior.
+- `js/pages/oil-visual-builder.js`: Oil-only Visual Plot Builder and production UI component.
+- `js/pages/oil-grid-editor-v585.js`: manual Oil grid positioning.
+- Existing core Oil runtime: calculations, `layoutPlots`, persistence compatibility, and shared pure helpers.
+- Compare Presets remains isolated under its Stage 3 controller and independent A/B state.
 
-## Migration sequence
-1. Establish `STOT_OIL_PAGE_CONTROLLER` as the authoritative Oil shell/order owner.
-2. Lock current Oil behavior with Stage 4 regression coverage.
-3. Move Advanced Tools ownership into the controller.
-4. Move Quick Fill shell ownership into the controller while preserving calculation helpers.
-5. Move calculator/boost shell ownership into the controller.
-6. Retire superseded Oil-only legacy ordering/polish patches.
-7. Run full Chromium + Mobile Chromium + Mobile WebKit regression, then merge only on green CI.
+## Retired Stage 4 Oil runtimes
+The following legacy Oil-only ownership layers are blocked from running by Stage 4 guards:
+- `beta-oil-order`
+- `beta-first-visit`
+- `v539-10-oil-compat`
+- `oil-advanced-inline-v594`
+- `v537-quick-fill`
+- `v536-build-ux`
 
-## Slice 1
-The Stage 4 controller becomes the final authority for Oil-only DOM ordering, calculator presentation, and Advanced Tools presentation. Legacy code can still run during migration, but the controller reapplies the canonical Oil shell after legacy timers finish. It does not mutate Oil calculation state and never touches Compare DOM/state.
+The final `v536-build-ux` dependency was removed by making Stage 4 create the Quick Fill and Advanced shells/buttons itself. Stage 4 no longer needs the old bootstrap to preserve `Paste Empty`, `Paste All`, or `Clear All`.
+
+## Completed migration sequence
+1. Established `STOT_OIL_PAGE_CONTROLLER` as the authoritative Oil shell/order owner.
+2. Locked Oil behavior with dedicated Stage 4 regression coverage.
+3. Moved Advanced Tools ownership into the controller.
+4. Moved Quick Fill ownership into the Stage 4 component while preserving 5×5/refinery behavior.
+5. Moved calculator/boost presentation ownership into the controller.
+6. Retired all targeted Oil-only legacy ordering/polish/bootstrap runtimes.
+7. Preserved Compare A/B isolation and Oil Visual Builder ownership.
+
+## Release gate
+Merge only after the final PR regression passes on Desktop Chromium, Mobile Chromium, and Mobile WebKit. After merge, Stage 4 is complete only when main regression and GitHub Pages deployment both pass.
