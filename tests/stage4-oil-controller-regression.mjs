@@ -18,7 +18,16 @@ await page.reload({waitUntil:'networkidle'});
 await nav('oil','#oilView');
 await page.waitForFunction(()=>!!window.STOT_OIL_PAGE_CONTROLLER?.ownsOilShell,{timeout:10000});
 await page.evaluate(()=>window.STOT_OIL_PAGE_CONTROLLER.sync());
-await wait(650); // final Stage 4 pass runs after legacy ordering timers.
+await wait(650); // final Stage 4 pass runs after any remaining compatibility timers.
+
+const retired=await page.evaluate(()=>({
+  list:[...(window.__STOT_STAGE4_RETIRED_OIL_PATCHES__||[])],
+  order:window.__STOT_BETA_OIL_ORDER__,
+  first:window.__STOT_BETA_FIRST_VISIT__
+}));
+assert.deepEqual(retired.list,['beta-oil-order','beta-first-visit'],'Stage 4 retired-patch marker is wrong');
+assert.equal(retired.order,true,'Legacy beta-oil-order guard was not pre-disabled');
+assert.equal(retired.first,true,'Legacy beta-first-visit guard was not pre-disabled');
 
 assert.equal(await page.locator('#oilView').getAttribute('data-stage4-oil-owner'),'controller','Oil controller ownership marker missing');
 assert.equal(await page.locator('#layoutVisualBuilder').getAttribute('data-stage4-oil-owner'),'builder','Oil builder is not owned by Stage 4 shell');
@@ -34,8 +43,10 @@ assert.ok(snap.advanced<snap.builder,'Advanced Tools must be before Visual Plot 
 assert.ok(snap.builder<snap.areas,'Visual Plot Builder must be before legacy layout host');
 if(snap.boosts>=0)assert.ok(snap.calculator<snap.boosts&&snap.boosts<snap.quick,'Preset Boosts order is wrong');
 
+assert.match(await text('#oilView .v543-calc-intro'),/Choose a calculation.*switch anytime/i,'Stage 4 did not absorb first-visit calculator intro');
 assert.match(await text('#layoutModeTabs [data-layoutmode="time"]'),/Time → Oil.*How much oil/i,'Stage 4 calculator presentation missing');
 assert.match(await text('#layoutModeTabs [data-layoutmode="target"]'),/Oil → Time.*reach your target/i,'Stage 4 target presentation missing');
+assert.match(await text('#oilView .v520-boosts'),/Preset Boosts.*Optional.*leave these as they are/i,'Stage 4 did not absorb first-visit boosts presentation');
 assert.equal(await text('#v536AdvancedTools > summary'),'Advanced Tools');
 assert.equal(await text('#layoutPasteEmpty'),'Paste Empty');
 assert.equal(await text('#layoutPasteAll'),'Paste All');
@@ -43,7 +54,7 @@ assert.equal(await text('#layoutClearAll'),'Clear All');
 
 // The shell controller must be presentation-only: explicit resync cannot mutate Oil or Compare persisted state.
 const stateBefore=await page.evaluate(()=>JSON.stringify(window.STOT_LAYOUT_PERSIST?.exportState?.()));
-await page.evaluate(()=>{window.STOT_OIL_PAGE_CONTROLLER.syncCalculator();window.STOT_OIL_PAGE_CONTROLLER.syncAdvanced();window.STOT_OIL_PAGE_CONTROLLER.syncOrder();});
+await page.evaluate(()=>{window.STOT_OIL_PAGE_CONTROLLER.syncCalculator();window.STOT_OIL_PAGE_CONTROLLER.syncBoosts();window.STOT_OIL_PAGE_CONTROLLER.syncAdvanced();window.STOT_OIL_PAGE_CONTROLLER.syncOrder();});
 await wait(120);
 const stateAfter=await page.evaluate(()=>JSON.stringify(window.STOT_LAYOUT_PERSIST?.exportState?.()));
 assert.equal(stateAfter,stateBefore,'Stage 4 Oil shell controller mutated persisted state');
@@ -63,5 +74,5 @@ await nav('oil','#oilView');await wait(650);
 const snapAgain=await page.evaluate(()=>window.STOT_OIL_PAGE_CONTROLLER.snapshot());
 assert.ok(snapAgain.calculator<snapAgain.quick&&snapAgain.quick<snapAgain.advanced&&snapAgain.advanced<snapAgain.builder&&snapAgain.builder<snapAgain.areas,'Oil canonical order was not restored after navigation');
 assert.equal(errors.length,0,`Page errors (${engineName}${mobile?' mobile':''}):\n${errors.join('\n')}`);
-console.log(`STAGE 4 OIL CONTROLLER PASS (${engineName}${mobile?' mobile':''}): authoritative Oil shell, stable state, Compare isolated`);
+console.log(`STAGE 4 OIL CONTROLLER PASS (${engineName}${mobile?' mobile':''}): authoritative Oil shell, two legacy patches retired, stable state, Compare isolated`);
 await browser.close();
