@@ -99,6 +99,12 @@ jobs:
       - name: Stage 4 Oil controller — Mobile Chromium
         run: STOT_MOBILE=1 node tests/stage4-oil-controller-regression.mjs
 
+      - name: Stage 5 Core — Desktop Chromium
+        run: node tests/stage5-core-regression.mjs
+
+      - name: Stage 5 Core — Mobile Chromium
+        run: STOT_MOBILE=1 node tests/stage5-core-regression.mjs
+
       - name: Mobile Chromium regression
         run: npm run test:mobile
 
@@ -155,6 +161,9 @@ jobs:
 
       - name: Stage 4 Oil controller — Mobile WebKit
         run: STOT_BROWSER=webkit STOT_MOBILE=1 node tests/stage4-oil-controller-regression.mjs
+
+      - name: Stage 5 Core — Mobile WebKit
+        run: STOT_BROWSER=webkit STOT_MOBILE=1 node tests/stage5-core-regression.mjs
 
       - name: Mobile WebKit regression
         run: npm run test:mobile:webkit
