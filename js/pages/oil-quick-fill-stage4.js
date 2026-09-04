@@ -1,23 +1,24 @@
 /* Stage 4 — authoritative Oil / Hour Quick Fill component. */
 (()=>{
   if(window.__STOT_OIL_QUICK_FILL_STAGE4__)return;
+  const geometry=window.STOT_LAYOUT_GEOMETRY;
+  if(!geometry){console.error('STOT Stage 5 layout geometry core is missing before Oil Quick Fill');return;}
   window.__STOT_OIL_QUICK_FILL_STAGE4__=true;
+  window.__STOT_OIL_USES_CORE_GEOMETRY__=true;
 
   const byId=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const drillIndex=()=>typeof drills!=='undefined'&&Array.isArray(drills)?drills:[];
   const refineryIndex=()=>typeof refineries!=='undefined'&&Array.isArray(refineries)?refineries:[];
   const tierIndex=()=>typeof TIER_OPTIONS!=='undefined'&&Array.isArray(TIER_OPTIONS)?TIER_OPTIONS:[];
+  const fp=geometry.parseFootprint;
+  const canPackPieces5x5=geometry.canPackPieces5x5;
   const rows=[{drill:'demonic',tier:0,count:1,hacker:550}];
   let reserveMeta=null;
 
   function cloneRows(input){
     if(typeof clonePlotRows==='function')return clonePlotRows(input||[]);
     return (Array.isArray(input)?input:[]).map(r=>({drill:r.drill,tier:Number(r.tier)||0,count:Math.max(1,Math.min(25,Math.floor(Number(r.count)||1))),hacker:Math.max(0,Number(r.hacker)||550)}));
-  }
-  function fp(value){
-    if(typeof fpSize==='function')return fpSize(value);
-    const m=String(value||'1x1').match(/^(\d+)x(\d+)$/);return m?[Number(m[1]),Number(m[2])]:[1,1];
   }
   function piecesFromRows(input){
     const pieces=[];
@@ -28,29 +29,10 @@
     }
     return pieces;
   }
-  function canPackPieces5x5(input){
-    const pieces=input.map(([w,h])=>[Number(w),Number(h)]),area=pieces.reduce((sum,[w,h])=>sum+w*h,0);
-    if(area>25)return false;
-    pieces.sort((a,b)=>(b[0]*b[1])-(a[0]*a[1])||Math.max(b[0],b[1])-Math.max(a[0],a[1]));
-    const grid=Array(25).fill(false),memo=new Set();
-    const fits=(w,h,x,y)=>{if(x+w>5||y+h>5)return false;for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(grid[yy*5+xx])return false;return true};
-    const set=(w,h,x,y,value)=>{for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)grid[yy*5+xx]=value};
-    function dfs(i){
-      if(i===pieces.length)return true;
-      const key=i+':'+grid.map(v=>v?1:0).join('');if(memo.has(key))return false;
-      const [a,b]=pieces[i],orients=a===b?[[a,b]]:[[a,b],[b,a]];
-      for(const [w,h] of orients)for(let y=0;y<=5-h;y++)for(let x=0;x<=5-w;x++){
-        if(!fits(w,h,x,y))continue;set(w,h,x,y,true);if(dfs(i+1))return true;set(w,h,x,y,false);
-      }
-      memo.add(key);return false;
-    }
-    return dfs(0);
-  }
   function templateInfo(){
-    const temp={rows:cloneRows(rows)};let cells=0;
-    try{cells=typeof pieceList==='function'?pieceList(temp).area:piecesFromRows(temp.rows).reduce((sum,[w,h])=>sum+w*h,0)}catch(_){}
-    const ok=typeof canPack5x5==='function'?canPack5x5(temp):canPackPieces5x5(piecesFromRows(temp.rows));
-    return{cells,ok};
+    const temp={rows:cloneRows(rows)},pieces=piecesFromRows(rows);let cells=0;
+    try{cells=typeof pieceList==='function'?pieceList(temp).area:geometry.piecesArea(pieces)}catch(_){cells=geometry.piecesArea(pieces)}
+    return{cells,ok:canPackPieces5x5(pieces)};
   }
   function refineryPieces(ref,qty){const [w,h]=fp(ref?.footprint);return Array.from({length:qty},()=>[w,h])}
   function rowLoss(row){
@@ -63,7 +45,7 @@
     return base*tier*pet;
   }
   function reservedVariant(template,ref,qty){
-    const reserve=refineryPieces(ref,qty),reservedCells=reserve.reduce((sum,[w,h])=>sum+w*h,0);
+    const reserve=refineryPieces(ref,qty),reservedCells=geometry.piecesArea(reserve);
     if(!canPackPieces5x5(reserve))return{ok:false,reason:'That refinery quantity cannot fit inside one 5×5 plot by itself.'};
     const original=cloneRows(template),fitsRows=value=>canPackPieces5x5([...piecesFromRows(value),...reserve]);
     if(fitsRows(original))return{ok:true,rows:original,removed:0,reservedCells};
@@ -167,7 +149,7 @@
   function mount(){const box=buildUI();if(!box)return false;installRenderHook();decorateReservedPlot();window.STOT_OIL_PAGE_CONTROLLER?.sync?.();return true}
   function boot(){let tries=0;const run=()=>{tries++;if(mount()||tries>=100)return;setTimeout(run,80)};run()}
 
-  window.STOT_OIL_QUICK_FILL=Object.freeze({mount,refresh:()=>renderTemplate(buildUI()),get template(){return cloneRows(rows)},get reserve(){return reserveMeta?{...reserveMeta}:null}});
+  window.STOT_OIL_QUICK_FILL=Object.freeze({mount,refresh:()=>renderTemplate(buildUI()),geometryOwner:'core',get template(){return cloneRows(rows)},get reserve(){return reserveMeta?{...reserveMeta}:null}});
   document.querySelector('.tabs button[data-view="oil"]')?.addEventListener('click',()=>setTimeout(mount,0));
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
