@@ -19,21 +19,22 @@ window.STOT_CONFIG=Object.freeze({
   storageKey(scope,suffix="v1"){return `${this.storageNamespace}-v${this.version}-${scope}-${suffix}`;}
 });
 
-/* Stage 4 strangler cutover: new Oil owners replace these runtime patches.
-   v536-build-ux intentionally remains as the pre-Stage3 shell bootstrap for now;
-   Stage 4 takes over its Quick/Advanced DOM immediately after Stage 3 restores Oil ownership. */
+/* Stage 4 strangler cutover: the authoritative Oil controller/Quick Fill now
+   replace every targeted Oil-only runtime patch, including the old v536 shell bootstrap. */
 window.__STOT_STAGE4_RETIRED_OIL_PATCHES__=Object.freeze([
   'beta-oil-order',
   'beta-first-visit',
   'v539-10-oil-compat',
   'oil-advanced-inline-v594',
-  'v537-quick-fill'
+  'v537-quick-fill',
+  'v536-build-ux'
 ]);
 window.__STOT_BETA_OIL_ORDER__=true;
 window.__STOT_BETA_FIRST_VISIT__=true;
 window.__STOT_V539_UI__=true;
 window.__STOT_ADVANCED_INLINE_V594__=true;
 window.__STOT_V537_QUICK_FILL__=true;
+window.__STOT_V536_BUILD_UX__=true;
 
 /* Compare Presets UI skin: visual parity with Oil / Hour without sharing DOM/state. */
 (()=>{
