@@ -19,6 +19,12 @@ window.STOT_CONFIG=Object.freeze({
   storageKey(scope,suffix="v1"){return `${this.storageNamespace}-v${this.version}-${scope}-${suffix}`;}
 });
 
+/* Stage 4 strangler cutover: the new Oil controller owns these responsibilities.
+   Set the legacy guards synchronously before beta-patches.bundle.js is parsed. */
+window.__STOT_STAGE4_RETIRED_OIL_PATCHES__=Object.freeze(['beta-oil-order','beta-first-visit']);
+window.__STOT_BETA_OIL_ORDER__=true;
+window.__STOT_BETA_FIRST_VISIT__=true;
+
 /* Compare Presets UI skin: visual parity with Oil / Hour without sharing DOM/state. */
 (()=>{
   const href='css/pages/compare-oil-match.css';
