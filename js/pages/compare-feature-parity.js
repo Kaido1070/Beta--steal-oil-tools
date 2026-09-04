@@ -1,10 +1,12 @@
 /* STOT Compare Presets — Oil feature parity, isolated A/B implementation */
 (()=>{
   if(window.__STOT_COMPARE_FEATURE_PARITY__)return;
-  const geometry=window.STOT_LAYOUT_GEOMETRY;
-  if(!geometry){console.error('STOT Stage 5 layout geometry core is missing before Compare feature parity');return;}
+  const geometry=window.STOT_LAYOUT_GEOMETRY,rowCore=window.STOT_LAYOUT_ROWS;
+  if(!geometry||!rowCore){console.error('STOT Stage 5 layout cores are missing before Compare feature parity');return;}
   window.__STOT_COMPARE_FEATURE_PARITY__=true;
   window.__STOT_COMPARE_USES_CORE_GEOMETRY__=true;
+  window.__STOT_COMPARE_USES_CORE_ROWS__=true;
+  window.__STOT_COMPARE_USES_CORE_RESERVE__=true;
 
   const byId=id=>document.getElementById(id);
   const clone=value=>JSON.parse(JSON.stringify(value));
@@ -13,7 +15,6 @@
   const drillIndex=()=>typeof drills!=='undefined'&&Array.isArray(drills)?drills:[];
   const refineryIndex=()=>typeof refineries!=='undefined'&&Array.isArray(refineries)?refineries:[];
   const tiers=()=>typeof TIER_OPTIONS!=='undefined'&&Array.isArray(TIER_OPTIONS)?TIER_OPTIONS:[];
-  const fp=geometry.parseFootprint;
   const canPackPieces5x5=geometry.canPackPieces5x5;
 
   let template=[{drill:'demonic',tier:0,count:1,hacker:550}];
@@ -31,28 +32,13 @@
     return true;
   }
   function activeState(saved=snapshot()){return saved?.compareStates?.[activeSide()]||null}
-  function cleanRows(rows){
-    return (Array.isArray(rows)?rows:[]).map(r=>({
-      drill:drillIndex().some(d=>d.id===r?.drill)?r.drill:'demonic',
-      tier:clamp(r?.tier,0,4,0),
-      count:clamp(r?.count,1,25,1),
-      hacker:Math.max(0,Number(r?.hacker)||550)
-    }));
-  }
-  function piecesFromRows(rows){
-    const out=[];
-    for(const row of cleanRows(rows)){
-      const d=drillIndex().find(x=>x.id===row.drill);if(!d)continue;
-      const [w,h]=fp(d.footprint);
-      for(let i=0;i<row.count;i++)out.push([w,h]);
-    }
-    return out;
-  }
+  const rowNormalizeOptions=()=>({validDrillIds:drillIndex().map(d=>d.id),fallbackDrill:'demonic',tierMin:0,tierMax:4});
+  const cleanRows=rows=>rowCore.normalizeRows(rows,rowNormalizeOptions());
+  const piecesFromRows=rows=>rowCore.piecesFromRows(cleanRows(rows),drillIndex());
   function templateInfo(){
     const pieces=piecesFromRows(template);
     return {cells:geometry.piecesArea(pieces),ok:canPackPieces5x5(pieces)};
   }
-  function refineryPieces(ref,qty){const [w,h]=fp(ref?.footprint);return Array.from({length:qty},()=>[w,h])}
 
   function petMultiplier(d,setup){
     let mult=1;
@@ -77,31 +63,14 @@
     return base*tier*petMultiplier(d,setup);
   }
   function reservedVariant(rows,ref,qty,setup){
-    const reserve=refineryPieces(ref,qty),reservedCells=geometry.piecesArea(reserve);
-    if(!canPackPieces5x5(reserve))return{ok:false,reason:'That refinery quantity cannot fit inside one 5×5 plot by itself.'};
-    const original=cleanRows(rows),fitsRows=value=>canPackPieces5x5([...piecesFromRows(value),...reserve]);
-    if(fitsRows(original))return{ok:true,rows:original,removed:0,reservedCells};
-    const counts=original.map(r=>r.count),losses=original.map(r=>Math.max(0,rowLoss(r,setup))),start=counts.map(()=>0),key=v=>v.join(',');
-    let frontier=[{v:start,loss:0}],seen=new Set([key(start)]);
-    const maxRemoved=counts.reduce((a,b)=>a+b,0);
-    for(let depth=1;depth<=maxRemoved;depth++){
-      const next=[];
-      for(const state of frontier){
-        for(let i=0;i<counts.length;i++){
-          if(state.v[i]>=counts[i])continue;
-          const v=state.v.slice();v[i]++;const k=key(v);if(seen.has(k))continue;seen.add(k);
-          next.push({v,loss:state.loss+losses[i]});
-        }
-      }
-      next.sort((a,b)=>a.loss-b.loss);
-      for(const state of next){
-        const candidate=[];
-        for(let i=0;i<original.length;i++){const remain=counts[i]-state.v[i];if(remain>0)candidate.push({...original[i],count:remain})}
-        if(fitsRows(candidate))return{ok:true,rows:candidate,removed:depth,reservedCells};
-      }
-      frontier=next;if(!frontier.length)break;
-    }
-    return{ok:false,reason:'Could not create a valid reserved space in Plot 1 for that refinery setup.'};
+    const original=cleanRows(rows);
+    return rowCore.bestFitWithReserve({
+      rows:original,
+      reservePieces:rowCore.footprintPieces(ref?.footprint,qty),
+      drillList:drillIndex(),
+      losses:original.map(row=>Math.max(0,rowLoss(row,setup))),
+      normalizeOptions:rowNormalizeOptions()
+    });
   }
 
   function drillOptions(selected){return drillIndex().map(d=>`<option value="${esc(d.id)}" ${d.id===selected?'selected':''}>${esc(d.name)} • ${esc(d.footprint)}</option>`).join('')}
