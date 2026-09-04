@@ -23,20 +23,21 @@ await wait(650);
 const retired=await page.evaluate(()=>({
   list:[...(window.__STOT_STAGE4_RETIRED_OIL_PATCHES__||[])],
   order:window.__STOT_BETA_OIL_ORDER__,first:window.__STOT_BETA_FIRST_VISIT__,v539:window.__STOT_V539_UI__,advanced:window.__STOT_ADVANCED_INLINE_V594__,
-  buildBootstrap:window.__STOT_V536_BUILD_UX__,quickLegacy:window.__STOT_V537_QUICK_FILL__,quickStage4:window.__STOT_OIL_QUICK_FILL_STAGE4__,share:window.__STOT_OIL_SHARE_COMPACT_V592__
+  v536Guard:window.__STOT_V536_BUILD_UX__,quickLegacy:window.__STOT_V537_QUICK_FILL__,quickStage4:window.__STOT_OIL_QUICK_FILL_STAGE4__,share:window.__STOT_OIL_SHARE_COMPACT_V592__
 }));
-assert.deepEqual(retired.list,['beta-oil-order','beta-first-visit','v539-10-oil-compat','oil-advanced-inline-v594','v537-quick-fill'],'Stage 4 retired-patch marker is wrong');
-for(const key of ['order','first','v539','advanced','quickLegacy','quickStage4'])assert.equal(retired[key],true,`${key} runtime ownership flag is wrong`);
-assert.equal(retired.buildBootstrap,true,'Temporary v536 shell bootstrap did not run before Stage 3 ownership restore');
+assert.deepEqual(retired.list,['beta-oil-order','beta-first-visit','v539-10-oil-compat','oil-advanced-inline-v594','v537-quick-fill','v536-build-ux'],'Stage 4 retired-patch marker is wrong');
+for(const key of ['order','first','v539','advanced','v536Guard','quickLegacy','quickStage4'])assert.equal(retired[key],true,`${key} runtime retirement/ownership flag is wrong`);
 assert.equal(retired.share,true,'Stage 4 controller did not absorb Oil share-preview wrapper');
 assert.equal(await page.locator('link[data-stot-oil-stage4-ui]').count(),1,'Stage 4 Oil CSS is not loaded');
 assert.equal(await page.locator('#v594OilFlowStyle').count(),0,'Retired advanced-inline runtime still injected its legacy style element');
+assert.equal(await page.locator('[data-v536-duplicate]').count(),0,'Retired v536 bootstrap still owns duplicate buttons');
 
 assert.equal(await page.locator('#oilView').getAttribute('data-stage4-oil-owner'),'controller','Oil controller ownership marker missing');
 assert.equal(await page.locator('#layoutVisualBuilder').getAttribute('data-stage4-oil-owner'),'builder','Oil builder is not owned by Stage 4 shell');
 assert.equal(await page.locator('#v536QuickFill').getAttribute('data-stage4-oil-owner'),'quick','Oil Quick Fill ownership marker missing');
 assert.equal(await page.locator('#v536QuickFill').getAttribute('data-stage4-quick-fill'),'1','Stage 4 Quick Fill component did not own the Oil Quick Fill DOM');
 assert.equal(await page.locator('#v536AdvancedTools').getAttribute('data-stage4-oil-owner'),'advanced','Oil Advanced Tools ownership marker missing');
+assert.equal(await page.locator('#layoutCopyBar').evaluate(el=>el.closest('#v536AdvancedTools')?.id||''),'v536AdvancedTools','Stage 4 did not create/rehome the Advanced copy bar');
 assert.equal(await page.locator('#layoutPasteEmpty').getAttribute('data-stage4-advanced-owner'),'1','Paste Empty still has legacy runtime ownership');
 assert.equal(await page.locator('#layoutPasteAll').getAttribute('data-stage4-advanced-owner'),'1','Paste All still has legacy runtime ownership');
 assert.equal(await page.locator('#layoutClearAll').getAttribute('data-stage4-advanced-owner'),'1','Clear All still has legacy runtime ownership');
@@ -87,7 +88,7 @@ await wait(120);
 const stateAfter=await page.evaluate(()=>JSON.stringify(window.STOT_LAYOUT_PERSIST?.exportState?.()));
 assert.equal(stateAfter,stateBefore,'Stage 4 Oil shell controller mutated persisted state during resync');
 
-// Compare remains completely outside Stage 4 Oil ownership with legacy v539-10 retired.
+// Compare remains completely outside Stage 4 Oil ownership with legacy Oil owners retired.
 await nav('layoutcompare','#layoutcompareView');await wait(220);
 assert.equal(await page.locator('#layoutcompareView [data-stage4-oil-owner]').count(),0,'Stage 4 Oil ownership leaked into Compare');
 assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentElement?.id||''),'oilView','Oil builder moved into Compare');
@@ -101,5 +102,5 @@ await nav('oil','#oilView');await wait(650);
 const snapAgain=await page.evaluate(()=>window.STOT_OIL_PAGE_CONTROLLER.snapshot());
 assert.ok(snapAgain.calculator<snapAgain.quick&&snapAgain.quick<snapAgain.advanced&&snapAgain.advanced<snapAgain.builder&&snapAgain.builder<snapAgain.areas,'Oil canonical order was not restored after navigation');
 assert.equal(errors.length,0,`Page errors (${engineName}${mobile?' mobile':''}):\n${errors.join('\n')}`);
-console.log(`STAGE 4 OIL CONTROLLER PASS (${engineName}${mobile?' mobile':''}): authoritative shell, Quick Fill and Advanced ownership, five legacy runtimes retired, Compare isolated`);
+console.log(`STAGE 4 OIL CONTROLLER PASS (${engineName}${mobile?' mobile':''}): authoritative Oil shell, Quick Fill and Advanced ownership, six legacy runtimes retired, Compare isolated`);
 await browser.close();
