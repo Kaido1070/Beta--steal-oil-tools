@@ -13,16 +13,30 @@ await page.evaluate(() => localStorage.clear());
 await page.reload({ waitUntil: 'networkidle' });
 await wait(300);
 
+await page.locator('.tabs button[data-view="oil"]').click();
+await wait(180);
+await page.evaluate(() => {
+  window.__stage3OilRefs = {
+    controls: document.querySelector('#oilView .layout-controls'),
+    areas: document.getElementById('layoutAreas'),
+    quick: document.getElementById('v536QuickFill'),
+    advanced: document.getElementById('v536AdvancedTools'),
+    builder: document.getElementById('layoutVisualBuilder')
+  };
+  window.__stage3OilSnapshot = window.STOT_LAYOUT_PERSIST?.exportState?.().singleState;
+});
+
 await page.locator('.tabs button[data-view="layoutcompare"]').click();
-await wait(120);
+await wait(180);
 assert.equal(await page.locator('#layoutcompareView').evaluate(el => el.classList.contains('active')), true, 'Compare Presets did not open');
 assert.equal(await page.locator('#layoutcompareView').getAttribute('data-stage3-compare-owner'), '1', 'Stage 3 Compare controller did not claim ownership');
+assert.equal(await page.evaluate(() => !!window.STOT_COMPARE_PRESETS_ISOLATED?.oilNodesStayInOil), true, 'Compare isolation API missing');
 
 await page.evaluate(() => {
   window.__stage3OrderViolations = 0;
   const view = document.getElementById('layoutcompareView');
   const valid = () => {
-    const advanced = view?.querySelector('#v536AdvancedTools');
+    const advanced = view?.querySelector('#v536AdvancedToolsCompare');
     const builder = view?.querySelector('#layoutVisualBuilderCompare');
     const comparison = view?.querySelector('.ab-compare');
     if (!advanced || !builder || !comparison) return true;
@@ -38,11 +52,12 @@ await page.evaluate(() => {
 
 async function assertStable(label) {
   const state = await page.locator('#layoutcompareView').evaluate(view => {
-    const advanced = view.querySelector('#v536AdvancedTools');
+    const advanced = view.querySelector('#v536AdvancedToolsCompare');
     const builder = view.querySelector('#layoutVisualBuilderCompare');
     const comparison = view.querySelector('.ab-compare');
     const sticky = document.getElementById('v601CompareSticky');
     const css = sticky ? getComputedStyle(sticky) : null;
+    const refs = window.__stage3OilRefs || {};
     return {
       advanced: !!advanced,
       builder: !!builder,
@@ -52,47 +67,68 @@ async function assertStable(label) {
       comparisonAfterBuilder: !!builder && !!comparison && !!(builder.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING),
       stickyBody: sticky?.parentElement === document.body,
       stickyPosition: css?.position || '',
-      stickyTop: css?.top || '',
-      violations: window.__stage3OrderViolations || 0
+      violations: window.__stage3OrderViolations || 0,
+      oilControlsSame: refs.controls === document.querySelector('#oilView .layout-controls'),
+      oilAreasSame: refs.areas === document.getElementById('layoutAreas') && document.getElementById('layoutAreas')?.parentElement?.id === 'oilView',
+      oilQuickSame: refs.quick === document.getElementById('v536QuickFill') && !view.contains(document.getElementById('v536QuickFill')),
+      oilAdvancedSame: refs.advanced === document.getElementById('v536AdvancedTools') && !view.contains(document.getElementById('v536AdvancedTools')),
+      oilBuilderSame: refs.builder === document.getElementById('layoutVisualBuilder') && document.getElementById('layoutVisualBuilder')?.parentElement?.id === 'oilView'
     };
   });
-  assert.equal(state.advanced, true, `${label}: Advanced Tools missing`);
+  assert.equal(state.advanced, true, `${label}: Compare Advanced Tools missing`);
   assert.equal(state.builder, true, `${label}: Compare Visual Plot Builder missing`);
   assert.equal(state.comparison, true, `${label}: Preset Comparison missing`);
-  assert.equal(state.sameParent, true, `${label}: Advanced Tools and builder left the same flow`);
-  assert.equal(state.builderAfterAdvanced, true, `${label}: builder is not directly below Advanced Tools`);
+  assert.equal(state.sameParent, true, `${label}: Compare Advanced Tools and builder left the same flow`);
+  assert.equal(state.builderAfterAdvanced, true, `${label}: Compare builder is not directly below Compare Advanced Tools`);
   assert.equal(state.comparisonAfterBuilder, true, `${label}: Preset Comparison moved above builder`);
   assert.equal(state.stickyBody, true, `${label}: sticky results bar is not a direct child of body`);
   assert.equal(state.stickyPosition, 'fixed', `${label}: sticky results bar is not fixed`);
-  assert.equal(state.violations, 0, `${label}: legacy reorder became externally visible`);
+  assert.equal(state.violations, 0, `${label}: Compare DOM order became externally unstable`);
+  assert.equal(state.oilControlsSame, true, `${label}: Oil controls were moved or replaced`);
+  assert.equal(state.oilAreasSame, true, `${label}: Oil areas were moved or replaced`);
+  assert.equal(state.oilQuickSame, true, `${label}: Oil Quick Fill leaked into Compare`);
+  assert.equal(state.oilAdvancedSame, true, `${label}: Oil Advanced Tools leaked into Compare`);
+  assert.equal(state.oilBuilderSame, true, `${label}: Oil builder moved or was replaced`);
 }
 
 await assertStable('initial mount');
 
+// Compare controls must be independent from Oil controls and state.
+await page.locator('[data-v524="separate"]').click();
+await page.locator('#compareLayoutMole').fill('20');
+await page.locator('#compareLayoutFruit').fill('30');
+await page.locator('#compareLayoutLikes').fill('400');
+await page.locator('#compareLayoutX2 [data-layoutx2="2"]').click();
 await page.locator('[data-ab-layout="B"]').click();
 await wait(80);
+await page.locator('#compareLayoutMole').fill('80');
+await page.locator('#compareLayoutFruit').fill('90');
+await page.locator('#compareLayoutLikes').fill('900');
+await page.locator('#compareLayoutX2 [data-layoutx2="1"]').click();
 await page.locator('[data-ab-layout="A"]').click();
-await wait(80);
+await wait(120);
 await assertStable('after A/B switch');
 
-// Let every known legacy delayed reorder (0/35/100/120/180/220/260/520ms)
-// fire. The Stage 3 controller must keep one externally stable DOM order.
+const compare = await page.evaluate(() => window.STOT_LAYOUT_PERSIST?.exportState?.().compareStates);
+assert.equal(String(compare.A.setup.mole), '20', 'Preset A Mole not independent');
+assert.equal(String(compare.B.setup.mole), '80', 'Preset B Mole not independent');
+assert.equal(String(compare.A.setup.likes), '400', 'Preset A Likes not independent');
+assert.equal(String(compare.B.setup.likes), '900', 'Preset B Likes not independent');
+
 await wait(900);
 await assertStable('after legacy reorder window');
 await wait(2600);
 await assertStable('after long idle');
 
-// Re-enter Compare so tab-driven legacy handlers run again. Moving shared editor
-// controls out to Oil is allowed while leaving Compare, so begin a fresh violation
-// window only after Oil has settled. From this point onward, any violation belongs
-// to the Compare re-entry path itself and represents user-visible flicker risk.
 await page.locator('.tabs button[data-view="oil"]').click();
 await wait(250);
+const oilUnchanged = await page.evaluate(() => JSON.stringify(window.STOT_LAYOUT_PERSIST?.exportState?.().singleState) === JSON.stringify(window.__stage3OilSnapshot));
+assert.equal(oilUnchanged, true, 'Compare edits changed Oil / Hour state');
 await page.evaluate(() => { window.__stage3OrderViolations = 0; });
 await page.locator('.tabs button[data-view="layoutcompare"]').click();
 await wait(900);
 await assertStable('after re-entry');
 
 await page.evaluate(() => window.__stage3OrderObserver?.disconnect());
-console.log(`STAGE 3 COMPARE CONTROLLER REGRESSION PASS (${process.env.STOT_BROWSER || 'chromium'} ${mobile ? 'mobile' : 'desktop'})`);
+console.log(`STAGE 3 ISOLATED COMPARE REGRESSION PASS (${process.env.STOT_BROWSER || 'chromium'} ${mobile ? 'mobile' : 'desktop'})`);
 await browser.close();
