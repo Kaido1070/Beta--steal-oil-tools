@@ -1,6 +1,6 @@
 # Stage 4 — Oil / Hour Consolidation
 
-Status: **implementation complete — final regression / release pending**
+Status: **implementation complete — PR regression passed; release pending**
 
 ## Goal
 Make Oil / Hour have one authoritative page controller without changing user-visible behavior, calculations, storage schema, or Compare Presets ownership.
@@ -40,5 +40,8 @@ The final `v536-build-ux` dependency was removed by making Stage 4 create the Qu
 6. Retired all targeted Oil-only legacy ordering/polish/bootstrap runtimes.
 7. Preserved Compare A/B isolation and Oil Visual Builder ownership.
 
+## Regression
+Final PR regression passed on Desktop Chromium, Mobile Chromium, and Mobile WebKit, including Stage 4 ownership checks, Compare isolation, Visual Builder ownership, deployment regression, Quick Fill, refinery reservation, and Advanced Tools behavior.
+
 ## Release gate
-Merge only after the final PR regression passes on Desktop Chromium, Mobile Chromium, and Mobile WebKit. After merge, Stage 4 is complete only when main regression and GitHub Pages deployment both pass.
+After merge, Stage 4 is complete only when main regression and GitHub Pages deployment both pass.
