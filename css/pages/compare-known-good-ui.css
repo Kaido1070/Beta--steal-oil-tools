@@ -13,3 +13,71 @@
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
   }
 }
+
+/* Compare-only color parity.
+   Reuse the site's purple/pink accent language while keeping Oil / Hour untouched. */
+#layoutcompareView #v603PresetSwitch .ab-layout-switch button,
+#layoutcompareView #compareLayoutModeTabs button,
+#layoutcompareView #v603SeparateToggle button,
+#layoutcompareView #compareLayoutX2 button{
+  color:#9aa6ba!important;
+  border:1px solid #30384c!important;
+  background:#111722!important;
+  box-shadow:none!important;
+}
+
+#layoutcompareView #v603PresetSwitch .ab-layout-switch button.active,
+#layoutcompareView #compareLayoutModeTabs button.active,
+#layoutcompareView #v603SeparateToggle button.active,
+#layoutcompareView #compareLayoutX2 button.active{
+  color:#fff!important;
+  border-color:#6f5f8e!important;
+  background:linear-gradient(180deg,rgba(255,79,195,.28),rgba(123,108,255,.25))!important;
+  box-shadow:inset 0 0 0 1px rgba(169,121,255,.24),0 0 14px rgba(123,108,255,.10)!important;
+}
+
+#layoutcompareView #v603PresetSwitch .ab-layout-switch button:not(.active):hover,
+#layoutcompareView #compareLayoutModeTabs button:not(.active):hover,
+#layoutcompareView #v603SeparateToggle button:not(.active):hover,
+#layoutcompareView #compareLayoutX2 button:not(.active):hover{
+  color:#d9deea!important;
+  background:#171e2c!important;
+}
+
+#layoutcompareView #compareTemplateAdd{
+  border-color:#51466a!important;
+  background:linear-gradient(180deg,rgba(255,79,195,.08),rgba(123,108,255,.07))!important;
+  color:#d8cffc!important;
+}
+
+#layoutcompareView #compareTemplateAdd:hover{
+  border-color:#7c6ca0!important;
+  background:linear-gradient(180deg,rgba(255,79,195,.14),rgba(123,108,255,.12))!important;
+  color:#fff!important;
+}
+
+#layoutcompareView #v536AdvancedToolsCompare>.v603-advanced-body button:not(#compareClearAll){
+  border:1px solid #3b445d!important;
+  background:#171d2a!important;
+  color:#dce4f2!important;
+}
+
+#layoutcompareView #v536AdvancedToolsCompare>.v603-advanced-body button:not(#compareClearAll):disabled{
+  border-color:#293247!important;
+  background:#101620!important;
+  color:#626d80!important;
+  opacity:1!important;
+  cursor:not-allowed!important;
+}
+
+#layoutcompareView #compareQuickApply{
+  border-color:#8a6fee!important;
+  background:linear-gradient(180deg,#756eff,#6259de)!important;
+  color:#fff!important;
+  box-shadow:0 8px 18px rgba(98,89,222,.16)!important;
+}
+
+#layoutcompareView #v520BoostsCompare .v524-shared-badge,
+#layoutcompareView .compare-reserved-note{
+  color:#c8b6ff!important;
+}
