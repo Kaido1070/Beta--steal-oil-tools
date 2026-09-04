@@ -19,18 +19,22 @@ window.STOT_CONFIG=Object.freeze({
   storageKey(scope,suffix="v1"){return `${this.storageNamespace}-v${this.version}-${scope}-${suffix}`;}
 });
 
-/* Stage 4 strangler cutover: the Oil controller owns these responsibilities.
-   Set guards synchronously before beta-patches.bundle.js/direct legacy scripts parse. */
+/* Stage 4 strangler cutover: new Oil owners replace these runtime patches.
+   Guards are set synchronously before beta-patches.bundle.js/direct legacy scripts parse. */
 window.__STOT_STAGE4_RETIRED_OIL_PATCHES__=Object.freeze([
   'beta-oil-order',
   'beta-first-visit',
   'v539-10-oil-compat',
-  'oil-advanced-inline-v594'
+  'oil-advanced-inline-v594',
+  'v536-build-ux',
+  'v537-quick-fill'
 ]);
 window.__STOT_BETA_OIL_ORDER__=true;
 window.__STOT_BETA_FIRST_VISIT__=true;
 window.__STOT_V539_UI__=true;
 window.__STOT_ADVANCED_INLINE_V594__=true;
+window.__STOT_V536_BUILD_UX__=true;
+window.__STOT_V537_QUICK_FILL__=true;
 
 /* Compare Presets UI skin: visual parity with Oil / Hour without sharing DOM/state. */
 (()=>{
@@ -75,16 +79,23 @@ window.__STOT_ADVANCED_INLINE_V594__=true;
   const script=document.createElement('script');script.src=src;script.dataset.stotCompareBoostIcons='1';document.head.appendChild(script);
 })();
 
-/* Stage 4 Oil controller-owned CSS, replacing oil-advanced-inline runtime CSS injection. */
+/* Stage 4 Oil controller-owned CSS. */
 (()=>{
   const href='css/pages/oil-stage4-controller.css';
   if(document.querySelector('link[data-stot-oil-stage4-ui]'))return;
   const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.stotOilStage4Ui='1';document.head.appendChild(link);
 })();
 
-/* Stage 4 Oil / Hour authoritative Oil-only shell/order controller. */
+/* Stage 4 Oil / Hour authoritative shell/order + Advanced owner. */
 (()=>{
   const src='js/pages/oil-page-controller.js';
   if(document.querySelector('script[data-stot-oil-page-controller]'))return;
   const script=document.createElement('script');script.src=src;script.dataset.stotOilPageController='stage4';document.head.appendChild(script);
+})();
+
+/* Stage 4 Oil / Hour authoritative Quick Fill owner. */
+(()=>{
+  const src='js/pages/oil-quick-fill-stage4.js';
+  if(document.querySelector('script[data-stot-oil-quick-fill-stage4]'))return;
+  const script=document.createElement('script');script.src=src;script.dataset.stotOilQuickFillStage4='1';document.head.appendChild(script);
 })();
