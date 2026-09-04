@@ -86,3 +86,13 @@ window.STOT_CONFIG=Object.freeze({
   script.dataset.stotCompareBoostIcons='1';
   document.head.appendChild(script);
 })();
+
+/* Stage 4 Oil / Hour consolidation: authoritative Oil-only shell/order controller. */
+(()=>{
+  const src='js/pages/oil-page-controller.js';
+  if(document.querySelector('script[data-stot-oil-page-controller]'))return;
+  const script=document.createElement('script');
+  script.src=src;
+  script.dataset.stotOilPageController='stage4';
+  document.head.appendChild(script);
+})();
