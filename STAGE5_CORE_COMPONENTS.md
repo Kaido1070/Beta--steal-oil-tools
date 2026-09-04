@@ -13,22 +13,39 @@ Reduce duplicated calculation/helper logic under Oil / Hour and Compare Presets 
 - Storage keys/schema remain compatible unless an explicit migration is introduced and tested.
 - Existing calculations and user-visible behavior must remain unchanged.
 
-## Initial duplication audit
-The safest first extraction is layout geometry used by both Oil Quick Fill and Compare Quick Fill:
+## Current shared core
+### `STOT_LAYOUT_GEOMETRY`
+Frozen, DOM-free, state-free helpers for:
 - footprint parsing
-- 5x5 piece area
-- 5x5 geometric packing with rotation
+- piece area
+- true 5x5 geometric packing with rotation
 
-Both pages currently carry their own copies of that logic. Stage 5 moves it to `js/core/layout-geometry.js` and makes both pages consume the same pure API.
+### `STOT_LAYOUT_ROWS`
+Frozen, DOM-free, state-free helpers for:
+- Oil-compatible and Compare-compatible row normalization through explicit options
+- row-to-footprint piece expansion
+- footprint quantity expansion
+- lowest-loss reserve-fit search for refinery space
+
+The reserve-fit core receives row loss values as data. Oil and Compare still calculate their own production/boost losses from their own isolated state; only the pure fit/search algorithm is shared.
+
+## Ownership after current cutover
+- Oil Quick Fill owns its own DOM, `layoutPlots` writes, reserve metadata and UI events.
+- Compare Quick Fill owns its own DOM, `compareStates.A/B` writes, reserve metadata and UI events.
+- Both consume the same pure geometry + row/template APIs.
+- No mutable DOM or state crosses the page boundary.
 
 ## Planned sequence
-1. Extract shared pure layout geometry and migrate Oil + Compare Quick Fill to it.
-2. Lock the new core contract with Stage 5 regression coverage.
-3. Audit and consolidate row cloning/normalization where semantics are truly identical.
-4. Audit formatting/calculation helpers and extract only behavior-identical pure functions.
-5. Introduce component factories only where each page receives an independent instance.
-6. Remove duplicated page-local helpers after parity tests prove the cutover.
+1. Extract shared pure layout geometry and migrate Oil + Compare Quick Fill. **Done.**
+2. Lock geometry core with Stage 5 regression coverage. **Done.**
+3. Consolidate row cloning/normalization and reserve-fit search where semantics are behavior-identical. **Done.**
+4. Audit formatting/calculation helpers and extract only behavior-identical pure functions. **Next.**
+5. Introduce component factories only where each page receives an independent instance and where the factory materially reduces duplication.
+6. Remove duplicated page-local helpers only after parity tests prove each cutover.
 7. Full Chromium + Mobile Chromium + Mobile WebKit regression before release.
 
-## Slice 1
-Create `STOT_LAYOUT_GEOMETRY` as a frozen, DOM-free, state-free core API and migrate the two Quick Fill implementations to it. Existing Stage 3/4 ownership tests remain release gates.
+## Slice 1 — Geometry
+Created `STOT_LAYOUT_GEOMETRY` and migrated Oil + Compare Quick Fill to it.
+
+## Slice 2 — Rows and reserve fitting
+Created `STOT_LAYOUT_ROWS` and migrated both Quick Fill implementations to shared normalization/piece expansion/reserve-fit helpers. Stage 5 regression now verifies frozen/pure contracts, input immutability, compatibility normalization, lowest-loss reserve fitting, and persisted-state isolation.
