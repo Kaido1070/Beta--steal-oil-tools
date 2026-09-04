@@ -43,6 +43,13 @@ window.__STOT_V536_BUILD_UX__=true;
   const script=document.createElement('script');script.src='js/core/layout-geometry.js';script.async=false;script.dataset.stotLayoutGeometry='stage5';document.head.appendChild(script);
 })();
 
+/* Stage 5 pure row/template core. It depends only on layout geometry and owns
+   normalization, row-to-piece conversion and reserve-fit search as data helpers. */
+(()=>{
+  if(window.STOT_LAYOUT_ROWS||document.querySelector('script[data-stot-layout-rows]'))return;
+  const script=document.createElement('script');script.src='js/core/layout-rows.js';script.async=false;script.dataset.stotLayoutRows='stage5';document.head.appendChild(script);
+})();
+
 /* Compare Presets UI skin: visual parity with Oil / Hour without sharing DOM/state. */
 (()=>{
   const href='css/pages/compare-oil-match.css';
@@ -100,7 +107,7 @@ window.__STOT_V536_BUILD_UX__=true;
   const script=document.createElement('script');script.src=src;script.dataset.stotOilPageController='stage4';document.head.appendChild(script);
 })();
 
-/* Stage 4 Oil / Hour authoritative Quick Fill owner, now consuming Stage 5 core geometry. */
+/* Stage 4 Oil / Hour authoritative Quick Fill owner, now consuming Stage 5 pure cores. */
 (()=>{
   const src='js/pages/oil-quick-fill-stage4.js';
   if(document.querySelector('script[data-stot-oil-quick-fill-stage4]'))return;
