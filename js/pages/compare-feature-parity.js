@@ -1,7 +1,10 @@
 /* STOT Compare Presets — Oil feature parity, isolated A/B implementation */
 (()=>{
   if(window.__STOT_COMPARE_FEATURE_PARITY__)return;
+  const geometry=window.STOT_LAYOUT_GEOMETRY;
+  if(!geometry){console.error('STOT Stage 5 layout geometry core is missing before Compare feature parity');return;}
   window.__STOT_COMPARE_FEATURE_PARITY__=true;
+  window.__STOT_COMPARE_USES_CORE_GEOMETRY__=true;
 
   const byId=id=>document.getElementById(id);
   const clone=value=>JSON.parse(JSON.stringify(value));
@@ -10,6 +13,8 @@
   const drillIndex=()=>typeof drills!=='undefined'&&Array.isArray(drills)?drills:[];
   const refineryIndex=()=>typeof refineries!=='undefined'&&Array.isArray(refineries)?refineries:[];
   const tiers=()=>typeof TIER_OPTIONS!=='undefined'&&Array.isArray(TIER_OPTIONS)?TIER_OPTIONS:[];
+  const fp=geometry.parseFootprint;
+  const canPackPieces5x5=geometry.canPackPieces5x5;
 
   let template=[{drill:'demonic',tier:0,count:1,hacker:550}];
   let plotClipboard=null;
@@ -34,7 +39,6 @@
       hacker:Math.max(0,Number(r?.hacker)||550)
     }));
   }
-  function fp(value){const m=String(value||'1x1').match(/^(\d+)x(\d+)$/);return m?[Number(m[1]),Number(m[2])]:[1,1]}
   function piecesFromRows(rows){
     const out=[];
     for(const row of cleanRows(rows)){
@@ -44,30 +48,9 @@
     }
     return out;
   }
-  function canPackPieces5x5(input){
-    const pieces=input.map(([w,h])=>[Number(w),Number(h)]);
-    const area=pieces.reduce((sum,[w,h])=>sum+w*h,0);
-    if(area>25)return false;
-    pieces.sort((a,b)=>(b[0]*b[1])-(a[0]*a[1])||Math.max(b[0],b[1])-Math.max(a[0],a[1]));
-    const grid=Array(25).fill(false),memo=new Set();
-    const fits=(w,h,x,y)=>{if(x+w>5||y+h>5)return false;for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(grid[yy*5+xx])return false;return true};
-    const set=(w,h,x,y,value)=>{for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)grid[yy*5+xx]=value};
-    function dfs(i){
-      if(i===pieces.length)return true;
-      const key=i+':'+grid.map(v=>v?1:0).join('');
-      if(memo.has(key))return false;
-      const [a,b]=pieces[i],orients=a===b?[[a,b]]:[[a,b],[b,a]];
-      for(const [w,h] of orients)for(let y=0;y<=5-h;y++)for(let x=0;x<=5-w;x++){
-        if(!fits(w,h,x,y))continue;
-        set(w,h,x,y,true);if(dfs(i+1))return true;set(w,h,x,y,false);
-      }
-      memo.add(key);return false;
-    }
-    return dfs(0);
-  }
   function templateInfo(){
     const pieces=piecesFromRows(template);
-    return {cells:pieces.reduce((sum,[w,h])=>sum+w*h,0),ok:canPackPieces5x5(pieces)};
+    return {cells:geometry.piecesArea(pieces),ok:canPackPieces5x5(pieces)};
   }
   function refineryPieces(ref,qty){const [w,h]=fp(ref?.footprint);return Array.from({length:qty},()=>[w,h])}
 
@@ -94,7 +77,7 @@
     return base*tier*petMultiplier(d,setup);
   }
   function reservedVariant(rows,ref,qty,setup){
-    const reserve=refineryPieces(ref,qty),reservedCells=reserve.reduce((sum,[w,h])=>sum+w*h,0);
+    const reserve=refineryPieces(ref,qty),reservedCells=geometry.piecesArea(reserve);
     if(!canPackPieces5x5(reserve))return{ok:false,reason:'That refinery quantity cannot fit inside one 5×5 plot by itself.'};
     const original=cleanRows(rows),fitsRows=value=>canPackPieces5x5([...piecesFromRows(value),...reserve]);
     if(fitsRows(original))return{ok:true,rows:original,removed:0,reservedCells};
@@ -261,9 +244,10 @@
   function bindViewEvents(){
     const view=byId('layoutcompareView');if(!view||view.dataset.featureParityEvents==='1')return false;view.dataset.featureParityEvents='1';
     view.addEventListener('click',event=>{
-      const plot=event.target.closest('[data-compare-plot]');if(plot){selectedPlotId=plot.dataset.comparePlot;setTimeout(enhanceEditor,0)}
-      if(event.target.closest('[data-ab-layout]'))setTimeout(()=>{decorateReservedPlot();enhanceBoosts();syncAdvancedButtons()},0);
-      if(event.target.closest('#v603ComparePlotEditor [data-add],#v603ComparePlotEditor [data-vremove],#v603ComparePlotEditor [data-clear]'))setTimeout(enhanceEditor,0);
+      const target=event.target instanceof Element?event.target:null;
+      const plot=target?.closest('[data-compare-plot]');if(plot){selectedPlotId=plot.dataset.comparePlot;setTimeout(enhanceEditor,0)}
+      if(target?.closest('[data-ab-layout]'))setTimeout(()=>{decorateReservedPlot();enhanceBoosts();syncAdvancedButtons()},0);
+      if(target?.closest('#v603ComparePlotEditor [data-add],#v603ComparePlotEditor [data-vremove],#v603ComparePlotEditor [data-clear]'))setTimeout(enhanceEditor,0);
     },true);
     return true;
   }
