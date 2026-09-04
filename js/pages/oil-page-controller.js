@@ -107,7 +107,8 @@
     if(!has){if(status)status.textContent='Layout is already empty';return}
     if(!window.confirm('Clear all drills from this layout?'))return;
     for(const p of layoutPlots)p.rows=[];clearRefineryReserve();if(typeof renderLayout==='function')renderLayout();
-    if(status)status.textContent='All 15 plots cleared';setTimeout(()=>document.dispatchEvent(new Event('change',{bubbles:true})),0);
+    if(status)status.textContent='All 15 plots cleared';
+    setTimeout(()=>oil()?.dispatchEvent(new Event('change',{bubbles:true})),0);
   }
   function ownAdvancedButton(id,text,handler){
     let btn=byId(id);if(!btn)return false;
@@ -192,7 +193,7 @@
     mount:sync,sync,syncOrder:()=>syncOrder(nodes()),syncAdvanced:()=>syncAdvancedPresentation(nodes()),syncCalculator:()=>syncCalculatorPresentation(nodes()),syncBoosts:()=>syncBoostPresentation(nodes()),syncQuick:()=>syncQuickPresentation(nodes()),snapshot,ownsOilShell:true,ownsAdvancedTools:true,compareStateShared:false
   });
 
-  document.addEventListener('click',e=>{if(e.target.closest('#oilView [data-copy]'))setTimeout(syncAdvancedButtons,0)},true);
+  document.addEventListener('click',e=>{const target=e.target instanceof Element?e.target:null;if(target?.closest('#oilView [data-copy]'))setTimeout(syncAdvancedButtons,0)},true);
   document.querySelector('.tabs button[data-view="oil"]')?.addEventListener('click',schedule);
   function boot(){let tries=0;const run=()=>{tries++;const ready=sync();if((ready&&installSharePreview())||tries>=100)return;setTimeout(run,80)};run()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
