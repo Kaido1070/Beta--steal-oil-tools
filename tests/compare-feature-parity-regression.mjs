@@ -29,6 +29,25 @@ assert.equal(await page.locator('[data-ab-layout="B"]').count(),1,'Preset B miss
 assert.match(await text('#compareLayoutModeTabs [data-layoutmode="time"]'),/Time → Oil.*How much oil/i);
 assert.match(await text('#compareLayoutModeTabs [data-layoutmode="target"]'),/Oil → Time.*reach your target/i);
 assert.match(await text('#v520BoostsCompare'),/Optional.*Mole Level.*Fruit Level.*Heart Likes.*Admin Event Lobby/i);
+const boostLayout=await page.evaluate(()=>{
+  const panel=document.querySelector('#v520BoostsCompare');
+  const hint=panel?.querySelector('.compare-boost-hint');
+  const grid=panel?.querySelector('.v603-boost-grid');
+  const cards=[...(grid?.querySelectorAll('.compare-boost-card')||[])];
+  const rect=el=>{const r=el.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom}};
+  return{panel:panel?rect(panel):null,hint:hint?rect(hint):null,grid:grid?rect(grid):null,cards:cards.map(rect)};
+});
+assert.equal(boostLayout.cards.length,4,'Preset Boosts must contain four equal cards');
+assert.ok(boostLayout.grid.width>boostLayout.panel.width*.85,'Preset Boosts grid is squeezed into one column of the panel');
+assert.ok(boostLayout.hint.width>boostLayout.panel.width*.75,'Optional boost hint is not a full-width row');
+if(mobile){
+  assert.ok(Math.abs(boostLayout.cards[0].y-boostLayout.cards[1].y)<4,'Mole and Fruit are not on the same mobile row');
+  assert.ok(Math.abs(boostLayout.cards[2].y-boostLayout.cards[3].y)<4,'Heart Likes and Admin Event are not on the same mobile row');
+  assert.ok(boostLayout.cards[2].y>boostLayout.cards[0].y+8,'Preset Boosts did not form a 2x2 mobile grid');
+  assert.ok(Math.abs(boostLayout.cards[0].width-boostLayout.cards[1].width)<4,'Mobile boost cards are not equal width');
+}else{
+  assert.ok(boostLayout.cards.every(r=>Math.abs(r.y-boostLayout.cards[0].y)<4),'Desktop boost cards are not on one row');
+}
 
 // Quick Fill parity: multi-row template + real 5x5 fit + refinery reservation.
 assert.equal(await page.locator('[data-compare-template-row]').count(),1);
