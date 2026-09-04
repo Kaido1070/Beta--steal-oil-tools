@@ -2,8 +2,12 @@
 #layoutcompareView #compareLayoutModeTabs .v593-mode-choice{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;line-height:1.05!important}
 #layoutcompareView #compareLayoutModeTabs .v593-mode-choice strong{display:block!important;font-size:13px!important;font-weight:950!important;white-space:nowrap!important}
 #layoutcompareView #compareLayoutModeTabs .v593-mode-choice small{display:block!important;margin-top:4px!important;font-size:8px!important;opacity:.72!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important}
-#layoutcompareView #v520BoostsCompare .compare-boost-hint{margin:-4px 0 9px;color:#8e98aa;font-size:8px;line-height:1.3}
-#layoutcompareView #v520BoostsCompare .compare-boost-card{border:1px solid #263044;border-radius:11px;background:#111722;padding:8px 9px}
+#layoutcompareView #v520BoostsCompare .compare-boost-hint{grid-column:1/-1!important;width:100%!important;margin:-4px 0 2px!important;color:#8e98aa;font-size:8px;line-height:1.3}
+#layoutcompareView #v520BoostsCompare .v603-boost-grid{grid-column:1/-1!important;width:100%!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
+#layoutcompareView #v520BoostsCompare .v603-boost-grid>label.compare-boost-card{grid-column:auto!important;min-width:0!important;display:grid!important;gap:5px!important;border:1px solid #263044;border-radius:11px;background:#111722;padding:8px 9px;color:#aab4c6!important;font-size:8px!important;line-height:1.2!important}
+#layoutcompareView #v520BoostsCompare .v603-boost-grid>label.compare-boost-card input{width:100%!important;min-width:0!important;max-width:none!important;height:36px!important;min-height:36px!important;padding:0 7px!important;text-align:center!important;font-size:13px!important;box-sizing:border-box!important}
+#layoutcompareView #v520BoostsCompare .v603-boost-grid>label.compare-boost-card #compareLayoutX2{display:grid!important;grid-template-columns:1fr 1fr!important;gap:4px!important;margin:0!important}
+#layoutcompareView #v520BoostsCompare .v603-boost-grid>label.compare-boost-card #compareLayoutX2 button{width:100%!important;min-width:0!important;min-height:36px!important;padding:0 5px!important;border-radius:9px!important;font-size:10px!important}
 #layoutcompareView #v536QuickFillCompare{padding:12px!important;border-radius:17px!important}
 #layoutcompareView #v536QuickFillCompare .v537-template-head,#layoutcompareView #v536QuickFillCompare .v537-template-fit{display:flex;align-items:center;justify-content:space-between;gap:10px}
 #layoutcompareView #v536QuickFillCompare .v537-template-head{margin:2px 0 6px}
@@ -37,6 +41,8 @@
 #v603ComparePlotEditor [data-compare-copy-plot]{min-height:40px}
 #layoutcompareView .compare-reserved-note{display:block!important;grid-column:1/-1;margin-top:3px;color:#c6a8ff!important;font-size:7px!important}
 @media(max-width:620px){
+#layoutcompareView #v520BoostsCompare .v603-boost-grid{grid-template-columns:1fr 1fr!important}
+#layoutcompareView #v520BoostsCompare .v603-boost-grid>label.compare-boost-card{grid-column:auto!important;width:auto!important}
 #layoutcompareView #v536QuickFillCompare .v537-template-row{grid-template-columns:1fr 1fr}
 #layoutcompareView #v536QuickFillCompare .v537-template-row label:first-child{grid-column:1/-1}
 #layoutcompareView #v536QuickFillCompare .v537-template-remove{grid-column:2;grid-row:2}
