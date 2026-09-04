@@ -20,20 +20,19 @@ window.STOT_CONFIG=Object.freeze({
 });
 
 /* Stage 4 strangler cutover: new Oil owners replace these runtime patches.
-   Guards are set synchronously before beta-patches.bundle.js/direct legacy scripts parse. */
+   v536-build-ux intentionally remains as the pre-Stage3 shell bootstrap for now;
+   Stage 4 takes over its Quick/Advanced DOM immediately after Stage 3 restores Oil ownership. */
 window.__STOT_STAGE4_RETIRED_OIL_PATCHES__=Object.freeze([
   'beta-oil-order',
   'beta-first-visit',
   'v539-10-oil-compat',
   'oil-advanced-inline-v594',
-  'v536-build-ux',
   'v537-quick-fill'
 ]);
 window.__STOT_BETA_OIL_ORDER__=true;
 window.__STOT_BETA_FIRST_VISIT__=true;
 window.__STOT_V539_UI__=true;
 window.__STOT_ADVANCED_INLINE_V594__=true;
-window.__STOT_V536_BUILD_UX__=true;
 window.__STOT_V537_QUICK_FILL__=true;
 
 /* Compare Presets UI skin: visual parity with Oil / Hour without sharing DOM/state. */
@@ -54,7 +53,7 @@ window.__STOT_V537_QUICK_FILL__=true;
   const script=document.createElement('script');script.src=src;script.dataset.stotCompareFeatureParity='1';document.head.appendChild(script);
 })();
 
-/* Known-good Compare responsive guard. Loaded last and scoped to Compare only. */
+/* Known-good Compare responsive guard. */
 (()=>{
   const href='css/pages/compare-known-good-ui.css';
   if(document.querySelector('link[data-stot-compare-known-good-ui]'))return;
