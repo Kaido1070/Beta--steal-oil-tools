@@ -17,8 +17,7 @@ await page.evaluate(()=>localStorage.clear());
 await page.reload({waitUntil:'networkidle'});
 await nav('oil','#oilView');
 const oilBefore=await page.evaluate(()=>JSON.stringify(window.STOT_LAYOUT_PERSIST?.exportState?.().singleState));
-const oilBuilder=await page.locator('#layoutVisualBuilder').evaluate(el=>el);
-assert.ok(oilBuilder,'Oil builder missing');
+assert.equal(await page.locator('#layoutVisualBuilder').count(),1,'Oil builder missing');
 
 await nav('layoutcompare','#layoutcompareView');
 await page.locator('#compareTemplateAdd').waitFor({state:'visible',timeout:10000});
