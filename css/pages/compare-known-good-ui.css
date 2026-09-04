@@ -1,0 +1,15 @@
+/* Final Compare-only responsive guard from the known-good layout.
+   Keep the boost content spanning the whole panel, then use 4-up desktop / 2x2 mobile. */
+#layoutcompareView #v520BoostsCompare .compare-boost-hint,
+#layoutcompareView #v520BoostsCompare .v603-boost-grid{
+  grid-column:1/-1!important;
+}
+#layoutcompareView #v520BoostsCompare .v603-boost-grid{
+  width:100%!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+}
+@media(max-width:760px){
+  #layoutcompareView #v520BoostsCompare .v603-boost-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}

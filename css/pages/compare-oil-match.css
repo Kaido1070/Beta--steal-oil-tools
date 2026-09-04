@@ -1,77 +1,301 @@
-/* Compare Presets visual parity with Oil / Hour — scoped UI only */
-#layoutcompareView{--cmp-gap:10px}
-#layoutcompareView>.panel,#layoutcompareView>details,#layoutcompareView>section{margin-bottom:var(--cmp-gap)!important}
-#layoutcompareView .v56-compare-intro{padding:14px 16px!important;border-radius:16px!important}
-#layoutcompareView .v56-compare-intro h2{font-size:20px!important;line-height:1.1!important}
-#layoutcompareView .v56-compare-intro p{font-size:10px!important;line-height:1.45!important;margin-top:5px!important}
-#layoutcompareView #v603PresetSwitch{padding:10px!important;border-radius:14px!important}
-#layoutcompareView #v603PresetSwitch .ab-layout-switch{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important}
-#layoutcompareView #v603PresetSwitch .ab-layout-switch button{height:40px!important;min-height:40px!important;border-radius:10px!important;font-size:11px!important;font-weight:900!important}
-#layoutcompareView #abEditing{margin-top:7px!important;font-size:8px!important;color:#8e98aa!important;text-align:center!important}
-#layoutcompareView #v533Condition{padding:12px!important;border-radius:15px!important}
-#layoutcompareView #v533Condition .v533-condition-head{margin-bottom:9px!important}
-#layoutcompareView #v533Condition .v533-condition-head strong{font-size:13px!important}
-#layoutcompareView #v533Condition .v533-condition-head span{font-size:8px!important}
-#layoutcompareView #compareLayoutModeTabs{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;margin-bottom:8px!important}
-#layoutcompareView #compareLayoutModeTabs button{height:48px!important;min-height:48px!important;border-radius:10px!important;padding:7px 10px!important;font-size:10px!important;text-align:left!important;background:#111722!important;border:1px solid #293247!important}
-#layoutcompareView #compareLayoutModeTabs button.active{background:#f2f4f8!important;color:#0d1118!important;border-color:#f2f4f8!important}
-#layoutcompareView .v603-condition-pane{border:1px solid #263044!important;border-radius:11px!important;background:#111722!important;padding:8px 10px!important}
-#layoutcompareView .v603-condition-pane label{display:grid!important;grid-template-columns:minmax(0,1fr) 96px!important;align-items:center!important;gap:8px!important;color:#eef2f8!important;font-size:10px!important;font-weight:850!important}
-#layoutcompareView .v603-condition-pane input,#layoutcompareView .v603-condition-pane select{height:36px!important;min-height:36px!important;border-radius:9px!important}
-#layoutcompareView #v524CompareSettings{padding:10px 11px!important;border-radius:14px!important}
-#layoutcompareView #v524CompareSettings .v524-settings-head{display:grid!important;grid-template-columns:minmax(0,1fr) 108px!important;align-items:center!important;gap:10px!important}
-#layoutcompareView #v524CompareSettings .v524-settings-copy strong{font-size:12px!important}
-#layoutcompareView #v524CompareSettings .v524-settings-copy small{display:block!important;margin-top:3px!important;font-size:8px!important;line-height:1.3!important;color:#8e98aa!important}
-#layoutcompareView #v603SeparateToggle{display:grid!important;grid-template-columns:1fr 1fr!important;gap:4px!important;padding:3px!important;border:1px solid #2b3448!important;border-radius:10px!important;background:#0f1520!important}
-#layoutcompareView #v603SeparateToggle button{height:32px!important;min-height:32px!important;border:0!important;border-radius:7px!important;font-size:9px!important}
-#layoutcompareView #v603SeparateToggle button.active{background:#f2f4f8!important;color:#0d1118!important}
-#layoutcompareView #v524Status{margin-top:6px!important;font-size:8px!important;color:#8e98aa!important}
-#layoutcompareView #v526EditorSwitch{padding:8px 10px!important;border-radius:12px!important}
-#layoutcompareView #v526EditorSwitch strong{font-size:9px!important;color:#aeb8c9!important}
-#layoutcompareView #v520BoostsCompare{padding:12px!important;border-radius:15px!important}
-#layoutcompareView #v520BoostsCompare .v520-boosts-title{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin-bottom:9px!important}
-#layoutcompareView #v520BoostsCompare .v520-boosts-title strong{font-size:13px!important}
-#layoutcompareView #v520BoostsCompare .v520-boosts-title>span{font-size:8px!important;color:#8e98aa!important}
-#layoutcompareView #v520BoostsCompare .v603-boost-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
-#layoutcompareView #v520BoostsCompare .v603-boost-grid label{display:grid!important;gap:5px!important;font-size:8px!important;color:#8e98aa!important;font-weight:850!important}
-#layoutcompareView #v520BoostsCompare .v603-boost-grid label:nth-child(3),#layoutcompareView #v520BoostsCompare .v603-boost-grid label:nth-child(4){grid-column:1/-1!important}
-#layoutcompareView #v520BoostsCompare input{height:38px!important;min-height:38px!important;border-radius:9px!important}
-#layoutcompareView #compareLayoutX2{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;margin-top:0!important}
-#layoutcompareView #compareLayoutX2 button{height:36px!important;min-height:36px!important;border-radius:9px!important}
-#layoutcompareView #v536QuickFillCompare{padding:11px!important;border-radius:14px!important}
-#layoutcompareView #v536QuickFillCompare .v536-qf-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin-bottom:8px!important}
+/* Compare Presets — restored from the known-good pre-Stage 3 visual structure.
+   Compare-only selectors: never changes Oil / Hour DOM or styles. */
+#layoutcompareView{
+  --cmp-gap:10px;
+  --cmp-pad:12px;
+  --cmp-radius:15px;
+}
+#layoutcompareView>.panel,
+#layoutcompareView>details,
+#layoutcompareView>section{margin-bottom:var(--cmp-gap)!important}
+
+/* Intro */
+#layoutcompareView .v56-compare-intro{
+  padding:13px 14px!important;
+  border-radius:var(--cmp-radius)!important;
+}
+#layoutcompareView .v56-compare-intro h2{
+  margin:0!important;
+  font-size:18px!important;
+  line-height:1.12!important;
+}
+#layoutcompareView .v56-compare-intro p{
+  margin:5px 0 0!important;
+  color:#9ea8ba!important;
+  font-size:9.5px!important;
+  line-height:1.45!important;
+}
+
+/* Preset A / B selector */
+#layoutcompareView #v603PresetSwitch{
+  padding:9px!important;
+  border-radius:14px!important;
+}
+#layoutcompareView #v603PresetSwitch .ab-layout-switch{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:7px!important;
+}
+#layoutcompareView #v603PresetSwitch .ab-layout-switch button{
+  min-height:42px!important;
+  height:42px!important;
+  border-radius:10px!important;
+  font-size:11px!important;
+  font-weight:900!important;
+}
+#layoutcompareView #abEditing{display:none!important}
+
+/* Comparison condition — same proportions as the old Compare page. */
+#layoutcompareView #v533Condition{
+  padding:var(--cmp-pad)!important;
+  border-radius:var(--cmp-radius)!important;
+}
+#layoutcompareView #v533Condition .v533-condition-head{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  margin-bottom:9px!important;
+}
+#layoutcompareView #v533Condition .v533-condition-head strong{font-size:12px!important}
+#layoutcompareView #v533Condition .v533-condition-head span{
+  color:#8f9bb0!important;
+  font-size:8.5px!important;
+  text-align:right!important;
+}
+#layoutcompareView #compareLayoutModeTabs{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:7px!important;
+  margin:0 0 9px!important;
+}
+#layoutcompareView #compareLayoutModeTabs button{
+  min-height:56px!important;
+  height:56px!important;
+  padding:7px 9px!important;
+  border-radius:12px!important;
+  border:1px solid #293247!important;
+  background:#111722!important;
+}
+#layoutcompareView #compareLayoutModeTabs button.active{
+  color:#0d1118!important;
+  border-color:#f2f4f8!important;
+  background:#f2f4f8!important;
+}
+#layoutcompareView .v603-condition-pane{
+  padding:9px 10px!important;
+  border:1px solid #30394e!important;
+  border-radius:12px!important;
+  background:#111722!important;
+}
+#layoutcompareView .v603-condition-pane label{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 110px!important;
+  align-items:center!important;
+  gap:10px!important;
+  color:#eef2f8!important;
+  font-size:10px!important;
+  font-weight:850!important;
+}
+#layoutcompareView .v603-condition-pane input,
+#layoutcompareView .v603-condition-pane select{
+  min-height:40px!important;
+  height:40px!important;
+  border-radius:10px!important;
+  font-size:15px!important;
+}
+
+/* Different Base Settings — restore the old readable card instead of the compact strip. */
+#layoutcompareView #v524CompareSettings{
+  margin:0 0 var(--cmp-gap)!important;
+  padding:10px!important;
+  border-radius:14px!important;
+}
+#layoutcompareView #v524CompareSettings .v524-settings-head{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+}
+#layoutcompareView #v524CompareSettings .v524-settings-copy{min-width:0!important}
+#layoutcompareView #v524CompareSettings .v524-settings-copy strong{
+  display:block!important;
+  font-size:11px!important;
+  line-height:1.25!important;
+}
+#layoutcompareView #v524CompareSettings .v524-settings-copy small{
+  display:block!important;
+  margin-top:4px!important;
+  color:#9aa5b8!important;
+  font-size:8.5px!important;
+  line-height:1.42!important;
+  white-space:normal!important;
+}
+#layoutcompareView #v603SeparateToggle{
+  flex:0 0 auto!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:4px!important;
+  min-width:130px!important;
+  padding:3px!important;
+  border:1px solid #30394e!important;
+  border-radius:11px!important;
+  background:#0f151f!important;
+}
+#layoutcompareView #v603SeparateToggle button{
+  min-height:34px!important;
+  height:34px!important;
+  padding:0 10px!important;
+  border:0!important;
+  border-radius:8px!important;
+  font-size:9.5px!important;
+  font-weight:900!important;
+}
+#layoutcompareView #v603SeparateToggle button.active{
+  color:#0d1118!important;
+  background:#f2f4f8!important;
+}
+#layoutcompareView #v524Status{
+  margin-top:8px!important;
+  padding:7px 9px!important;
+  border-radius:9px!important;
+  background:#101620!important;
+  color:#9aa6ba!important;
+  font-size:8.5px!important;
+  line-height:1.4!important;
+}
+
+/* Editing hint */
+#layoutcompareView #v526EditorSwitch{
+  padding:9px 10px!important;
+  border-radius:12px!important;
+}
+#layoutcompareView #v526EditorSwitch strong{
+  font-size:10px!important;
+  color:#aeb8c9!important;
+}
+
+/* Preset boosts — use the known-good card grid, not four compressed controls. */
+#layoutcompareView #v520BoostsCompare{
+  padding:11px!important;
+  border-radius:14px!important;
+}
+#layoutcompareView #v520BoostsCompare .v520-boosts-title{
+  display:flex!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  gap:7px!important;
+  margin:0 0 7px!important;
+}
+#layoutcompareView #v520BoostsCompare .v520-boosts-title strong{font-size:11px!important}
+#layoutcompareView #v520BoostsCompare .v520-boosts-title>span{
+  color:#8f9bb0!important;
+  font-size:8px!important;
+}
+#layoutcompareView #v520BoostsCompare .v524-shared-badge{margin-left:auto!important}
+#layoutcompareView #v520BoostsCompare .compare-boost-hint{
+  width:100%!important;
+  margin:0 0 2px!important;
+  color:#9aa6ba!important;
+  font-size:8.5px!important;
+  line-height:1.35!important;
+}
+#layoutcompareView #v520BoostsCompare .v603-boost-grid{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:8px!important;
+}
+#layoutcompareView #v520BoostsCompare .v603-boost-grid>label.compare-boost-card{
+  min-width:0!important;
+  display:grid!important;
+  gap:6px!important;
+  padding:9px!important;
+  border:1px solid #30394e!important;
+  border-radius:11px!important;
+  background:#111722!important;
+  color:#aab4c6!important;
+  font-size:8.5px!important;
+  line-height:1.2!important;
+}
+#layoutcompareView #v520BoostsCompare .compare-boost-card input{
+  width:100%!important;
+  min-width:0!important;
+  height:40px!important;
+  min-height:40px!important;
+  padding:0 8px!important;
+  border-radius:10px!important;
+  text-align:center!important;
+  font-size:15px!important;
+}
+#layoutcompareView #compareLayoutX2{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:5px!important;
+}
+#layoutcompareView #compareLayoutX2 button{
+  min-height:40px!important;
+  height:40px!important;
+  border-radius:10px!important;
+  font-size:10px!important;
+}
+
+/* Quick Fill shell. Feature-specific controls are styled in compare-feature-parity.css. */
+#layoutcompareView #v536QuickFillCompare{
+  padding:11px!important;
+  border-radius:14px!important;
+}
+#layoutcompareView #v536QuickFillCompare .v536-qf-head{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  margin-bottom:9px!important;
+}
 #layoutcompareView #v536QuickFillCompare .v536-qf-head strong{font-size:12px!important}
-#layoutcompareView #v536QuickFillCompare .v536-qf-head span{font-size:8px!important;color:#8e98aa!important}
-#layoutcompareView #v536QuickFillCompare .v603-qf-grid{display:grid!important;grid-template-columns:minmax(0,1.6fr) minmax(0,.8fr) minmax(0,.7fr)!important;gap:7px!important}
-#layoutcompareView #v536QuickFillCompare .v603-qf-grid label{display:grid!important;gap:4px!important;font-size:8px!important;color:#8e98aa!important;font-weight:850!important}
-#layoutcompareView #v536QuickFillCompare select,#layoutcompareView #v536QuickFillCompare input{height:36px!important;min-height:36px!important;border-radius:9px!important}
-#layoutcompareView #v536QuickFillCompare .v603-qf-actions{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:7px!important;margin-top:7px!important}
-#layoutcompareView #compareQuickApply{min-height:36px!important;border-radius:9px!important;font-size:9px!important;font-weight:900!important}
-#layoutcompareView #compareQuickStatus{margin-top:6px!important;font-size:7.5px!important;color:#7f8a9d!important}
-#layoutcompareView #v536AdvancedToolsCompare{display:grid!important;grid-template-columns:max-content minmax(0,1fr)!important;align-items:center!important;gap:8px!important;padding:8px 9px!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:12px!important;background:#101521!important}
-#layoutcompareView #v536AdvancedToolsCompare>summary{list-style:none!important;padding:0!important;border:0!important;background:none!important;font-size:10px!important;font-weight:900!important;white-space:nowrap!important}
-#layoutcompareView #v536AdvancedToolsCompare>summary span{display:none!important}
-#layoutcompareView #v536AdvancedToolsCompare>.v603-advanced-body{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;padding:0!important}
-#layoutcompareView #v536AdvancedToolsCompare>.v603-advanced-body button{height:32px!important;min-height:32px!important;padding:3px 5px!important;border-radius:8px!important;font-size:8px!important;white-space:nowrap!important}
-#layoutcompareView #compareClearPreset{border-color:rgba(255,92,108,.30)!important;background:rgba(255,65,84,.08)!important;color:#ff9aa5!important}
-#layoutcompareView #layoutVisualBuilderCompare{margin-top:0!important;border-radius:15px!important}
-#layoutcompareView .v603-note{margin:-2px 2px 8px!important;font-size:8px!important;line-height:1.35!important}
+#layoutcompareView #v536QuickFillCompare .v536-qf-head span{
+  color:#8f9bb0!important;
+  font-size:8px!important;
+  line-height:1.35!important;
+  text-align:right!important;
+}
+
+/* Visual builder ownership and dimensions stay untouched. */
+#layoutcompareView #layoutVisualBuilderCompare{
+  margin-top:0!important;
+  border-radius:15px!important;
+}
+#layoutcompareView .v603-note{
+  margin:-2px 2px 8px!important;
+  color:#8f9bb0!important;
+  font-size:8.5px!important;
+  line-height:1.35!important;
+}
 #layoutcompareView .ab-compare{border-radius:15px!important}
-@media(max-width:520px){
-#layoutcompareView{--cmp-gap:8px}
-#layoutcompareView .v56-compare-intro{padding:11px 12px!important}
-#layoutcompareView .v56-compare-intro h2{font-size:17px!important}
-#layoutcompareView #v603PresetSwitch{padding:8px!important}
-#layoutcompareView #v603PresetSwitch .ab-layout-switch button{height:36px!important;min-height:36px!important;font-size:10px!important}
-#layoutcompareView #v533Condition,#layoutcompareView #v520BoostsCompare{padding:10px!important}
-#layoutcompareView #compareLayoutModeTabs button{height:44px!important;min-height:44px!important;font-size:9px!important}
-#layoutcompareView .v603-condition-pane label{grid-template-columns:minmax(0,1fr) 86px!important;font-size:9px!important}
-#layoutcompareView #v524CompareSettings .v524-settings-head{grid-template-columns:minmax(0,1fr) 100px!important;gap:7px!important}
-#layoutcompareView #v520BoostsCompare .v603-boost-grid{grid-template-columns:1fr 1fr!important}
-#layoutcompareView #v536QuickFillCompare .v603-qf-grid{grid-template-columns:1fr 1fr!important}
-#layoutcompareView #v536QuickFillCompare .v603-qf-grid label:first-child{grid-column:1/-1!important}
-#layoutcompareView #v536AdvancedToolsCompare{grid-template-columns:max-content minmax(0,1fr)!important;gap:5px!important;padding:7px 8px!important}
-#layoutcompareView #v536AdvancedToolsCompare>summary{font-size:8px!important}
-#layoutcompareView #v536AdvancedToolsCompare>.v603-advanced-body{gap:4px!important}
-#layoutcompareView #v536AdvancedToolsCompare>.v603-advanced-body button{height:30px!important;min-height:30px!important;font-size:6.8px!important;padding:2px!important}
+
+@media(max-width:760px){
+  #layoutcompareView{--cmp-gap:9px;--cmp-pad:11px}
+  #layoutcompareView .v56-compare-intro{padding:11px 12px!important}
+  #layoutcompareView .v56-compare-intro h2{font-size:17px!important}
+  #layoutcompareView #v603PresetSwitch{padding:8px!important}
+  #layoutcompareView #v603PresetSwitch .ab-layout-switch button{min-height:40px!important;height:40px!important}
+  #layoutcompareView #compareLayoutModeTabs button{min-height:54px!important;height:54px!important}
+  #layoutcompareView .v603-condition-pane label{grid-template-columns:minmax(0,1fr) 96px!important}
+  #layoutcompareView #v524CompareSettings .v524-settings-head{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+  }
+  #layoutcompareView #v603SeparateToggle{
+    width:100%!important;
+    min-width:0!important;
+  }
+  #layoutcompareView #v520BoostsCompare .v603-boost-grid{
+    grid-template-columns:1fr 1fr!important;
+  }
+}
+
+@media(max-width:390px){
+  #layoutcompareView #v520BoostsCompare .v603-boost-grid{gap:6px!important}
+  #layoutcompareView #v520BoostsCompare .v603-boost-grid>label.compare-boost-card{padding:8px!important}
+  #layoutcompareView #v520BoostsCompare .compare-boost-card input{font-size:14px!important}
 }
