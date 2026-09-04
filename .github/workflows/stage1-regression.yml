@@ -29,10 +29,17 @@ on:
 permissions:
   contents: read
 
+# A newer commit on the same PR makes the older run useless. Cancel it instead
+# of spending runner time on stale regression work.
+concurrency:
+  group: stage1-regression-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  regression:
+  chromium:
+    name: Chromium regression
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,10 +49,24 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install Playwright browsers
+      - name: Cache npm downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-playwright-1.55.0-${{ hashFiles('package.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-playwright-1.55.0-
+
+      - name: Cache Chromium browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-1.55.0-chromium
+
+      - name: Install Playwright and Chromium
         run: |
-          npm install --no-save playwright@1.55.0
-          npx playwright install --with-deps chromium webkit
+          npm install --no-save --no-audit --no-fund playwright@1.55.0
+          npx playwright install --with-deps chromium
 
       - name: Start local site
         run: |
@@ -69,14 +90,76 @@ jobs:
       - name: Stage 3 Compare controller — Mobile Chromium
         run: STOT_MOBILE=1 node tests/stage3-compare-controller-regression.mjs
 
-      - name: Stage 3 Compare controller — Mobile WebKit
-        run: STOT_BROWSER=webkit STOT_MOBILE=1 node tests/stage3-compare-controller-regression.mjs
-
       - name: Mobile Chromium regression
         run: npm run test:mobile
+
+      - name: Deployment regression
+        run: npm run test:deployment
+
+  webkit:
+    name: Mobile WebKit regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache npm downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-playwright-1.55.0-${{ hashFiles('package.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-playwright-1.55.0-
+
+      - name: Cache WebKit browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-1.55.0-webkit
+
+      - name: Install Playwright and WebKit
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Start local site
+        run: |
+          python3 -m http.server 4173 >/tmp/stot-http.log 2>&1 &
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/stot-http.log
+          exit 1
+
+      - name: Stage 3 Compare controller — Mobile WebKit
+        run: STOT_BROWSER=webkit STOT_MOBILE=1 node tests/stage3-compare-controller-regression.mjs
 
       - name: Mobile WebKit regression
         run: npm run test:mobile:webkit
 
-      - name: Deployment regression
-        run: npm run test:deployment
+  # Preserve the existing required check name while the heavy suites run in parallel.
+  regression:
+    name: regression
+    needs:
+      - chromium
+      - webkit
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify parallel suites
+        env:
+          CHROMIUM_RESULT: ${{ needs.chromium.result }}
+          WEBKIT_RESULT: ${{ needs.webkit.result }}
+        run: |
+          echo "Chromium: $CHROMIUM_RESULT"
+          echo "WebKit:   $WEBKIT_RESULT"
+          test "$CHROMIUM_RESULT" = "success"
+          test "$WEBKIT_RESULT" = "success"
