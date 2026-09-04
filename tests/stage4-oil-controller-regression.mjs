@@ -23,10 +23,11 @@ await wait(650);
 const retired=await page.evaluate(()=>({
   list:[...(window.__STOT_STAGE4_RETIRED_OIL_PATCHES__||[])],
   order:window.__STOT_BETA_OIL_ORDER__,first:window.__STOT_BETA_FIRST_VISIT__,v539:window.__STOT_V539_UI__,advanced:window.__STOT_ADVANCED_INLINE_V594__,
-  build:window.__STOT_V536_BUILD_UX__,quickLegacy:window.__STOT_V537_QUICK_FILL__,quickStage4:window.__STOT_OIL_QUICK_FILL_STAGE4__,share:window.__STOT_OIL_SHARE_COMPACT_V592__
+  buildBootstrap:window.__STOT_V536_BUILD_UX__,quickLegacy:window.__STOT_V537_QUICK_FILL__,quickStage4:window.__STOT_OIL_QUICK_FILL_STAGE4__,share:window.__STOT_OIL_SHARE_COMPACT_V592__
 }));
-assert.deepEqual(retired.list,['beta-oil-order','beta-first-visit','v539-10-oil-compat','oil-advanced-inline-v594','v536-build-ux','v537-quick-fill'],'Stage 4 retired-patch marker is wrong');
-for(const key of ['order','first','v539','advanced','build','quickLegacy','quickStage4'])assert.equal(retired[key],true,`${key} runtime ownership flag is wrong`);
+assert.deepEqual(retired.list,['beta-oil-order','beta-first-visit','v539-10-oil-compat','oil-advanced-inline-v594','v537-quick-fill'],'Stage 4 retired-patch marker is wrong');
+for(const key of ['order','first','v539','advanced','quickLegacy','quickStage4'])assert.equal(retired[key],true,`${key} runtime ownership flag is wrong`);
+assert.equal(retired.buildBootstrap,true,'Temporary v536 shell bootstrap did not run before Stage 3 ownership restore');
 assert.equal(retired.share,true,'Stage 4 controller did not absorb Oil share-preview wrapper');
 assert.equal(await page.locator('link[data-stot-oil-stage4-ui]').count(),1,'Stage 4 Oil CSS is not loaded');
 assert.equal(await page.locator('#v594OilFlowStyle').count(),0,'Retired advanced-inline runtime still injected its legacy style element');
@@ -73,7 +74,7 @@ await page.locator('#v537QuickApply').click();await wait(180);
 assert.match(await text('#v537QuickStatus'),/Filled .*empty plot/i,'Stage 4 Oil Quick Fill did not execute');
 assert.ok(await page.evaluate(()=>Array.isArray(window.STOT_REFINERY_RESERVE?.pieces)&&window.STOT_REFINERY_RESERVE.pieces.length>0),'Stage 4 Oil Quick Fill did not publish refinery reserve geometry');
 
-// Advanced Tools are now Stage 4-owned behavior: clear the filled layout and the refinery reserve.
+// Advanced Tools are Stage 4-owned behavior: clear the filled layout and refinery reserve.
 page.once('dialog',dialog=>dialog.accept());
 await page.locator('#layoutClearAll').click();await wait(180);
 assert.equal(await page.evaluate(()=>layoutPlots.some(p=>p.rows.length)),false,'Stage 4 Clear All did not clear Oil plots');
@@ -100,5 +101,5 @@ await nav('oil','#oilView');await wait(650);
 const snapAgain=await page.evaluate(()=>window.STOT_OIL_PAGE_CONTROLLER.snapshot());
 assert.ok(snapAgain.calculator<snapAgain.quick&&snapAgain.quick<snapAgain.advanced&&snapAgain.advanced<snapAgain.builder&&snapAgain.builder<snapAgain.areas,'Oil canonical order was not restored after navigation');
 assert.equal(errors.length,0,`Page errors (${engineName}${mobile?' mobile':''}):\n${errors.join('\n')}`);
-console.log(`STAGE 4 OIL CONTROLLER PASS (${engineName}${mobile?' mobile':''}): authoritative shell, Quick Fill and Advanced ownership, six legacy runtimes retired, Compare isolated`);
+console.log(`STAGE 4 OIL CONTROLLER PASS (${engineName}${mobile?' mobile':''}): authoritative shell, Quick Fill and Advanced ownership, five legacy runtimes retired, Compare isolated`);
 await browser.close();
