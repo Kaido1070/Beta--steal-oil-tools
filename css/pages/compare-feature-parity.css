@@ -1,0 +1,48 @@
+/* Compare Presets feature parity — scoped; no Oil DOM/state sharing */
+#layoutcompareView #compareLayoutModeTabs .v593-mode-choice{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;line-height:1.05!important}
+#layoutcompareView #compareLayoutModeTabs .v593-mode-choice strong{display:block!important;font-size:13px!important;font-weight:950!important;white-space:nowrap!important}
+#layoutcompareView #compareLayoutModeTabs .v593-mode-choice small{display:block!important;margin-top:4px!important;font-size:8px!important;opacity:.72!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important}
+#layoutcompareView #v520BoostsCompare .compare-boost-hint{margin:-4px 0 9px;color:#8e98aa;font-size:8px;line-height:1.3}
+#layoutcompareView #v520BoostsCompare .compare-boost-card{border:1px solid #263044;border-radius:11px;background:#111722;padding:8px 9px}
+#layoutcompareView #v536QuickFillCompare{padding:12px!important;border-radius:17px!important}
+#layoutcompareView #v536QuickFillCompare .v537-template-head,#layoutcompareView #v536QuickFillCompare .v537-template-fit{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#layoutcompareView #v536QuickFillCompare .v537-template-head{margin:2px 0 6px}
+#layoutcompareView #v536QuickFillCompare .v537-template-head strong{font-size:11px}
+#layoutcompareView #v536QuickFillCompare .v537-template-head span,#layoutcompareView #v536QuickFillCompare .v537-template-fit span,#layoutcompareView #compareQuickStatus{color:#8e98aa;font-size:8px}
+#layoutcompareView #v536QuickFillCompare .v537-template-row{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,.8fr) minmax(0,.7fr) 38px;gap:7px;align-items:end;margin-top:7px}
+#layoutcompareView #v536QuickFillCompare .v537-template-row label{display:grid;gap:4px;color:#8e98aa;font-size:8px;font-weight:850}
+#layoutcompareView #v536QuickFillCompare .v537-template-remove{height:36px;min-height:36px;border-radius:9px}
+#layoutcompareView #compareTemplateAdd{width:100%;min-height:39px;margin-top:7px;border-radius:10px}
+#layoutcompareView #v536QuickFillCompare .v537-template-fit{margin:7px 0;padding:7px 0;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
+#layoutcompareView #v536QuickFillCompare .v537-template-fit strong{font-size:9px}
+#layoutcompareView #v536QuickFillCompare .v537-template-fit strong.bad{color:#ff9aaf}
+#layoutcompareView #v536QuickFillCompare .v537-reserve{margin-top:8px;padding:9px;border:1px solid #263044;border-radius:11px;background:#0f1520}
+#layoutcompareView #v536QuickFillCompare .v537-checkline{display:flex!important;align-items:center;gap:7px!important;color:#eef2f8!important;font-size:9px!important;font-weight:850!important}
+#layoutcompareView #v536QuickFillCompare .v537-checkline input{width:16px!important;height:16px!important;min-height:16px!important;flex:0 0 auto}
+#layoutcompareView #compareReserveFields{display:none;grid-template-columns:minmax(0,1fr) 95px;gap:7px;margin-top:8px}
+#layoutcompareView #compareReserveFields.show{display:grid}
+#layoutcompareView #compareReserveFields label,#layoutcompareView .v537-qf-target label{display:grid;gap:4px;color:#8e98aa;font-size:8px;font-weight:850}
+#layoutcompareView .v537-reserve-note{margin-top:7px;color:#7f8a9d;font-size:7.5px;line-height:1.35}
+#layoutcompareView .v537-qf-target{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;margin-top:9px}
+#layoutcompareView #compareQuickApply{width:100%;min-height:39px!important;border-radius:10px!important;font-size:9px!important;font-weight:950!important}
+#layoutcompareView #compareQuickStatus{margin-top:7px;line-height:1.35}
+#layoutcompareView #compareQuickStatus.ok{color:#7fd9a2}
+#layoutcompareView #compareQuickStatus.bad{color:#ff9aaf}
+#layoutcompareView #v536AdvancedToolsCompare{display:grid!important;grid-template-columns:max-content minmax(0,1fr)!important;align-items:center!important;gap:8px!important;padding:8px 9px!important}
+#layoutcompareView #v536AdvancedToolsCompare>summary{list-style:none!important;font-size:10px!important;font-weight:900!important;white-space:nowrap!important}
+#layoutcompareView #v536AdvancedToolsCompare>.v603-advanced-body{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;padding:0!important}
+#layoutcompareView #v536AdvancedToolsCompare>.v603-advanced-body button{height:32px!important;min-height:32px!important;padding:3px 5px!important;border-radius:8px!important;font-size:8px!important;white-space:nowrap!important}
+#layoutcompareView #compareClearAll{border-color:rgba(255,92,108,.30)!important;background:rgba(255,65,84,.08)!important;color:#ff9aa5!important}
+#layoutcompareView #compareAdvancedStatus{grid-column:1/-1;color:#7f8a9d;font-size:7px;line-height:1.25}
+#v603ComparePlotEditor [data-compare-copy-plot]{min-height:40px}
+#layoutcompareView .compare-reserved-note{display:block!important;grid-column:1/-1;margin-top:3px;color:#c6a8ff!important;font-size:7px!important}
+@media(max-width:620px){
+#layoutcompareView #v536QuickFillCompare .v537-template-row{grid-template-columns:1fr 1fr}
+#layoutcompareView #v536QuickFillCompare .v537-template-row label:first-child{grid-column:1/-1}
+#layoutcompareView #v536QuickFillCompare .v537-template-remove{grid-column:2;grid-row:2}
+#layoutcompareView #compareReserveFields{grid-template-columns:1fr 88px}
+#layoutcompareView #v536AdvancedToolsCompare{grid-template-columns:max-content minmax(0,1fr)!important;gap:5px!important;padding:7px 8px!important}
+#layoutcompareView #v536AdvancedToolsCompare>summary{font-size:8px!important}
+#layoutcompareView #v536AdvancedToolsCompare>.v603-advanced-body{gap:4px!important}
+#layoutcompareView #v536AdvancedToolsCompare>.v603-advanced-body button{height:30px!important;min-height:30px!important;font-size:6.8px!important;padding:2px!important}
+}
