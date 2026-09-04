@@ -26,7 +26,21 @@
     }
     let host=advanced.querySelector('#v536AdvancedHost');
     if(!host){host=document.createElement('div');host.id='v536AdvancedHost';advanced.appendChild(host)}
-    const bar=byId('layoutCopyBar');if(bar&&bar.parentElement!==host)host.appendChild(bar);
+
+    let bar=byId('layoutCopyBar');
+    if(!bar){
+      bar=document.createElement('div');bar.id='layoutCopyBar';bar.className='panel layout-copy-bar';
+      bar.innerHTML='<div><strong>Plot Copy</strong><small id="layoutCopyStatus">Copy a plot to reuse its drill setup.</small></div>';
+    }
+    if(!bar.querySelector('#layoutCopyStatus')){
+      const copy=document.createElement('div');copy.innerHTML='<strong>Plot Copy</strong><small id="layoutCopyStatus">Copy a plot to reuse its drill setup.</small>';bar.prepend(copy);
+    }
+    const buttonDefs=[['layoutPasteEmpty','Paste Empty',true],['layoutPasteAll','Paste All',true],['layoutClearAll','Clear All',false]];
+    for(const [id,label,disabled] of buttonDefs){
+      if(byId(id))continue;
+      const btn=document.createElement('button');btn.id=id;btn.type='button';btn.textContent=label;btn.disabled=disabled;bar.appendChild(btn);
+    }
+    if(bar.parentElement!==host)host.appendChild(bar);
     return{quick,advanced};
   }
 
@@ -126,11 +140,12 @@
     syncAdvancedButtons();return !!(byId('layoutPasteEmpty')&&byId('layoutPasteAll')&&byId('layoutClearAll'));
   }
 
-  function enhanceLegacyPlotButtons(){
+  function enhancePlotButtons(){
     if(typeof layoutPlots==='undefined')return false;
     document.querySelectorAll('#layoutAreas .plot-card').forEach(card=>{
       const actions=card.querySelector('.plot-actions');if(!actions)return;actions.classList.add('v536-three');
-      if(actions.querySelector('[data-stage4-duplicate]')||actions.querySelector('[data-v536-duplicate]'))return;
+      actions.querySelectorAll('[data-v536-duplicate]').forEach(el=>el.remove());
+      if(actions.querySelector('[data-stage4-duplicate]'))return;
       const id=card.dataset.plot,index=layoutPlots.findIndex(p=>p.id===id),btn=document.createElement('button');
       btn.type='button';btn.className='plot-action v536-duplicate';btn.dataset.stage4Duplicate=id;btn.textContent='Duplicate → Next';btn.disabled=index<0||index>=layoutPlots.length-1;
       btn.addEventListener('click',()=>{
@@ -182,7 +197,7 @@
 
   function sync(){
     const parts=nodes();if(!parts?.view)return false;
-    hideKnownLegacyShells(parts.view);syncCalculatorPresentation(parts);syncBoostPresentation(parts);syncQuickPresentation(parts);syncAdvancedPresentation(parts);enhanceLegacyPlotButtons();syncSummaryPresentation(parts);installSharePreview();installRenderHook();
+    hideKnownLegacyShells(parts.view);syncCalculatorPresentation(parts);syncBoostPresentation(parts);syncQuickPresentation(parts);syncAdvancedPresentation(parts);enhancePlotButtons();syncSummaryPresentation(parts);installSharePreview();installRenderHook();
     const ordered=syncOrder(parts);hideEmptyOilShells(parts);markOwnership(parts);return ordered;
   }
 
