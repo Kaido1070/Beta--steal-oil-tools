@@ -68,3 +68,21 @@ window.STOT_CONFIG=Object.freeze({
   script.dataset.stotComparePresetSwitchPosition='1';
   document.head.appendChild(script);
 })();
+
+/* Compare Presets boost images: Mole, Fruit and Heart Drill thumbnails beside their labels. */
+(()=>{
+  const href='css/pages/compare-boost-icons.css';
+  if(!document.querySelector('link[data-stot-compare-boost-icons]')){
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href=href;
+    link.dataset.stotCompareBoostIcons='1';
+    document.head.appendChild(link);
+  }
+  const src='js/pages/compare-boost-icons.js';
+  if(document.querySelector('script[data-stot-compare-boost-icons]'))return;
+  const script=document.createElement('script');
+  script.src=src;
+  script.dataset.stotCompareBoostIcons='1';
+  document.head.appendChild(script);
+})();

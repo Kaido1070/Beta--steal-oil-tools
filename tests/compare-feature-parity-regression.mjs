@@ -29,6 +29,14 @@ assert.equal(await page.locator('[data-ab-layout="B"]').count(),1,'Preset B miss
 assert.match(await text('#compareLayoutModeTabs [data-layoutmode="time"]'),/Time → Oil.*How much oil/i);
 assert.match(await text('#compareLayoutModeTabs [data-layoutmode="target"]'),/Oil → Time.*reach your target/i);
 assert.match(await text('#v520BoostsCompare'),/Optional.*Mole Level.*Fruit Level.*Heart Likes.*Admin Event Lobby/i);
+for(const [key,file] of [['mole','pets-1.webp'],['fruit','pets-1.webp'],['heart','drills-3.webp']]){
+  const icon=page.locator(`#v520BoostsCompare .compare-boost-label[data-boost-icon="${key}"] .compare-boost-icon`);
+  await icon.waitFor({state:'visible',timeout:10000});
+  assert.equal(await icon.count(),1,`${key} boost icon missing`);
+  const visual=await icon.evaluate(el=>{const cs=getComputedStyle(el),r=el.getBoundingClientRect();return{bg:cs.backgroundImage,width:r.width,height:r.height}});
+  assert.match(visual.bg,new RegExp(file.replace('.','\\.')),`${key} boost icon uses the wrong atlas`);
+  assert.ok(visual.width>=24&&visual.height>=24,`${key} boost icon is too small`);
+}
 const boostLayout=await page.evaluate(()=>{
   const panel=document.querySelector('#v520BoostsCompare');
   const hint=panel?.querySelector('.compare-boost-hint');
@@ -115,5 +123,5 @@ assert.equal(await page.locator('#layoutVisualBuilder').evaluate(el=>el.parentEl
 assert.equal(await page.locator('#layoutcompareView #layoutVisualBuilderCompare').count(),1,'Compare builder left Compare');
 
 assert.equal(errors.length,0,`Page errors (${engineName}${mobile?' mobile':''}):\n${errors.join('\n')}`);
-console.log(`COMPARE FEATURE PARITY PASS (${engineName}${mobile?' mobile':''}): Quick Fill, refinery reserve, Advanced Tools, A/B boosts and Oil isolation`);
+console.log(`COMPARE FEATURE PARITY PASS (${engineName}${mobile?' mobile':''}): Quick Fill, refinery reserve, Advanced Tools, boost icons, A/B boosts and Oil isolation`);
 await browser.close();
