@@ -42,8 +42,20 @@
   }
 
   function syncCalculatorPresentation(parts=nodes()){
-    const view=parts?.view,tabs=byId('layoutModeTabs');
-    if(!view||!tabs||!view.contains(tabs))return false;
+    const view=parts?.view,tabs=byId('layoutModeTabs'),calc=parts?.calculator;
+    if(!view||!tabs||!calc||!view.contains(tabs))return false;
+    calc.classList.add('v543-friendly-calc','v593-calc-card');
+    let intro=calc.querySelector('.v543-calc-intro');
+    if(!intro){
+      intro=document.createElement('div');
+      intro.className='v543-calc-intro';
+      intro.innerHTML='<strong>Choose a calculation</strong><span>You can switch anytime.</span>';
+      calc.insertBefore(intro,calc.firstChild);
+    }
+    const title=intro.querySelector('strong'),copy=intro.querySelector('span');
+    if(title){title.textContent='Choose a calculation';title.classList.add('v593-question-title')}
+    if(copy){copy.textContent='You can switch anytime.';copy.classList.add('v593-question-copy')}
+
     tabs.classList.add('v593-mode-grid');
     const time=tabs.querySelector('[data-layoutmode="time"]');
     const target=tabs.querySelector('[data-layoutmode="target"]');
@@ -57,14 +69,24 @@
       target.innerHTML='<strong>Oil → Time</strong><small>When you’ll reach your target</small>';
       target.setAttribute('aria-label','Oil to Time: calculate when you will reach your target');
     }
-    parts.calculator?.classList.add('v593-calc-card');
     byId('layoutHours')?.closest('.field')?.classList.add('v593-runtime-field');
-    const intro=view.querySelector('.v543-calc-intro');
-    if(intro){
-      const title=intro.querySelector('strong'),copy=intro.querySelector('span');
-      if(title){title.textContent='Choose a calculation';title.classList.add('v593-question-title')}
-      if(copy){copy.textContent='You can switch anytime.';copy.classList.add('v593-question-copy')}
+    return true;
+  }
+
+  function syncBoostPresentation(parts=nodes()){
+    const boosts=parts?.boosts;if(!boosts)return false;
+    boosts.classList.add('v543-friendly-boosts','v539-oil-boosts');
+    boosts.classList.remove('v539-compare-boosts');
+    const title=boosts.querySelector('.v520-boosts-title');
+    if(!title)return true;
+    const strong=title.querySelector('strong');if(strong)strong.textContent='Preset Boosts';
+    let hint=title.querySelector('.v543-optional-hint');
+    if(!hint){
+      hint=document.createElement('span');
+      hint.className='v543-optional-hint';
+      title.appendChild(hint);
     }
+    hint.textContent='Optional — leave these as they are if you do not use boosts';
     return true;
   }
 
@@ -81,6 +103,12 @@
     ];
     for(const [id,text] of labels){const btn=byId(id);if(btn&&tools.contains(btn))btn.textContent=text}
     return labels.every(([id])=>{const btn=byId(id);return !!btn&&tools.contains(btn)});
+  }
+
+  function syncSummaryPresentation(parts=nodes()){
+    const summary=parts?.summary;if(!summary)return false;
+    if(summary.classList.contains('v519-combined-summary'))summary.classList.add('panel','v541-summary-panel');
+    return true;
   }
 
   function markOwnership(parts){
@@ -110,7 +138,9 @@
   function sync(){
     const parts=nodes();if(!parts?.view)return false;
     syncCalculatorPresentation(parts);
+    syncBoostPresentation(parts);
     syncAdvancedPresentation(parts);
+    syncSummaryPresentation(parts);
     const ordered=syncOrder(parts);
     markOwnership(parts);
     return ordered;
@@ -138,6 +168,7 @@
     syncOrder:()=>syncOrder(nodes()),
     syncAdvanced:()=>syncAdvancedPresentation(nodes()),
     syncCalculator:()=>syncCalculatorPresentation(nodes()),
+    syncBoosts:()=>syncBoostPresentation(nodes()),
     snapshot,
     ownsOilShell:true,
     compareStateShared:false
