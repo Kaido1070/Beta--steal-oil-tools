@@ -47,3 +47,14 @@ window.STOT_CONFIG=Object.freeze({
   script.dataset.stotCompareFeatureParity='1';
   document.head.appendChild(script);
 })();
+
+/* Known-good Compare responsive guard. Loaded last and scoped to Compare only. */
+(()=>{
+  const href='css/pages/compare-known-good-ui.css';
+  if(document.querySelector('link[data-stot-compare-known-good-ui]'))return;
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href=href;
+  link.dataset.stotCompareKnownGoodUi='1';
+  document.head.appendChild(link);
+})();
