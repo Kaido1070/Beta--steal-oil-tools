@@ -162,10 +162,24 @@ try {
     visual.__stage3CompareIsolated=true;
   }
 
+  function keepCompareCoreContiguous(){
+    const view=byId('layoutcompareView');
+    const builder=byId('layoutVisualBuilderCompare');
+    const comparison=view?.querySelector('.ab-compare');
+    const note=view?.querySelector('.v603-note');
+    if(!view||!builder||!comparison) return;
+    /* The explanatory note must not split the tested/visible core sequence:
+       Advanced Tools -> Visual Plot Builder -> Preset Comparison. */
+    if(note && builder.nextElementSibling===note && note.nextElementSibling===comparison){
+      comparison.insertAdjacentElement('afterend',note);
+    }
+  }
+
   function mountCompare(){
     /* Stage 3 owns Compare completely. Never move or mount an Oil-owned node here. */
     lockCompareVisualOwnership();
     window.STOT_COMPARE_PRESETS_CONTROLLER?.mount?.();
+    keepCompareCoreContiguous();
   }
 
   function syncActiveView(){
