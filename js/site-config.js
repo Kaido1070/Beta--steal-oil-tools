@@ -18,3 +18,14 @@ window.STOT_CONFIG=Object.freeze({
   }),
   storageKey(scope,suffix="v1"){return `${this.storageNamespace}-v${this.version}-${scope}-${suffix}`;}
 });
+
+/* Compare Presets UI skin: visual parity with Oil / Hour without sharing DOM/state. */
+(()=>{
+  const href='css/pages/compare-oil-match.css';
+  if(document.querySelector('link[data-stot-compare-oil-ui]'))return;
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href=href;
+  link.dataset.stotCompareOilUi='1';
+  document.head.appendChild(link);
+})();
