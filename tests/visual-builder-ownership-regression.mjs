@@ -25,7 +25,7 @@ async function assertCompareBuilder(label) {
   assert.equal(await page.evaluate(() => document.getElementById('layoutVisualBuilder') !== document.getElementById('layoutVisualBuilderCompare')), true, `${label}: Oil and Compare are sharing one builder node`);
 
   const order = await page.locator('#layoutcompareView').evaluate(view => {
-    const advanced = view.querySelector('#v536AdvancedTools');
+    const advanced = view.querySelector('#v536AdvancedToolsCompare');
     const builder = view.querySelector('#layoutVisualBuilderCompare');
     const comparison = view.querySelector('.ab-compare');
     return {
@@ -37,11 +37,11 @@ async function assertCompareBuilder(label) {
       comparisonFollowsBuilder: !!builder && !!comparison && !!(builder.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING)
     };
   });
-  assert.equal(order.advancedFound, true, `${label}: Advanced Tools is not mounted in Compare Presets`);
-  assert.equal(order.builderFound, true, `${label}: Visual Plot Builder is not mounted in Compare Presets`);
-  assert.equal(order.comparisonFound, true, `${label}: Preset Comparison is not mounted in Compare Presets`);
-  assert.equal(order.sameParent, true, `${label}: Visual Plot Builder must be in the same visible flow as Advanced Tools`);
-  assert.equal(order.builderDirectlyAfterAdvanced, true, `${label}: Visual Plot Builder must sit directly below Advanced Tools`);
+  assert.equal(order.advancedFound, true, `${label}: Compare Advanced Tools missing`);
+  assert.equal(order.builderFound, true, `${label}: Visual Plot Builder missing`);
+  assert.equal(order.comparisonFound, true, `${label}: Preset Comparison missing`);
+  assert.equal(order.sameParent, true, `${label}: Compare builder and Advanced Tools left the same flow`);
+  assert.equal(order.builderDirectlyAfterAdvanced, true, `${label}: Compare builder must sit directly below Compare Advanced Tools`);
   assert.equal(order.comparisonFollowsBuilder, true, `${label}: Preset Comparison must stay below Visual Plot Builder`);
 }
 async function assertBothFixed(label) {
@@ -56,40 +56,42 @@ await page.evaluate(() => localStorage.clear());
 await page.reload({ waitUntil: 'networkidle' });
 await wait(400);
 
-// Oil / Hour creates and owns its permanent builder without needing Compare.
 await nav('oil', '#oilView');
 await wait(800);
 await assertOilBuilder('initial Oil / Hour');
-await page.evaluate(() => { window.__oilBuilderRef = document.getElementById('layoutVisualBuilder'); });
+await page.evaluate(() => {
+  window.__oilBuilderRef = document.getElementById('layoutVisualBuilder');
+  window.__oilAreasRef = document.getElementById('layoutAreas');
+  window.__oilAdvancedRef = document.getElementById('v536AdvancedTools');
+  window.__oilQuickRef = document.getElementById('v536QuickFill');
+});
 
-// Reproduce the user's sequence: edit a plot, then Quick Fill, then wait for
-// delayed render timers. The Oil builder must remain the exact same DOM node.
 await page.evaluate(() => window.STOT_VISUAL_PLOT_BUILDER?.open('forest-1'));
 await wait(100);
-assert.equal(await page.locator('#v572PlotEditor.open').count(), 1, 'Plot editor did not open');
+assert.equal(await page.locator('#v572PlotEditor.open').count(), 1, 'Oil plot editor did not open');
 await page.locator('#v572PlotEditor [data-vadd]').click();
 await wait(150);
 await page.locator('#v572PlotEditor [data-vclose]').click();
 await wait(150);
 
 const fillEmpty = page.getByRole('button', { name: 'Fill Empty Plots', exact: true });
-assert.equal(await fillEmpty.count(), 1, 'Fill Empty Plots button missing');
+assert.equal(await fillEmpty.count(), 1, 'Oil Fill Empty Plots button missing');
 await fillEmpty.click();
 await wait(300);
-await assertOilBuilder('immediately after Quick Fill');
+await assertOilBuilder('immediately after Oil Quick Fill');
 await wait(3200);
-await assertOilBuilder('3.2s after Quick Fill');
+await assertOilBuilder('3.2s after Oil Quick Fill');
 assert.equal(await page.evaluate(() => window.__oilBuilderRef === document.getElementById('layoutVisualBuilder')), true, 'Oil builder DOM node was replaced or transferred');
 
-// Compare Presets lazily creates a second, different permanent builder on its
-// first visit. It must sit directly below Advanced Tools and above Preset Comparison.
 await nav('layoutcompare', '#layoutcompareView');
 await wait(700);
 await assertCompareBuilder('initial Compare Presets');
 await page.evaluate(() => { window.__compareBuilderRef = document.getElementById('layoutVisualBuilderCompare'); });
 assert.equal(await page.evaluate(() => window.__oilBuilderRef === document.getElementById('layoutVisualBuilder')), true, 'Oil builder changed after entering Compare');
+assert.equal(await page.evaluate(() => window.__oilAreasRef === document.getElementById('layoutAreas') && document.getElementById('layoutAreas')?.parentElement?.id === 'oilView'), true, 'Oil areas moved into Compare');
+assert.equal(await page.evaluate(() => window.__oilAdvancedRef === document.getElementById('v536AdvancedTools') && !document.getElementById('layoutcompareView')?.contains(document.getElementById('v536AdvancedTools'))), true, 'Oil Advanced Tools moved into Compare');
+assert.equal(await page.evaluate(() => window.__oilQuickRef === document.getElementById('v536QuickFill') && !document.getElementById('layoutcompareView')?.contains(document.getElementById('v536QuickFill'))), true, 'Oil Quick Fill moved into Compare');
 
-// Exercise Compare A/B rendering and allow every delayed timer to run.
 await page.locator('[data-ab-layout="B"]').click();
 await wait(200);
 await page.locator('[data-ab-layout="A"]').click();
@@ -97,13 +99,14 @@ await wait(3200);
 await assertCompareBuilder('after Compare A/B and delayed timers');
 assert.equal(await page.evaluate(() => window.__compareBuilderRef === document.getElementById('layoutVisualBuilderCompare')), true, 'Compare builder DOM node was replaced');
 
-// Returning to Oil must reveal the original Oil builder. Compare's independent
-// builder stays permanently inside Compare Presets instead of following us back.
 await nav('oil', '#oilView');
 await wait(3200);
 await assertBothFixed('after returning from Compare Presets');
 assert.equal(await page.evaluate(() => window.__oilBuilderRef === document.getElementById('layoutVisualBuilder')), true, 'Oil builder is not the original node after return');
 assert.equal(await page.evaluate(() => window.__compareBuilderRef === document.getElementById('layoutVisualBuilderCompare')), true, 'Compare builder moved or was replaced after return');
+assert.equal(await page.evaluate(() => window.__oilAreasRef === document.getElementById('layoutAreas')), true, 'Oil areas node was replaced');
+assert.equal(await page.evaluate(() => window.__oilAdvancedRef === document.getElementById('v536AdvancedTools')), true, 'Oil Advanced Tools node was replaced');
+assert.equal(await page.evaluate(() => window.__oilQuickRef === document.getElementById('v536QuickFill')), true, 'Oil Quick Fill node was replaced');
 
 console.log('VISUAL BUILDER INDEPENDENCE REGRESSION PASS');
 await browser.close();
