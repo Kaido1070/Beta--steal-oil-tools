@@ -1,0 +1,10 @@
+/* Final Compare-only responsive guard from the known-good layout.
+   Desktop: four boost cards in one row. Mobile/tablet: stable 2x2 grid. */
+#layoutcompareView #v520BoostsCompare .v603-boost-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+}
+@media(max-width:760px){
+  #layoutcompareView #v520BoostsCompare .v603-boost-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
