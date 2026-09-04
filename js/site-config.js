@@ -29,3 +29,21 @@ window.STOT_CONFIG=Object.freeze({
   link.dataset.stotCompareOilUi='1';
   document.head.appendChild(link);
 })();
+
+/* Compare Presets feature parity: copied/adapted behavior with isolated A/B state. */
+(()=>{
+  const css='css/pages/compare-feature-parity.css';
+  if(!document.querySelector('link[data-stot-compare-feature-parity]')){
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href=css;
+    link.dataset.stotCompareFeatureParity='1';
+    document.head.appendChild(link);
+  }
+  const src='js/pages/compare-feature-parity.js';
+  if(document.querySelector('script[data-stot-compare-feature-parity]'))return;
+  const script=document.createElement('script');
+  script.src=src;
+  script.dataset.stotCompareFeatureParity='1';
+  document.head.appendChild(script);
+})();
