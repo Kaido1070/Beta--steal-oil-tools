@@ -90,6 +90,9 @@ jobs:
       - name: Stage 3 Compare controller — Mobile Chromium
         run: STOT_MOBILE=1 node tests/stage3-compare-controller-regression.mjs
 
+      - name: Compare feature parity — Desktop Chromium
+        run: node tests/compare-feature-parity-regression.mjs
+
       - name: Mobile Chromium regression
         run: npm run test:mobile
 
@@ -140,6 +143,9 @@ jobs:
 
       - name: Stage 3 Compare controller — Mobile WebKit
         run: STOT_BROWSER=webkit STOT_MOBILE=1 node tests/stage3-compare-controller-regression.mjs
+
+      - name: Compare feature parity — Mobile WebKit
+        run: STOT_BROWSER=webkit STOT_MOBILE=1 node tests/compare-feature-parity-regression.mjs
 
       - name: Mobile WebKit regression
         run: npm run test:mobile:webkit
