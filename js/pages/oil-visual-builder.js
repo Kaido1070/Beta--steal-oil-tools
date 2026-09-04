@@ -56,19 +56,11 @@
   function visualPlotHtml(plot){const number=plotNumber(plot),meta=displayMeta(plot),packed=packVisual(plot),used=pieceList(plot).area,valid=packed!==null,occupied=valid?packed.map(placementHtml).join(''):'';return `<button class="v572-plot-card ${areaClass(plot)}${selectedPlotId===plot.id?' selected':''}${valid?'':' invalid'}" data-visual-plot="${plot.id}" type="button" aria-label="Edit plot ${number}, ${esc(meta.areaName)}"><span class="v572-plot-head"><strong>${number} <em>${esc(meta.areaName)}</em></strong><i>×${meta.mult}</i></span><span class="v572-grid-stage">${gridCells()}<span class="v572-grid-placements">${occupied}</span>${valid?'':`<span class="v572-invalid-label">Doesn't fit</span>`}</span><span class="v572-plot-foot"><span>${used?`${used}/25 cells`:'Empty'}</span><span>${plot.rows.length?`${plot.rows.length} drill type${plot.rows.length===1?'':'s'}`:'Tap to build'}</span></span></button>`}
   function summaryHtml(){return `<div class="v572-map-summary">${LAYOUT_AREAS.map(area=>`<span class="v572-summary-item ${AREA_CLASS[area.id]||''}"><i></i><b>${esc(area.name)}</b><small>${area.plots} Plot${area.plots===1?'':'s'} · ×${area.mult}</small></span>`).join('')}</div>`}
 
-  // Oil / Hour and Compare Presets use two completely separate DOM builders.
-  // Neither builder is ever shared, transferred, detached, or reused by the other page.
-  function directChildOf(root,node){
-    let current=node;
-    while(current&&current.parentElement!==root)current=current.parentElement;
-    return current?.parentElement===root?current:null;
-  }
-
-  function ensureShells(){
+  // Stage 3 ownership rule: this module owns Oil / Hour only.
+  // Compare Presets owns #layoutVisualBuilderCompare and its own mutable A/B state.
+  function ensureOilShell(){
     const oilView=document.getElementById('oilView');
-    const compareView=document.getElementById('layoutcompareView');
     const host=document.getElementById('layoutAreas');
-
     let oilShell=document.getElementById('layoutVisualBuilder');
     if(!oilShell){
       oilShell=document.createElement('section');
@@ -80,23 +72,8 @@
       if(oilShell.parentElement!==oilView)oilView.appendChild(oilShell);
       if(host?.parentElement===oilView&&oilShell.nextElementSibling!==host)oilView.insertBefore(oilShell,host);
     }
-
-    let compareShell=document.getElementById('layoutVisualBuilderCompare');
-    if(!compareShell){
-      compareShell=document.createElement('section');
-      compareShell.id='layoutVisualBuilderCompare';
-      compareShell.className='panel v572-visual-builder';
-      compareShell.dataset.builderScope='compare';
-    }
-    if(compareView){
-      if(compareShell.parentElement!==compareView)compareView.appendChild(compareShell);
-      const comparison=compareView.querySelector('.ab-compare');
-      const compareAnchor=directChildOf(compareView,comparison);
-      if(compareAnchor&&compareShell.nextElementSibling!==compareAnchor)compareView.insertBefore(compareShell,compareAnchor);
-    }
-
     host?.classList.add('v572-legacy-layout');
-    return {oilShell,compareShell};
+    return oilShell;
   }
 
   function renderShell(shell){
@@ -110,12 +87,9 @@
     if(visualRendering)return;
     visualRendering=true;
     try{
-      const {oilShell,compareShell}=ensureShells();
-      const compareActive=document.getElementById('layoutcompareView')?.classList.contains('active');
+      const oilShell=ensureOilShell();
       const oilActive=document.getElementById('oilView')?.classList.contains('active');
-      if(compareActive)renderShell(compareShell);
-      else if(oilActive)renderShell(oilShell);
-      else if(!oilShell?.dataset.v572Rendered)renderShell(oilShell);
+      if(oilActive||!oilShell?.dataset.v572Rendered)renderShell(oilShell);
     }finally{visualRendering=false}
   }
 
@@ -200,7 +174,7 @@
     return bar;
   }
 
-  window.STOT_VISUAL_PLOT_BUILDER=Object.freeze({render:renderVisualBuilder,open:openVisualPlotEditor,close:closeVisualPlotEditor,pack:packVisual,mount:ensureShells});
+  window.STOT_VISUAL_PLOT_BUILDER=Object.freeze({render:renderVisualBuilder,open:openVisualPlotEditor,close:closeVisualPlotEditor,pack:packVisual,mount:ensureOilShell});
   document.documentElement.dataset.stotVisualBuilder=STOT_CONFIG.version;
   ensureStickyRate();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',renderVisualBuilder,{once:true});else renderVisualBuilder();
