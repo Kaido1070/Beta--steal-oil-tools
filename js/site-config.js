@@ -19,70 +19,83 @@ window.STOT_CONFIG=Object.freeze({
   storageKey(scope,suffix="v1"){return `${this.storageNamespace}-v${this.version}-${scope}-${suffix}`;}
 });
 
+/* Stage 4 strangler cutover: the authoritative Oil controller/Quick Fill now
+   replace every targeted Oil-only runtime patch, including the old v536 shell bootstrap. */
+window.__STOT_STAGE4_RETIRED_OIL_PATCHES__=Object.freeze([
+  'beta-oil-order',
+  'beta-first-visit',
+  'v539-10-oil-compat',
+  'oil-advanced-inline-v594',
+  'v537-quick-fill',
+  'v536-build-ux'
+]);
+window.__STOT_BETA_OIL_ORDER__=true;
+window.__STOT_BETA_FIRST_VISIT__=true;
+window.__STOT_V539_UI__=true;
+window.__STOT_ADVANCED_INLINE_V594__=true;
+window.__STOT_V537_QUICK_FILL__=true;
+window.__STOT_V536_BUILD_UX__=true;
+
 /* Compare Presets UI skin: visual parity with Oil / Hour without sharing DOM/state. */
 (()=>{
   const href='css/pages/compare-oil-match.css';
   if(document.querySelector('link[data-stot-compare-oil-ui]'))return;
-  const link=document.createElement('link');
-  link.rel='stylesheet';
-  link.href=href;
-  link.dataset.stotCompareOilUi='1';
-  document.head.appendChild(link);
+  const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.stotCompareOilUi='1';document.head.appendChild(link);
 })();
 
 /* Compare Presets feature parity: copied/adapted behavior with isolated A/B state. */
 (()=>{
   const css='css/pages/compare-feature-parity.css';
   if(!document.querySelector('link[data-stot-compare-feature-parity]')){
-    const link=document.createElement('link');
-    link.rel='stylesheet';
-    link.href=css;
-    link.dataset.stotCompareFeatureParity='1';
-    document.head.appendChild(link);
+    const link=document.createElement('link');link.rel='stylesheet';link.href=css;link.dataset.stotCompareFeatureParity='1';document.head.appendChild(link);
   }
   const src='js/pages/compare-feature-parity.js';
   if(document.querySelector('script[data-stot-compare-feature-parity]'))return;
-  const script=document.createElement('script');
-  script.src=src;
-  script.dataset.stotCompareFeatureParity='1';
-  document.head.appendChild(script);
+  const script=document.createElement('script');script.src=src;script.dataset.stotCompareFeatureParity='1';document.head.appendChild(script);
 })();
 
-/* Known-good Compare responsive guard. Loaded last and scoped to Compare only. */
+/* Known-good Compare responsive guard. */
 (()=>{
   const href='css/pages/compare-known-good-ui.css';
   if(document.querySelector('link[data-stot-compare-known-good-ui]'))return;
-  const link=document.createElement('link');
-  link.rel='stylesheet';
-  link.href=href;
-  link.dataset.stotCompareKnownGoodUi='1';
-  document.head.appendChild(link);
+  const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.stotCompareKnownGoodUi='1';document.head.appendChild(link);
 })();
 
-/* Compare Presets A/B selector position: place it where the redundant editor-status panel used to be. */
+/* Compare Presets A/B selector position. */
 (()=>{
   const src='js/pages/compare-preset-switch-position.js';
   if(document.querySelector('script[data-stot-compare-preset-switch-position]'))return;
-  const script=document.createElement('script');
-  script.src=src;
-  script.dataset.stotComparePresetSwitchPosition='1';
-  document.head.appendChild(script);
+  const script=document.createElement('script');script.src=src;script.dataset.stotComparePresetSwitchPosition='1';document.head.appendChild(script);
 })();
 
-/* Compare Presets boost images: Mole, Fruit and Heart Drill thumbnails beside their labels. */
+/* Compare Presets boost images. */
 (()=>{
   const href='css/pages/compare-boost-icons.css';
   if(!document.querySelector('link[data-stot-compare-boost-icons]')){
-    const link=document.createElement('link');
-    link.rel='stylesheet';
-    link.href=href;
-    link.dataset.stotCompareBoostIcons='1';
-    document.head.appendChild(link);
+    const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.stotCompareBoostIcons='1';document.head.appendChild(link);
   }
   const src='js/pages/compare-boost-icons.js';
   if(document.querySelector('script[data-stot-compare-boost-icons]'))return;
-  const script=document.createElement('script');
-  script.src=src;
-  script.dataset.stotCompareBoostIcons='1';
-  document.head.appendChild(script);
+  const script=document.createElement('script');script.src=src;script.dataset.stotCompareBoostIcons='1';document.head.appendChild(script);
+})();
+
+/* Stage 4 Oil controller-owned CSS. */
+(()=>{
+  const href='css/pages/oil-stage4-controller.css';
+  if(document.querySelector('link[data-stot-oil-stage4-ui]'))return;
+  const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.stotOilStage4Ui='1';document.head.appendChild(link);
+})();
+
+/* Stage 4 Oil / Hour authoritative shell/order + Advanced owner. */
+(()=>{
+  const src='js/pages/oil-page-controller.js';
+  if(document.querySelector('script[data-stot-oil-page-controller]'))return;
+  const script=document.createElement('script');script.src=src;script.dataset.stotOilPageController='stage4';document.head.appendChild(script);
+})();
+
+/* Stage 4 Oil / Hour authoritative Quick Fill owner. */
+(()=>{
+  const src='js/pages/oil-quick-fill-stage4.js';
+  if(document.querySelector('script[data-stot-oil-quick-fill-stage4]'))return;
+  const script=document.createElement('script');script.src=src;script.dataset.stotOilQuickFillStage4='1';document.head.appendChild(script);
 })();
