@@ -52,8 +52,22 @@
     hideKnownLegacyShells(oil);
   }
 
+  function lockCompareVisualOwnership(){
+    const controller=window.STOT_COMPARE_PRESETS_CONTROLLER;
+    const visual=window.STOT_VISUAL_PLOT_BUILDER;
+    if(!controller||!visual||visual.__stage3CompareIsolated===true) return;
+
+    /* The legacy Visual Builder is Oil-owned. Its old mount() still knows how
+       to reposition #layoutVisualBuilderCompare using Oil-era rules. Never let
+       that mount path run while Stage 3 owns Compare. Preserve render/open/close
+       routing already installed by the Stage 3 controller. */
+    visual.mount=()=>byId('layoutVisualBuilderCompare');
+    visual.__stage3CompareIsolated=true;
+  }
+
   function mountCompare(){
-    /* Stage 3 owns Compare completely. Never move an Oil node here. */
+    /* Stage 3 owns Compare completely. Never move or mount an Oil-owned node here. */
+    lockCompareVisualOwnership();
     window.STOT_COMPARE_PRESETS_CONTROLLER?.mount?.();
   }
 
