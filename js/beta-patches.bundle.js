@@ -79,13 +79,13 @@ try {
 
 /* ===== js/v539-08.js ===== */
 try {
-(()=>{function placeConditionInTopSlot(){const view=document.getElementById("layoutcompareView");if(!view)return;const intro=view.querySelector(".v56-compare-intro"),comparison=view.querySelector(".ab-compare"),modeTabs=document.getElementById("layoutModeTabs"),calcCard=modeTabs?.closest(".layout-control-card");if(!intro||!comparison||!calcCard)return;let box=document.getElementById("v533Condition");if(!box){box=document.createElement("div");box.id="v533Condition";box.className="panel v533-condition";box.innerHTML=`<div class="v533-condition-head"><strong>Comparison Condition</strong><span>Same time or target for A and B</span></div><div id="v533ConditionHost"></div>`;}intro.insertAdjacentElement("afterend",box);box.querySelector("#v533ConditionHost").appendChild(calcCard);box.insertAdjacentElement("afterend",comparison);["v528Condition","v529Condition"].forEach(id=>{const old=document.getElementById(id);if(old&&old!==box&&!old.contains(calcCard))old.classList.add("v533-obsolete-empty");});let node=intro.nextElementSibling;while(node&&node!==comparison){const next=node.nextElementSibling;if(node!==box&&node.classList.contains("panel")){const hasInteractive=node.querySelector("input,select,textarea,button"),hasMeaningful=(node.textContent||"").trim();if(!hasInteractive&&!hasMeaningful)node.classList.add("v533-obsolete-empty");}node=next;}}const layoutTab=document.querySelector('.tabs button[data-view="layoutcompare"]');layoutTab?.addEventListener("click",()=>{setTimeout(placeConditionInTopSlot,0);requestAnimationFrame(()=>requestAnimationFrame(placeConditionInTopSlot));});if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",placeConditionInTopSlot,{once:true});else placeConditionInTopSlot();})();
+(()=>{function stage3(){return window.STOT_COMPARE_PRESETS_CONTROLLER}function placeConditionInTopSlot(){if(stage3()){stage3().mount();return;}const view=document.getElementById("layoutcompareView");if(!view)return;const intro=view.querySelector(".v56-compare-intro"),comparison=view.querySelector(".ab-compare"),modeTabs=document.getElementById("layoutModeTabs"),calcCard=modeTabs?.closest(".layout-control-card");if(!intro||!comparison||!calcCard)return;let box=document.getElementById("v533Condition");if(!box){box=document.createElement("div");box.id="v533Condition";box.className="panel v533-condition";box.innerHTML=`<div class="v533-condition-head"><strong>Comparison Condition</strong><span>Same time or target for A and B</span></div><div id="v533ConditionHost"></div>`;}intro.insertAdjacentElement("afterend",box);box.querySelector("#v533ConditionHost").appendChild(calcCard);box.insertAdjacentElement("afterend",comparison);["v528Condition","v529Condition"].forEach(id=>{const old=document.getElementById(id);if(old&&old!==box&&!old.contains(calcCard))old.classList.add("v533-obsolete-empty");});let node=intro.nextElementSibling;while(node&&node!==comparison){const next=node.nextElementSibling;if(node!==box&&node.classList.contains("panel")){const hasInteractive=node.querySelector("input,select,textarea,button"),hasMeaningful=(node.textContent||"").trim();if(!hasInteractive&&!hasMeaningful)node.classList.add("v533-obsolete-empty");}node=next;}}const layoutTab=document.querySelector('.tabs button[data-view="layoutcompare"]');layoutTab?.addEventListener("click",()=>{queueMicrotask(placeConditionInTopSlot);requestAnimationFrame(placeConditionInTopSlot);});if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",placeConditionInTopSlot,{once:true});else placeConditionInTopSlot();})();
 
-(()=>{function arrangeCompareLayout(){const view=document.getElementById("layoutcompareView");if(!view)return;const intro=view.querySelector(".v56-compare-intro"),condition=document.getElementById("v533Condition")||document.getElementById("v529Condition"),comparison=view.querySelector(".ab-compare"),actions=view.querySelector(".v56-compare-actions"),settings=document.getElementById("v524CompareSettings"),editor=document.getElementById("v526EditorSwitch"),boosts=view.querySelector(".v520-boosts"),copyBar=document.getElementById("layoutCopyBar");if(!intro||!condition||!comparison||!settings||!editor||!boosts)return;["v528LayoutSettings","v529LayoutSetup","v527Workflow"].forEach(id=>{const old=document.getElementById(id);if(old){if(old.contains(settings))view.insertBefore(settings,old);if(old.contains(editor))view.insertBefore(editor,old);if(old.contains(boosts))view.insertBefore(boosts,old);old.remove();}});intro.insertAdjacentElement("afterend",condition);condition.insertAdjacentElement("afterend",comparison);let anchor=comparison;if(actions){anchor.insertAdjacentElement("afterend",actions);anchor=actions;}anchor.insertAdjacentElement("afterend",settings);settings.insertAdjacentElement("afterend",editor);editor.insertAdjacentElement("afterend",boosts);if(copyBar)boosts.insertAdjacentElement("afterend",copyBar);["v528Condition","v529Condition"].forEach(id=>{const el=document.getElementById(id);if(el&&el!==condition&&!(el.textContent||"").trim()&&!el.querySelector("input,button,select"))el.remove();});}const tab=document.querySelector('.tabs button[data-view="layoutcompare"]');tab?.addEventListener("click",()=>{setTimeout(arrangeCompareLayout,0);requestAnimationFrame(()=>requestAnimationFrame(arrangeCompareLayout));});if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",arrangeCompareLayout,{once:true});else arrangeCompareLayout();setTimeout(arrangeCompareLayout,120);})();
+(()=>{function stage3(){return window.STOT_COMPARE_PRESETS_CONTROLLER}function arrangeCompareLayout(){if(stage3()){stage3().mount();return;}const view=document.getElementById("layoutcompareView");if(!view)return;const intro=view.querySelector(".v56-compare-intro"),condition=document.getElementById("v533Condition")||document.getElementById("v529Condition"),comparison=view.querySelector(".ab-compare"),actions=view.querySelector(".v56-compare-actions"),settings=document.getElementById("v524CompareSettings"),editor=document.getElementById("v526EditorSwitch"),boosts=view.querySelector(".v520-boosts"),copyBar=document.getElementById("layoutCopyBar");if(!intro||!condition||!comparison||!settings||!editor||!boosts)return;["v528LayoutSettings","v529LayoutSetup","v527Workflow"].forEach(id=>{const old=document.getElementById(id);if(old){if(old.contains(settings))view.insertBefore(settings,old);if(old.contains(editor))view.insertBefore(editor,old);if(old.contains(boosts))view.insertBefore(boosts,old);old.remove();}});intro.insertAdjacentElement("afterend",condition);condition.insertAdjacentElement("afterend",comparison);let anchor=comparison;if(actions){anchor.insertAdjacentElement("afterend",actions);anchor=actions;}anchor.insertAdjacentElement("afterend",settings);settings.insertAdjacentElement("afterend",editor);editor.insertAdjacentElement("afterend",boosts);if(copyBar)boosts.insertAdjacentElement("afterend",copyBar);["v528Condition","v529Condition"].forEach(id=>{const el=document.getElementById(id);if(el&&el!==condition&&!(el.textContent||"").trim()&&!el.querySelector("input,button,select"))el.remove();});}const tab=document.querySelector('.tabs button[data-view="layoutcompare"]');tab?.addEventListener("click",()=>{queueMicrotask(arrangeCompareLayout);requestAnimationFrame(arrangeCompareLayout);});if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",arrangeCompareLayout,{once:true});else arrangeCompareLayout();queueMicrotask(arrangeCompareLayout);})();
 
-(()=>{function arrangeCompareWorkflow(){const view=document.getElementById("layoutcompareView");if(!view)return;const intro=view.querySelector(".v56-compare-intro"),condition=document.getElementById("v533Condition")||document.getElementById("v529Condition"),settings=document.getElementById("v524CompareSettings"),editor=document.getElementById("v526EditorSwitch"),boosts=view.querySelector(".v520-boosts"),copyBar=document.getElementById("layoutCopyBar"),comparison=view.querySelector(".ab-compare"),actions=view.querySelector(".v56-compare-actions");if(!intro||!condition||!settings||!editor||!boosts||!comparison)return;let anchor=intro;for(const el of[condition,settings,editor,boosts,copyBar,comparison,actions]){if(!el)continue;anchor.insertAdjacentElement("afterend",el);anchor=el;}}const tab=document.querySelector('.tabs button[data-view="layoutcompare"]');tab?.addEventListener("click",()=>{setTimeout(arrangeCompareWorkflow,0);requestAnimationFrame(()=>requestAnimationFrame(arrangeCompareWorkflow));});if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",arrangeCompareWorkflow,{once:true});else arrangeCompareWorkflow();setTimeout(arrangeCompareWorkflow,180);})();
+(()=>{function stage3(){return window.STOT_COMPARE_PRESETS_CONTROLLER}function arrangeCompareWorkflow(){if(stage3()){stage3().mount();return;}const view=document.getElementById("layoutcompareView");if(!view)return;const intro=view.querySelector(".v56-compare-intro"),condition=document.getElementById("v533Condition")||document.getElementById("v529Condition"),settings=document.getElementById("v524CompareSettings"),editor=document.getElementById("v526EditorSwitch"),boosts=view.querySelector(".v520-boosts"),copyBar=document.getElementById("layoutCopyBar"),comparison=view.querySelector(".ab-compare"),actions=view.querySelector(".v56-compare-actions");if(!intro||!condition||!settings||!editor||!boosts||!comparison)return;let anchor=intro;for(const el of[condition,settings,editor,boosts,copyBar,comparison,actions]){if(!el)continue;anchor.insertAdjacentElement("afterend",el);anchor=el;}}const tab=document.querySelector('.tabs button[data-view="layoutcompare"]');tab?.addEventListener("click",()=>{queueMicrotask(arrangeCompareWorkflow);requestAnimationFrame(arrangeCompareWorkflow);});if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",arrangeCompareWorkflow,{once:true});else arrangeCompareWorkflow();queueMicrotask(arrangeCompareWorkflow);})();
 
-(()=>{if(window.__STOT_V536_BUILD_UX__)return;window.__STOT_V536_BUILD_UX__=true;const makeQuickFill=()=>{let box=document.getElementById("v536QuickFill");if(box)return box;box=document.createElement("div");box.id="v536QuickFill";box.className="panel v536-quick-fill";const areaOptions=(typeof LAYOUT_AREAS!=="undefined"?LAYOUT_AREAS:[]).map(a=>`<option value="${a.id}">${a.name} only</option>`).join(""),drillOpts=(typeof drills!=="undefined"?drills:[]).map(d=>`<option value="${d.id}" ${d.id==="demonic"?"selected":""}>${d.name} • ${d.footprint}</option>`).join(""),tierOpts=(typeof TIER_OPTIONS!=="undefined"?TIER_OPTIONS:[]).map((t,i)=>`<option value="${i}" ${i===0?"selected":""}>${t.name} ×${t.mult}</option>`).join("");box.innerHTML=`<div class="v536-qf-head"><strong>Quick Fill</strong><span>Fill empty plots without rebuilding the same setup</span></div><div class="v536-qf-grid"><label>Drill<select id="v536QuickDrill">${drillOpts}</select></label><label>Tier<select id="v536QuickTier">${tierOpts}</select></label><label>Count<input id="v536QuickCount" type="number" min="1" max="25" step="1" value="1" inputmode="numeric"></label></div><div class="v536-qf-target"><label>Fill empty plots in<select id="v536QuickTarget"><option value="all">All Areas</option>${areaOptions}</select></label><button id="v536QuickApply" type="button">Fill Empty Plots</button></div><div id="v536QuickStatus">Only empty plots are changed.</div>`;box.querySelector("#v536QuickApply").addEventListener("click",()=>{if(typeof layoutPlots==="undefined"||typeof clonePlotRows!=="function")return;const drill=box.querySelector("#v536QuickDrill").value,tier=Math.max(0,Number(box.querySelector("#v536QuickTier").value)||0),count=Math.max(1,Math.min(25,Math.floor(Number(box.querySelector("#v536QuickCount").value)||1)));box.querySelector("#v536QuickCount").value=count;const area=box.querySelector("#v536QuickTarget").value,row={drill,tier,count,hacker:550},probe={rows:clonePlotRows([row])},status=box.querySelector("#v536QuickStatus");status.className="";if(typeof canPack5x5==="function"&&!canPack5x5(probe)){status.textContent="This drill/count does not fit inside one 5×5 plot.";status.classList.add("bad");return;}const targets=layoutPlots.filter(p=>p.rows.length===0&&(area==="all"||p.area===area));if(!targets.length){status.textContent="No empty plots found in that selection.";status.classList.add("bad");return;}targets.forEach(p=>{p.rows=clonePlotRows([row]);});if(typeof renderLayout==="function")renderLayout();status.textContent=`Filled ${targets.length} empty plot${targets.length===1?"":"s"}.`;status.classList.add("ok");});return box;},makeAdvanced=()=>{let details=document.getElementById("v536AdvancedTools");if(!details){details=document.createElement("details");details.id="v536AdvancedTools";details.className="v536-advanced";details.innerHTML='<summary>Advanced Tools <span>Copy • paste • clear layout</span></summary><div id="v536AdvancedHost"></div>';}const bar=document.getElementById("layoutCopyBar"),host=details.querySelector("#v536AdvancedHost");if(bar&&host&&bar.parentElement!==host)host.appendChild(bar);return details;},enhancePlotButtons=()=>{if(typeof layoutPlots==="undefined")return;document.querySelectorAll("#layoutAreas .plot-card").forEach(card=>{const actions=card.querySelector(".plot-actions");if(!actions)return;actions.classList.add("v536-three");if(actions.querySelector("[data-v536-duplicate]"))return;const id=card.dataset.plot,index=layoutPlots.findIndex(p=>p.id===id),btn=document.createElement("button");btn.type="button";btn.className="plot-action v536-duplicate";btn.dataset.v536Duplicate=id;btn.textContent="Duplicate → Next";btn.disabled=index<0||index>=layoutPlots.length-1;btn.addEventListener("click",()=>{const currentIndex=layoutPlots.findIndex(p=>p.id===id);if(currentIndex<0||currentIndex>=layoutPlots.length-1)return;const src=layoutPlots[currentIndex],next=layoutPlots[currentIndex+1];if(next.rows.length&&!window.confirm(`Plot ${next.index} already has drills. Replace it with this plot?`))return;next.rows=clonePlotRows(src.rows);const nextId=next.id;if(typeof renderLayout==="function")renderLayout();requestAnimationFrame(()=>{const nextCard=document.querySelector(`#layoutAreas .plot-card[data-plot="${nextId}"]`),group=nextCard?.closest("details.area-group");if(group)group.open=true;nextCard?.scrollIntoView({behavior:"smooth",block:"center"});});});actions.appendChild(btn);});},arrangeBuilderUX=()=>{const areas=document.getElementById("layoutAreas");if(!areas)return;const quick=makeQuickFill(),advanced=makeAdvanced(),parent=areas.parentElement;if(parent){parent.insertBefore(quick,areas);parent.insertBefore(advanced,areas);}enhancePlotButtons();const view=document.getElementById("layoutcompareView");if(view&&view.contains(areas)){const intro=view.querySelector(".v56-compare-intro"),condition=document.getElementById("v533Condition")||document.getElementById("v529Condition"),settings=document.getElementById("v524CompareSettings"),editor=document.getElementById("v526EditorSwitch"),boosts=view.querySelector(".v520-boosts"),note=view.querySelector(".layout-note"),comparison=view.querySelector(".ab-compare"),actions=view.querySelector(".v56-compare-actions");if(intro&&condition&&settings&&editor&&boosts&&comparison){let anchor=intro;for(const el of[condition,settings,editor,boosts,quick,advanced,areas,note,comparison,actions]){if(!el)continue;anchor.insertAdjacentElement("afterend",el);anchor=el;}}}};if(typeof renderLayout==="function"){const originalRender=renderLayout;renderLayout=function(){const result=originalRender.apply(this,arguments);enhancePlotButtons();return result;};}document.querySelectorAll('.tabs button[data-view="oil"],.tabs button[data-view="layoutcompare"]').forEach(tab=>tab.addEventListener("click",()=>{setTimeout(arrangeBuilderUX,0);requestAnimationFrame(()=>requestAnimationFrame(arrangeBuilderUX));}));if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",arrangeBuilderUX,{once:true});else arrangeBuilderUX();setTimeout(arrangeBuilderUX,220);})();
+(()=>{if(window.__STOT_V536_BUILD_UX__)return;window.__STOT_V536_BUILD_UX__=true;const makeQuickFill=()=>{let box=document.getElementById("v536QuickFill");if(box)return box;box=document.createElement("div");box.id="v536QuickFill";box.className="panel v536-quick-fill";const areaOptions=(typeof LAYOUT_AREAS!=="undefined"?LAYOUT_AREAS:[]).map(a=>`<option value="${a.id}">${a.name} only</option>`).join(""),drillOpts=(typeof drills!=="undefined"?drills:[]).map(d=>`<option value="${d.id}" ${d.id==="demonic"?"selected":""}>${d.name} • ${d.footprint}</option>`).join(""),tierOpts=(typeof TIER_OPTIONS!=="undefined"?TIER_OPTIONS:[]).map((t,i)=>`<option value="${i}" ${i===0?"selected":""}>${t.name} ×${t.mult}</option>`).join("");box.innerHTML=`<div class="v536-qf-head"><strong>Quick Fill</strong><span>Fill empty plots without rebuilding the same setup</span></div><div class="v536-qf-grid"><label>Drill<select id="v536QuickDrill">${drillOpts}</select></label><label>Tier<select id="v536QuickTier">${tierOpts}</select></label><label>Count<input id="v536QuickCount" type="number" min="1" max="25" step="1" value="1" inputmode="numeric"></label></div><div class="v536-qf-target"><label>Fill empty plots in<select id="v536QuickTarget"><option value="all">All Areas</option>${areaOptions}</select></label><button id="v536QuickApply" type="button">Fill Empty Plots</button></div><div id="v536QuickStatus">Only empty plots are changed.</div>`;box.querySelector("#v536QuickApply").addEventListener("click",()=>{if(typeof layoutPlots==="undefined"||typeof clonePlotRows!=="function")return;const drill=box.querySelector("#v536QuickDrill").value,tier=Math.max(0,Number(box.querySelector("#v536QuickTier").value)||0),count=Math.max(1,Math.min(25,Math.floor(Number(box.querySelector("#v536QuickCount").value)||1)));box.querySelector("#v536QuickCount").value=count;const area=box.querySelector("#v536QuickTarget").value,row={drill,tier,count,hacker:550},probe={rows:clonePlotRows([row])},status=box.querySelector("#v536QuickStatus");status.className="";if(typeof canPack5x5==="function"&&!canPack5x5(probe)){status.textContent="This drill/count does not fit inside one 5×5 plot.";status.classList.add("bad");return;}const targets=layoutPlots.filter(p=>p.rows.length===0&&(area==="all"||p.area===area));if(!targets.length){status.textContent="No empty plots found in that selection.";status.classList.add("bad");return;}targets.forEach(p=>{p.rows=clonePlotRows([row]);});if(typeof renderLayout==="function")renderLayout();status.textContent=`Filled ${targets.length} empty plot${targets.length===1?"":"s"}.`;status.classList.add("ok");});return box;},makeAdvanced=()=>{let details=document.getElementById("v536AdvancedTools");if(!details){details=document.createElement("details");details.id="v536AdvancedTools";details.className="v536-advanced";details.innerHTML='<summary>Advanced Tools <span>Copy • paste • clear layout</span></summary><div id="v536AdvancedHost"></div>';}const bar=document.getElementById("layoutCopyBar"),host=details.querySelector("#v536AdvancedHost");if(bar&&host&&bar.parentElement!==host)host.appendChild(bar);return details;},enhancePlotButtons=()=>{if(typeof layoutPlots==="undefined")return;document.querySelectorAll("#layoutAreas .plot-card").forEach(card=>{const actions=card.querySelector(".plot-actions");if(!actions)return;actions.classList.add("v536-three");if(actions.querySelector("[data-v536-duplicate]"))return;const id=card.dataset.plot,index=layoutPlots.findIndex(p=>p.id===id),btn=document.createElement("button");btn.type="button";btn.className="plot-action v536-duplicate";btn.dataset.v536Duplicate=id;btn.textContent="Duplicate → Next";btn.disabled=index<0||index>=layoutPlots.length-1;btn.addEventListener("click",()=>{const currentIndex=layoutPlots.findIndex(p=>p.id===id);if(currentIndex<0||currentIndex>=layoutPlots.length-1)return;const src=layoutPlots[currentIndex],next=layoutPlots[currentIndex+1];if(next.rows.length&&!window.confirm(`Plot ${next.index} already has drills. Replace it with this plot?`))return;next.rows=clonePlotRows(src.rows);const nextId=next.id;if(typeof renderLayout==="function")renderLayout();requestAnimationFrame(()=>{const nextCard=document.querySelector(`#layoutAreas .plot-card[data-plot="${nextId}"]`),group=nextCard?.closest("details.area-group");if(group)group.open=true;nextCard?.scrollIntoView({behavior:"smooth",block:"center"});});});actions.appendChild(btn);});},arrangeBuilderUX=()=>{const areas=document.getElementById("layoutAreas");if(!areas)return;const quick=makeQuickFill(),advanced=makeAdvanced(),view=document.getElementById("layoutcompareView"),controller=window.STOT_COMPARE_PRESETS_CONTROLLER;if(controller&&view?.classList.contains("active")){enhancePlotButtons();controller.mount();return;}const parent=areas.parentElement;if(parent){parent.insertBefore(quick,areas);parent.insertBefore(advanced,areas);}enhancePlotButtons();if(view&&view.contains(areas)){const intro=view.querySelector(".v56-compare-intro"),condition=document.getElementById("v533Condition")||document.getElementById("v529Condition"),settings=document.getElementById("v524CompareSettings"),editor=document.getElementById("v526EditorSwitch"),boosts=view.querySelector(".v520-boosts"),note=view.querySelector(".layout-note"),comparison=view.querySelector(".ab-compare"),actions=view.querySelector(".v56-compare-actions");if(intro&&condition&&settings&&editor&&boosts&&comparison){let anchor=intro;for(const el of[condition,settings,editor,boosts,quick,advanced,areas,note,comparison,actions]){if(!el)continue;anchor.insertAdjacentElement("afterend",el);anchor=el;}}}};if(typeof renderLayout==="function"){const originalRender=renderLayout;renderLayout=function(){const result=originalRender.apply(this,arguments);enhancePlotButtons();return result;};}document.querySelectorAll('.tabs button[data-view="oil"],.tabs button[data-view="layoutcompare"]').forEach(tab=>tab.addEventListener("click",()=>{queueMicrotask(arrangeBuilderUX);requestAnimationFrame(arrangeBuilderUX);}));if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",arrangeBuilderUX,{once:true});else arrangeBuilderUX();queueMicrotask(arrangeBuilderUX);})();
 } catch (error) { console.error("STOT patch failed: js/v539-08.js", error); }
 
 /* ===== js/v539-09.js ===== */
@@ -96,27 +96,15 @@ try {
 /* ===== js/v539-10.js ===== */
 try {
 (() => {
-  /* v5.39 — Older compare-layout patches physically moved the calculator and
-     boosts out of Oil / Hour. Keep one real set of controls, but mount it in
-     the correct page every time the user switches views. */
+  /* v5.39 compatibility — Stage 3 isolation
+     Oil / Hour owns its DOM permanently. Compare Presets owns a separate DOM
+     and state through STOT_COMPARE_PRESETS_CONTROLLER. Nothing is transferred
+     between the two pages. */
   if(window.__STOT_V539_UI__) return;
   window.__STOT_V539_UI__=true;
 
   const byId=id=>document.getElementById(id);
-  const nextFrames=fn=>{setTimeout(fn,0);setTimeout(fn,40);requestAnimationFrame(()=>requestAnimationFrame(fn));};
-
-  function liveParts(){
-    const modeTabs=byId('layoutModeTabs');
-    return {
-      calc:modeTabs?.closest('.layout-control-card')||null,
-      boosts:document.querySelector('.v520-boosts'),
-      controls:document.querySelector('.layout-controls'),
-      quick:byId('v536QuickFill'),
-      advanced:byId('v536AdvancedTools'),
-      areas:byId('layoutAreas'),
-      note:document.querySelector('.layout-note')
-    };
-  }
+  const nextFrames=fn=>{requestAnimationFrame(()=>requestAnimationFrame(fn));};
 
   function hideKnownLegacyShells(root,preserve=null){
     if(!root) return;
@@ -125,74 +113,73 @@ try {
       if(el && el!==preserve && root.contains(el)) el.classList.add('v539-hidden-shell');
     });
     root.querySelectorAll('.v519-old-result,.v528-remove-empty,.v533-obsolete-empty').forEach(el=>el.classList.add('v539-hidden-shell'));
-
-    root.querySelectorAll(':scope > .panel').forEach(panel=>{
-      if(panel.classList.contains('ab-compare')) return;
-      if(panel.querySelector('.ab-editing') && !panel.querySelector('.ab-layout-switch')){
-        panel.classList.add('v539-hidden-shell');
-        return;
-      }
-      const useful=panel.querySelector('input:not([type="hidden"]),select,textarea,button:not([hidden]),#layoutModeTabs,.ab-compare,.v56-compare-intro,.v520-boosts');
-      const text=(panel.innerText||'').trim();
-      if(!useful && !text) panel.classList.add('v539-hidden-shell');
-    });
   }
 
   function mountOil(){
     const oil=byId('oilView'); if(!oil) return;
-    const {calc,boosts,controls,quick,advanced,areas,note}=liveParts();
-    if(!calc || !boosts || !controls) return;
+    const controls=document.querySelector('.layout-controls');
+    const calc=byId('layoutModeTabs')?.closest('.layout-control-card')||null;
+    const boosts=document.querySelector('.v520-boosts');
+    const quick=byId('v536QuickFill');
+    const advanced=byId('v536AdvancedTools');
+    const areas=byId('layoutAreas');
+    const note=document.querySelector('.layout-note');
+    if(!controls) return;
 
-    if(calc.parentElement!==controls) controls.appendChild(calc);
+    if(controls.parentElement!==oil) oil.appendChild(controls);
+    if(calc && calc.parentElement!==controls) controls.appendChild(calc);
     controls.classList.remove('v539-empty-controls');
 
-    boosts.classList.remove('v539-compare-boosts');
-    boosts.classList.add('v539-oil-boosts');
-    const title=boosts.querySelector('.v520-boosts-title strong');
-    const hint=boosts.querySelector('.v520-boosts-title span');
-    if(title) title.textContent='Layout Boosts';
-    if(hint) hint.textContent='Mole • Fruit • Heart Likes • x2';
-
-    const introPanel=oil.querySelector(':scope > .panel.step');
-    const intro=oil.querySelector('.oil-layout-intro');
-    if(intro){
-      const h=intro.querySelector('h2'); const p=intro.querySelector('p'); const badge=intro.querySelector('.layout-badge');
-      if(h) h.textContent='Oil / Hour';
-      if(p) p.textContent='Build one layout, set your boosts, and see its production or time to target.';
-      if(badge) badge.textContent='1 Layout';
+    if(boosts){
+      boosts.classList.remove('v539-compare-boosts');
+      boosts.classList.add('v539-oil-boosts');
+      const title=boosts.querySelector('.v520-boosts-title strong');
+      const hint=boosts.querySelector('.v520-boosts-title span');
+      if(title) title.textContent='Layout Boosts';
+      if(hint) hint.textContent='Mole • Fruit • Heart Likes • x2';
     }
 
+    const introPanel=oil.querySelector(':scope > .panel.step');
     let anchor=introPanel;
     for(const el of [boosts,controls,quick,advanced,areas,note]){
       if(!el || !anchor) continue;
-      anchor.insertAdjacentElement('afterend',el); anchor=el;
+      if(el!==anchor.nextElementSibling) anchor.insertAdjacentElement('afterend',el);
+      anchor=el;
     }
     hideKnownLegacyShells(oil);
   }
 
-  function mountCompare(){
-    const view=byId('layoutcompareView'); if(!view) return;
-    const {calc,boosts,controls,quick,advanced,areas,note}=liveParts();
-    const intro=view.querySelector('.v56-compare-intro');
-    const condition=byId('v533Condition')||byId('v529Condition');
-    const conditionHost=byId('v533ConditionHost')||byId('v529ConditionHost');
-    const settings=byId('v524CompareSettings');
-    const editor=byId('v526EditorSwitch');
-    const comparison=view.querySelector('.ab-compare');
-    const actions=view.querySelector('.v56-compare-actions');
-    if(!intro || !condition || !calc || !settings || !editor || !boosts || !comparison) return;
+  function lockCompareVisualOwnership(){
+    const controller=window.STOT_COMPARE_PRESETS_CONTROLLER;
+    const visual=window.STOT_VISUAL_PLOT_BUILDER;
+    if(!controller||!visual||visual.__stage3CompareIsolated===true) return;
 
-    if(conditionHost && calc.parentElement!==conditionHost) conditionHost.appendChild(calc);
-    if(controls) controls.classList.add('v539-empty-controls');
-    boosts.classList.remove('v539-oil-boosts');
-    boosts.classList.add('v539-compare-boosts');
+    /* The legacy Visual Builder is Oil-owned. Its old mount() still knows how
+       to reposition #layoutVisualBuilderCompare using Oil-era rules. Never let
+       that mount path run while Stage 3 owns Compare. Preserve render/open/close
+       routing already installed by the Stage 3 controller. */
+    visual.mount=()=>byId('layoutVisualBuilderCompare');
+    visual.__stage3CompareIsolated=true;
+  }
 
-    let anchor=intro;
-    for(const el of [condition,settings,editor,boosts,quick,advanced,areas,note,comparison,actions]){
-      if(!el) continue;
-      anchor.insertAdjacentElement('afterend',el); anchor=el;
+  function keepCompareCoreContiguous(){
+    const view=byId('layoutcompareView');
+    const builder=byId('layoutVisualBuilderCompare');
+    const comparison=view?.querySelector('.ab-compare');
+    const note=view?.querySelector('.v603-note');
+    if(!view||!builder||!comparison) return;
+    /* The explanatory note must not split the tested/visible core sequence:
+       Advanced Tools -> Visual Plot Builder -> Preset Comparison. */
+    if(note && builder.nextElementSibling===note && note.nextElementSibling===comparison){
+      comparison.insertAdjacentElement('afterend',note);
     }
-    hideKnownLegacyShells(view,condition);
+  }
+
+  function mountCompare(){
+    /* Stage 3 owns Compare completely. Never move or mount an Oil-owned node here. */
+    lockCompareVisualOwnership();
+    window.STOT_COMPARE_PRESETS_CONTROLLER?.mount?.();
+    keepCompareCoreContiguous();
   }
 
   function syncActiveView(){
