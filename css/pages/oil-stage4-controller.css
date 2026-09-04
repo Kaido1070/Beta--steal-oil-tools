@@ -1,0 +1,39 @@
+/* Stage 4 Oil / Hour controller-owned presentation. Scoped to Oil except legacy shell hiding. */
+#oilView .v539-hidden-shell,
+#oilView .v533-obsolete-empty,
+#oilView .v539-empty-controls,
+#oilView .v593-empty-oil-shell,
+#layoutcompareView .v539-hidden-shell,
+#layoutcompareView .v533-obsolete-empty,
+#layoutcompareView .v539-empty-controls{display:none!important}
+
+#oilView .v593-question-title{margin:0 0 2px!important;font-size:17px!important;line-height:1.08!important;letter-spacing:-.1px!important}
+#oilView .v593-question-copy{margin:0 0 7px!important;color:#a3adbf!important;font-size:10px!important;line-height:1.25!important}
+#oilView .v593-calc-card{padding:10px!important;border-radius:17px!important}
+#oilView #layoutModeTabs.v593-mode-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;margin:5px 0 8px!important}
+#oilView #layoutModeTabs .v593-mode-choice{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-height:56px!important;height:56px!important;padding:7px 9px!important;border-radius:12px!important;text-align:center!important;line-height:1.05!important;white-space:normal!important}
+#oilView #layoutModeTabs .v593-mode-choice strong{display:block!important;font-size:14px!important;line-height:1.05!important;font-weight:950!important;white-space:nowrap!important}
+#oilView #layoutModeTabs .v593-mode-choice small{display:block!important;margin-top:4px!important;font-size:8.5px!important;line-height:1.1!important;font-weight:650!important;opacity:.72!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important}
+#oilView #layoutModeTabs .v593-mode-choice.active small{opacity:.9!important}
+#oilView .v593-runtime-field{grid-template-columns:minmax(0,1fr) 112px!important;align-items:center!important;gap:10px!important;min-height:64px!important;padding:8px 10px!important;border-radius:14px!important}
+#oilView .v593-runtime-field .field-head{margin:0!important}
+#oilView .v593-runtime-field input{height:44px!important;min-height:44px!important;font-size:18px!important;border-radius:12px!important}
+#oilView .v520-boosts{margin-bottom:9px!important}
+#oilView #v536QuickFill.v593-quick-flow{margin-top:0!important;padding:12px!important;border-radius:17px!important}
+#oilView #v536QuickFill.v593-quick-flow .v536-qf-head{margin-bottom:9px!important}
+#oilView #v536QuickFill.v593-quick-flow .v537-template-head{margin-bottom:6px!important}
+#oilView #v536QuickFill.v593-quick-flow #v537AddTemplateRow{min-height:39px!important;margin-top:6px!important;border-radius:10px!important}
+#oilView #v536QuickFill.v593-quick-flow .v537-template-fit{margin:6px 0!important;padding:6px 0!important}
+
+@media(max-width:620px){
+  #oilView .v593-question-title{font-size:15px!important}
+  #oilView .v593-question-copy{font-size:9px!important;margin-bottom:6px!important}
+  #oilView .v593-calc-card{padding:9px!important}
+  #oilView #layoutModeTabs.v593-mode-grid{gap:6px!important;margin:4px 0 7px!important}
+  #oilView #layoutModeTabs .v593-mode-choice{min-height:52px!important;height:52px!important;padding:6px 7px!important;border-radius:11px!important}
+  #oilView #layoutModeTabs .v593-mode-choice strong{font-size:13px!important}
+  #oilView #layoutModeTabs .v593-mode-choice small{font-size:7.5px!important;margin-top:3px!important}
+  #oilView .v593-runtime-field{grid-template-columns:minmax(0,1fr) 102px!important;min-height:58px!important;padding:7px 9px!important}
+  #oilView .v593-runtime-field input{height:42px!important;min-height:42px!important;font-size:17px!important}
+  #oilView #v536QuickFill.v593-quick-flow{padding:10px!important}
+}
