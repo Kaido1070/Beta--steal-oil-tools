@@ -58,3 +58,13 @@ window.STOT_CONFIG=Object.freeze({
   link.dataset.stotCompareKnownGoodUi='1';
   document.head.appendChild(link);
 })();
+
+/* Compare Presets A/B selector position: place it where the redundant editor-status panel used to be. */
+(()=>{
+  const src='js/pages/compare-preset-switch-position.js';
+  if(document.querySelector('script[data-stot-compare-preset-switch-position]'))return;
+  const script=document.createElement('script');
+  script.src=src;
+  script.dataset.stotComparePresetSwitchPosition='1';
+  document.head.appendChild(script);
+})();
