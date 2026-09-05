@@ -141,5 +141,50 @@ const lootboxes=[
 {name:"Burger Refinery Lootbox",type:"refinery",rarity:"Special",cash:"$1.7B",drops:[["Nuclear Reactor Refinery","30%"],["Photon Refinery","30%"],["Crystal Core Refinery","20%"],["Moon Base Refinery","18%"],["Burger Refinery","2%"]]}
 ];
 
+/* Confirmed Scrap/Rebirth chart values. Keep them attached to the canonical game items. */
+const drillScrap={
+  basic:[1,2,3,5,10],strong:[2,4,6,10,20],enhanced:[2,4,6,10,20],speed:[3,6,9,15,30],
+  reinforced:[3,12,9,15,30],industrial:[4,16,12,20,40],"double-industrial":[4,24,12,20,40],turbo:[6,12,18,30,60],
+  mega:[7,14,21,35,70],ice:[10,20,30,50,100],lava:[14,28,42,70,140],drake:[15,30,45,75,150],
+  hacker:[16,32,48,80,160],rocket:[21,42,63,105,210],"mega-laser":[44,88,132,220,440],"scifi-double":[58,116,174,290,580],
+  "scifi-quad":[83,166,249,415,830],lunar:[122,244,366,610,1220],"alien-tech":[169,338,507,845,1690],ufo:[263,526,789,1315,2630],
+  solar:[581,762,1143,1905,3810],antimatter:[556,1112,1668,2780,5560],"black-hole":[772,1544,2316,3860,7720],
+  angel:[957,1914,2871,4785,9570],demonic:[1588,3176,4764,7940,15880],disco:[8,16,24,40,80],volcano:[5,10,15,25,50],
+  candy:[5,10,15,25,50],"super-rocket":[44,88,132,220,440],"ketchup-mustard":[13,26,39,65,130],clock:[2715,5430,8145,13575,27150],
+  heart:null,banana:null
+};
+const tierKeys=["basic","gold","diamond","rainbow","galaxy"];
+drills.forEach(drill=>{
+  if(!Object.prototype.hasOwnProperty.call(drillScrap,drill.id))return;
+  const values=drillScrap[drill.id];
+  drill.scrap=values===null?null:Object.fromEntries(tierKeys.map((tier,index)=>[tier,values[index]]));
+});
+
+const refineryScrap={
+  "Basic Refinery":1,"Enhanced Refinery":2,"Reinforced Refinery":3,"Advanced Refinery":4,"Plasma Refinery":5,
+  "Industrial Refinery":8,"Energy Refinery":12,"Castle Refinery":16,"Mega Refinery":19,"Quantum Refinery":26,
+  "Ice Refinery":22,"Hell Refinery":32,"Burger Refinery":37,"Nuclear Power Plant Refinery":57,"Nuclear Reactor Refinery":67,
+  "Photon Refinery":90,"Crystal Core Refinery":107,"Moon Base Refinery":216,"Solar Refinery":465,"Antimatter Refinery":830,
+  "Black Hole Refinery":1078,"Angel Refinery":1301,"Demonic Refinery":2000,"Fruit Basket Refinery":null
+};
+const solarScrap={"Copper Solar Panel":28,"Iron Solar Panel":80,"Golden Solar Panel":216,"Emerald Solar Panel":630};
+const decorationScrap={
+  "Radio Station":13,"Lootbox Radio":145,"Shuttle Station":126,"Fusion Radio":145,
+  "Wood Wind Turbine":13,"Iron Wind Turbine":23,"Gold Wind Turbine":50,"Emerald Wind Turbine":107,
+  "Basic Incubator":6,"Heated Incubator":10,"Genetic Incubator":16,"Work Station":272
+};
+const lootboxScrap={
+  "Basic Drill Lootbox":3,"Basic Refinery Lootbox":4,"Gold Drill Lootbox":4,"Gold Refinery Lootbox":8,
+  "Diamond Drill Lootbox":9,"Diamond Refinery Lootbox":25,"Rainbow Drill Lootbox":27,"Rainbow Refinery Lootbox":60,
+  "Galaxy Drill Lootbox":110,"Galaxy Refinery Lootbox":236,"Burger Drill Lootbox":171,"Burger Refinery Lootbox":151,"Clock Drill Lootbox":622
+};
+function attachScrap(list,lookup){
+  list.forEach(item=>{if(Object.prototype.hasOwnProperty.call(lookup,item.name))item.scrapValue=lookup[item.name]});
+}
+attachScrap(refineries,refineryScrap);
+attachScrap(solarPanels,solarScrap);
+attachScrap(decorations,decorationScrap);
+attachScrap(lootboxes,lootboxScrap);
+
 return {drills,pets,refineries,solarPanels,totems,decorations,lootboxes};
 })();
