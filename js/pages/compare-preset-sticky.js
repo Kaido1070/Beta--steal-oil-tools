@@ -43,8 +43,6 @@
     return {rows:PLOTS.map(p=>({id:p.id,rows:by.get(p.id)||[]})),setup:cleanSetup(state?.setup)};
   }
 
-  /* Put every Oil / Hour node back in Oil before replacing the legacy Compare
-     view. From this point forward no Oil node is ever moved into Compare. */
   function restoreOilOwnership(){
     const oil=byId('oilView');
     if(!oil)return;
@@ -89,6 +87,7 @@
     A:cleanState(loaded.compareStates?.A),
     B:cleanState(loaded.compareStates?.B)
   };
+  let compareRebirth={A:0,B:0};
   let activeSide=loaded.activeCompare==='B'?'B':'A';
   const BUILD_VERSION=window.STOT_CONFIG?.version||document.querySelector('meta[name="stot-local-version"]')?.content||'5.77';
   const SEPARATE_KEY=`stot-v${BUILD_VERSION}-compare-separate-boosts-v1`;
@@ -97,6 +96,10 @@
   let compareClipboard=null;
   let selectedPlotId=null;
   let mounting=false;
+  const productionCore=window.STOT_LAYOUT_PRODUCTION;
+  const rebirthLevel=value=>productionCore?.rebirthLevel?productionCore.rebirthLevel(value):clampInt(value,0,50,0);
+  const rebirthBonus=value=>productionCore?.rebirthBonusPercent?productionCore.rebirthBonusPercent(value):rebirthLevel(value)*10;
+  const rebirthMultiplier=value=>productionCore?.rebirthMultiplier?productionCore.rebirthMultiplier(value):1+(rebirthBonus(value)/100);
 
   if(legacyPersist){
     legacyPersist.exportState=function(){
@@ -127,6 +130,7 @@
     #layoutcompareView .v603-condition-pane{display:none}.v603-condition-pane.active{display:block!important}
     #layoutcompareView .v603-boost-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     #layoutcompareView .v603-boost-grid label,#layoutcompareView .v603-condition-pane label{display:grid;gap:5px;font-size:12px;color:var(--muted,#98a2b8)}
+    #layoutcompareView .v603-boost-grid label small{font-size:9px;color:var(--muted,#98a2b8)}
     #layoutcompareView .v603-boost-grid input,#layoutcompareView .v603-condition-pane input{width:100%;min-height:42px}
     #layoutcompareView .v603-x2{display:flex;gap:6px;margin-top:8px}.v603-x2 button{flex:1;min-height:38px}
     #layoutcompareView .v603-qf-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:7px}.v603-qf-grid label{display:grid;gap:4px;font-size:11px;color:var(--muted,#98a2b8)}
@@ -150,7 +154,7 @@
     <div class="panel v533-condition" id="v533Condition"><div class="v533-condition-head"><strong>Comparison Condition</strong><span>Shared by A and B</span></div><div id="v533ConditionHost"></div></div>
     <div class="panel v524-settings" id="v524CompareSettings"><div class="v524-settings-head"><div class="v524-settings-copy"><strong>Different Base Settings</strong><small>Keep Off to use the same boosts for both presets.</small></div><div class="v603-toggle" id="v603SeparateToggle"><button type="button" data-v524="shared">Off</button><button type="button" data-v524="separate">On</button></div></div><div class="v524-status" id="v524Status"></div></div>
     <div class="panel" id="v526EditorSwitch"><strong id="v526EditorHint">Editing Preset A · isolated visual editor</strong></div>
-    <div class="panel v520-boosts" id="v520BoostsCompare"><div class="v520-boosts-title"><strong>Preset Boosts</strong><span></span><span class="v524-shared-badge"></span></div><div class="v603-boost-grid"><label>Mole Level<input id="compareLayoutMole" type="number" min="0" max="100" value="0"></label><label>Fruit Level<input id="compareLayoutFruit" type="number" min="0" max="100" value="0"></label><label>Heart Drill Likes<input id="compareLayoutLikes" type="number" min="0" value="0"></label><label>Admin Event Lobby<div class="v603-x2" id="compareLayoutX2"><button type="button" data-layoutx2="1">Off</button><button type="button" data-layoutx2="2">x2</button></div></label></div></div>
+    <div class="panel v520-boosts" id="v520BoostsCompare"><div class="v520-boosts-title"><strong>Preset Boosts</strong><span></span><span class="v524-shared-badge"></span></div><div class="v603-boost-grid"><label>Mole Level<input id="compareLayoutMole" type="number" min="0" max="100" value="0"></label><label>Fruit Level<input id="compareLayoutFruit" type="number" min="0" max="100" value="0"></label><label>Heart Drill Likes<input id="compareLayoutLikes" type="number" min="0" value="0"></label><label>Rebirth Level <small id="compareLayoutRebirthBonus">+0% Production</small><input id="compareLayoutRebirth" type="number" min="0" max="50" step="1" value="0" inputmode="numeric" placeholder="0 - 50"></label><label>Admin Event Lobby<div class="v603-x2" id="compareLayoutX2"><button type="button" data-layoutx2="1">Off</button><button type="button" data-layoutx2="2">x2</button></div></label></div></div>
     <div class="panel v536-quick-fill" id="v536QuickFillCompare"><div class="v536-qf-head"><strong>Quick Fill</strong><span>Compare-only preset builder</span></div><div class="v603-qf-grid"><label>Drill<select id="compareQuickDrill"></select></label><label>Tier<select id="compareQuickTier"></select></label><label>Count<input id="compareQuickCount" type="number" min="1" max="25" value="1"></label></div><div class="v603-qf-actions"><select id="compareQuickTarget"><option value="all">All Areas</option><option value="forest">Forest</option><option value="desert">Desert</option><option value="volcano-side">Volcano Sides</option><option value="volcano-core">Volcano Core</option><option value="mountain-side">Mountain Sides</option><option value="mountain-summit">Mountain Summit</option></select><button id="compareQuickApply" type="button">Fill Empty Plots</button></div><div id="compareQuickStatus">Only the active preset is changed.</div></div>
     <details class="v536-advanced" id="v536AdvancedToolsCompare"><summary>Advanced Tools <span>Compare-only copy • paste • clear</span></summary><div class="v603-advanced-body"><button id="compareCopyPreset" type="button">Copy Preset</button><button id="comparePastePreset" type="button">Paste Preset</button><button id="compareClearPreset" type="button">Clear Preset</button></div></details>
     <section class="panel v572-visual-builder" id="layoutVisualBuilderCompare" data-builder-scope="compare"></section>
@@ -176,15 +180,16 @@
     const fruit=(drill.id==='banana'&&fl)?petValue(pets.find(p=>p.id==='fruit'),fl)/100:0;
     return(1+mole)*(1+fruit);
   }
-  function statsFor(state){
+  function statsFor(state,side){
     const setup=state.setup;let staticRate=0,clockGrowth=0,cells=0,valid=true;
+    const rebirth=rebirthMultiplier(compareRebirth[side]||0);
     for(const meta of PLOTS){
       const p=plotModel(state,meta),info=pieceList(p);cells+=Math.min(info.area,25);if(!canPack5x5(p)){valid=false;continue;}
       for(const row of p.rows){
         const d=drills.find(x=>x.id===row.drill);if(!d)continue;
         const count=clampInt(row.count,1,25,1);let base=Number(d.oil)||0;
         if(d.special==='heart')base=Math.max(0,Number(setup.likes)||0);else if(d.special==='hacker')base=Math.max(0,Number(row.hacker)||550);
-        const mult=(TIER_OPTIONS[Number(row.tier)||0]?.mult||1)*meta.mult*count*petMult(d,setup)*(Number(setup.lobby)===2?2:1);
+        const mult=(TIER_OPTIONS[Number(row.tier)||0]?.mult||1)*meta.mult*count*petMult(d,setup)*(Number(setup.lobby)===2?2:1)*rebirth;
         if(d.special==='clock')clockGrowth+=mult;else staticRate+=base*mult;
       }
     }
@@ -217,7 +222,7 @@
   function closeEditor(){selectedPlotId=null;byId('v603ComparePlotEditor')?.classList.remove('open')}
 
   function syncSetupDom(){
-    const setup=setupFor();byId('compareLayoutMole').value=setup.mole;byId('compareLayoutFruit').value=setup.fruit;byId('compareLayoutLikes').value=setup.likes;byId('compareLayoutHours').value=setup.hours;byId('compareLayoutTarget').value=setup.target;
+    const setup=setupFor();byId('compareLayoutMole').value=setup.mole;byId('compareLayoutFruit').value=setup.fruit;byId('compareLayoutLikes').value=setup.likes;byId('compareLayoutRebirth').value=rebirthLevel(compareRebirth[activeSide]);byId('compareLayoutRebirthBonus').textContent=`+${rebirthBonus(compareRebirth[activeSide])}% Production`;byId('compareLayoutHours').value=setup.hours;byId('compareLayoutTarget').value=setup.target;
     view.querySelectorAll('#compareLayoutX2 [data-layoutx2]').forEach(b=>b.classList.toggle('active',Number(b.dataset.layoutx2)===Number(setup.lobby)));
     view.querySelectorAll('#compareLayoutModeTabs [data-layoutmode]').forEach(b=>b.classList.toggle('active',b.dataset.layoutmode===setup.mode));
     byId('compareLayoutTimePane').classList.toggle('active',setup.mode==='time');byId('compareLayoutTargetPane').classList.toggle('active',setup.mode==='target');
@@ -231,7 +236,7 @@
   }
 
   function renderComparison(){
-    const a=statsFor(compareStates.A),b=statsFor(compareStates.B),setup=setupFor();
+    const a=statsFor(compareStates.A,'A'),b=statsFor(compareStates.B,'B'),setup=setupFor();
     byId('abRateA').textContent=a.valid?rateFmt(a.now)+'/s':'—';byId('abRateB').textContent=b.valid?rateFmt(b.now)+'/s':'—';byId('abCells').textContent=`${a.cells} / ${b.cells}`;
     if(!a.valid||!b.valid){byId('abWinner').textContent='Fix the over-capacity plot before comparing';byId('abDiffRate').textContent='—';byId('abDiffHour').textContent='—';return;}
     const signed=n=>(n>0?'+':n<0?'−':'')+fmt(Math.abs(n));byId('abDiffRate').textContent=signed(b.now-a.now)+'/s';
@@ -251,12 +256,13 @@
 
   view.querySelectorAll('[data-ab-layout]').forEach(btn=>btn.onclick=()=>{activeSide=btn.dataset.abLayout==='B'?'B':'A';closeEditor();syncAll();view.dispatchEvent(new Event('change',{bubbles:true}))});
   ['Mole','Fruit','Likes'].forEach(key=>{byId(`compareLayout${key}`).oninput=e=>{const prop=key.toLowerCase(),value=key==='Likes'?String(Math.max(0,Math.trunc(Number(e.target.value)||0))):String(clampInt(e.target.value,0,100,0));e.target.value=value;if(separate)compareStates[activeSide].setup[prop]=value;else{compareStates.A.setup[prop]=value;compareStates.B.setup[prop]=value;}syncAll()}});
+  byId('compareLayoutRebirth').oninput=e=>{const value=rebirthLevel(e.target.value);e.target.value=String(value);if(separate)compareRebirth[activeSide]=value;else{compareRebirth.A=value;compareRebirth.B=value;}syncAll()};
   view.querySelectorAll('#compareLayoutX2 [data-layoutx2]').forEach(btn=>btn.onclick=()=>{const value=Number(btn.dataset.layoutx2)===2?2:1;if(separate)compareStates[activeSide].setup.lobby=value;else{compareStates.A.setup.lobby=value;compareStates.B.setup.lobby=value;}syncAll()});
   view.querySelectorAll('#compareLayoutModeTabs [data-layoutmode]').forEach(btn=>btn.onclick=()=>{const mode=btn.dataset.layoutmode==='target'?'target':'time';compareStates.A.setup.mode=mode;compareStates.B.setup.mode=mode;syncAll()});
   byId('compareLayoutHours').oninput=e=>{const value=String(Math.max(0,Number(e.target.value)||0));compareStates.A.setup.hours=value;compareStates.B.setup.hours=value;renderComparison();syncSticky()};
   byId('compareLayoutTarget').oninput=e=>{const value=String(Math.max(0,Number(e.target.value)||0));compareStates.A.setup.target=value;compareStates.B.setup.target=value;renderComparison();syncSticky()};
   view.querySelectorAll('#compareLayoutTargetUnits [data-layouttarget]').forEach(btn=>btn.onclick=()=>{const value=Number(btn.dataset.layouttarget);compareStates.A.setup.targetUnit=value;compareStates.B.setup.targetUnit=value;syncAll()});
-  view.querySelectorAll('#v603SeparateToggle [data-v524]').forEach(btn=>btn.onclick=()=>{const next=btn.dataset.v524==='separate';if(next===separate)return;if(!next){const source=clone(compareStates[activeSide].setup);compareStates.A.setup={...compareStates.A.setup,mole:source.mole,fruit:source.fruit,likes:source.likes,lobby:source.lobby};compareStates.B.setup={...compareStates.B.setup,mole:source.mole,fruit:source.fruit,likes:source.likes,lobby:source.lobby};}else{const source=clone(compareStates[activeSide].setup);compareStates.A.setup={...compareStates.A.setup,mole:source.mole,fruit:source.fruit,likes:source.likes,lobby:source.lobby};compareStates.B.setup={...compareStates.B.setup,mole:source.mole,fruit:source.fruit,likes:source.likes,lobby:source.lobby};}separate=next;try{localStorage.setItem(SEPARATE_KEY,separate?'1':'0')}catch(_){}syncAll()});
+  view.querySelectorAll('#v603SeparateToggle [data-v524]').forEach(btn=>btn.onclick=()=>{const next=btn.dataset.v524==='separate';if(next===separate)return;const source=clone(compareStates[activeSide].setup),sourceRebirth=rebirthLevel(compareRebirth[activeSide]);compareStates.A.setup={...compareStates.A.setup,mole:source.mole,fruit:source.fruit,likes:source.likes,lobby:source.lobby};compareStates.B.setup={...compareStates.B.setup,mole:source.mole,fruit:source.fruit,likes:source.likes,lobby:source.lobby};compareRebirth.A=sourceRebirth;compareRebirth.B=sourceRebirth;separate=next;try{localStorage.setItem(SEPARATE_KEY,separate?'1':'0')}catch(_){}syncAll()});
   byId('compareQuickApply').onclick=()=>{const state=activeState(),drill=byId('compareQuickDrill').value,tier=clampInt(byId('compareQuickTier').value,0,4,0),count=clampInt(byId('compareQuickCount').value,1,25,1),target=byId('compareQuickTarget').value,row={drill,tier,count,hacker:550},probe={rows:[row]},status=byId('compareQuickStatus');if(!canPack5x5(probe)){status.textContent='This setup does not fit inside one 5×5 plot.';return;}let changed=0;for(const meta of PLOTS){const entry=state.rows.find(x=>x.id===meta.id);const area=meta.id.replace(/-\d+$/,'');if(entry&&!entry.rows.length&&(target==='all'||area===target)){entry.rows=cloneRows([row]);changed++;}}status.textContent=changed?`Filled ${changed} empty plot${changed===1?'':'s'} in Preset ${activeSide}.`:'No empty plots found.';syncAll();view.dispatchEvent(new Event('change',{bubbles:true}))};
   byId('compareCopyPreset').onclick=()=>{compareClipboard=clone(activeState());byId('compareCopyPreset').textContent='Copied';setTimeout(()=>{if(byId('compareCopyPreset'))byId('compareCopyPreset').textContent='Copy Preset'},700)};
   byId('comparePastePreset').onclick=()=>{if(!compareClipboard)return;compareStates[activeSide]=cleanState(compareClipboard);syncAll();view.dispatchEvent(new Event('change',{bubbles:true}))};
