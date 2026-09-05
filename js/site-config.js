@@ -19,10 +19,19 @@ window.STOT_CONFIG=Object.freeze({
   storageKey(scope,suffix="v1"){return `${this.storageNamespace}-v${this.version}-${scope}-${suffix}`;}
 });
 
-/* Canonical Forged Drill data. Data-only module; no page DOM/state ownership. */
+/* Canonical Forged Drill data must exist before deferred page modules execute. */
 (()=>{
-  if(window.STOT_FORGED_DRILLS||document.querySelector('script[data-stot-forged-drills]'))return;
-  const script=document.createElement('script');script.src='js/data/forged-drills.js';script.async=false;script.dataset.stotForgedDrills='1';document.head.appendChild(script);
+  if(window.STOT_FORGED_DRILLS)return;
+  try{
+    const xhr=new XMLHttpRequest();
+    xhr.open('GET','js/data/forged-drills.js?v=6.05',false);
+    xhr.send(null);
+    if((xhr.status>=200&&xhr.status<300)||xhr.status===0){
+      (0,eval)(xhr.responseText);
+    }
+  }catch(error){
+    console.error('Failed to load Forged Drill data',error);
+  }
 })();
 
 /* Stage 4 strangler cutover: the authoritative Oil controller/Quick Fill now
