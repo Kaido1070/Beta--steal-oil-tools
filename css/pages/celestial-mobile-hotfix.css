@@ -1,0 +1,9 @@
+@media(max-width:620px){
+#databaseView .forged-level-list{grid-column:1/-1!important;width:100%!important;min-width:0!important}
+#databaseView .forged-level-card{width:100%!important;max-width:none!important;box-sizing:border-box!important;grid-template-columns:48px minmax(0,1fr)!important}
+#databaseView .forged-level-props{grid-column:1/-1!important;grid-template-columns:1fr!important;gap:6px!important;padding-top:6px!important;border-top:1px solid #283247!important}
+#databaseView .forged-level-cost{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important}
+#databaseView .forged-level-production{width:100%!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:2px!important}
+#databaseView .forged-level-production span{min-width:0!important;padding:5px 2px!important;font-size:8px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important}
+#databaseView .forged-level-production b{font-size:6px!important;line-height:1.1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+}
