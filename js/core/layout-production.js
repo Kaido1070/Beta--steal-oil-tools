@@ -21,10 +21,25 @@
     return rowBaseRate({special,oil,heartLikes,hackerOil})*tier*pet;
   }
 
+  function rebirthLevel(value){
+    return Math.max(0,Math.min(50,Math.trunc(finiteNumber(value,0))));
+  }
+
+  function rebirthBonusPercent(value){
+    return rebirthLevel(value)*10;
+  }
+
+  function rebirthMultiplier(value){
+    return 1+(rebirthBonusPercent(value)/100);
+  }
+
   window.STOT_LAYOUT_PRODUCTION=Object.freeze({
-    version:1,
+    version:2,
     pure:true,
     rowBaseRate,
-    rowLoss
+    rowLoss,
+    rebirthLevel,
+    rebirthBonusPercent,
+    rebirthMultiplier
   });
 })();

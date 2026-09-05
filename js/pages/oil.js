@@ -15,6 +15,20 @@ let layoutCopiedRows=null;
 const layoutPlots=[];
 LAYOUT_AREAS.forEach(area=>{for(let i=1;i<=area.plots;i++)layoutPlots.push({id:`${area.id}-${i}`,area:area.id,areaName:area.name,mult:area.mult,index:i,rows:[]})});
 
+const layoutProductionCore=window.STOT_LAYOUT_PRODUCTION;
+function layoutRebirthLevel(){const raw=$("#layoutRebirth")?.value;return layoutProductionCore?.rebirthLevel?layoutProductionCore.rebirthLevel(raw):Math.max(0,Math.min(50,Math.trunc(Number(raw)||0)))}
+function layoutRebirthBonus(){return layoutProductionCore?.rebirthBonusPercent?layoutProductionCore.rebirthBonusPercent(layoutRebirthLevel()):layoutRebirthLevel()*10}
+function layoutRebirthMultiplier(){return layoutProductionCore?.rebirthMultiplier?layoutProductionCore.rebirthMultiplier(layoutRebirthLevel()):1+(layoutRebirthBonus()/100)}
+function ensureLayoutRebirthControl(){
+  if($("#layoutRebirth"))return;
+  const mole=$("#layoutMole"),card=mole?.closest(".layout-control-card"),likes=$("#layoutLikes")?.closest("label.field");
+  if(!card)return;
+  const field=document.createElement("label");field.id="layoutRebirthField";field.className="field";field.style.marginTop="9px";
+  field.innerHTML='<div class="field-head"><div class="labels"><strong>Rebirth Level</strong><small id="layoutRebirthBonus">Production Bonus: +0%</small></div></div><input id="layoutRebirth" type="number" min="0" max="50" step="1" value="0" inputmode="numeric" placeholder="0 - 50">';
+  if(likes&&likes.parentElement===card)card.insertBefore(field,likes);else card.appendChild(field);
+}
+function syncLayoutRebirthUI(){const el=$("#layoutRebirth"),bonus=$("#layoutRebirthBonus");if(!el)return 0;const level=layoutRebirthLevel();if(String(el.value)!==String(level))el.value=level;if(bonus)bonus.textContent=`Production Bonus: +${layoutRebirthBonus()}%`;return level}
+
 function fpSize(fp){const m=String(fp||"1x1").match(/^(\d+)x(\d+)$/);return m?[+m[1],+m[2]]:[1,1]}
 function rowOilBase(d,row){if(d.special==="heart")return Math.max(0,Number($("#layoutLikes")?.value)||0);if(d.special==="hacker")return Math.max(0,Number(row.hacker)||550);return Number(d.oil)||0}
 function clonePlotRows(rows){return rows.map(r=>({drill:r.drill,tier:Number(r.tier)||0,count:Math.max(1,Math.min(25,Math.floor(Number(r.count)||1))),hacker:Math.max(0,Number(r.hacker)||550)}))}
@@ -42,7 +56,7 @@ function canPack5x5(plot){
   return dfs(0);
 }
 function layoutPetMult(d){const ml=Math.max(0,Math.min(100,Number($("#layoutMole")?.value)||0)),fl=Math.max(0,Math.min(100,Number($("#layoutFruit")?.value)||0));const mole=ml?petValue(pets.find(p=>p.id==="mole"),ml)/100:0,fruit=(d.id==="banana"&&fl)?petValue(pets.find(p=>p.id==="fruit"),fl)/100:0;return(1+mole)*(1+fruit)}
-function plotStats(plot,t=0){let staticRate=0,clockGrowth=0;for(const row of plot.rows){const d=drills.find(x=>x.id===row.drill);if(!d)continue;const count=Math.max(0,Math.floor(Number(row.count)||0));const mult=rowTierMult(row)*plot.mult*count*layoutPetMult(d)*layoutLobbyMult;if(d.special==="clock")clockGrowth+=mult;else staticRate+=rowOilBase(d,row)*mult}return{rate:staticRate+clockGrowth*(Math.floor(t)+1),staticRate,clockGrowth}}
+function plotStats(plot,t=0){let staticRate=0,clockGrowth=0;for(const row of plot.rows){const d=drills.find(x=>x.id===row.drill);if(!d)continue;const count=Math.max(0,Math.floor(Number(row.count)||0));const mult=rowTierMult(row)*plot.mult*count*layoutPetMult(d)*layoutLobbyMult*layoutRebirthMultiplier();if(d.special==="clock")clockGrowth+=mult;else staticRate+=rowOilBase(d,row)*mult}return{rate:staticRate+clockGrowth*(Math.floor(t)+1),staticRate,clockGrowth}}
 function totalOilForSeconds(staticRate,clockGrowth,seconds){const s=Math.max(0,Math.floor(seconds));return staticRate*s+clockGrowth*s*(s+1)/2}
 function timeForTarget(staticRate,clockGrowth,target){
   if(target<=0)return 0;if(staticRate<=0&&clockGrowth<=0)return Infinity;
@@ -112,7 +126,7 @@ function bindLayoutUI(){
   updateCopyUI();
 }
 function updatePlotCard(card,p){const used=pieceList(p).area,ok=canPack5x5(p),st=plotStats(p,0),status=card.querySelector(".plot-status");status.className="plot-status "+(ok?"ok":"bad");status.textContent=ok?`${used} / 25 cells`:`Doesn't fit`;card.querySelector(".plot-foot strong").textContent=ok?rateFmt(st.rate)+"/s":"—";calcLayout()}
-function calcLayout(){let staticRate=0,clockGrowth=0,cells=0,usedPlots=0,valid=true;for(const p of layoutPlots){const info=pieceList(p);if(info.area>0)usedPlots++;cells+=Math.min(info.area,25);if(!canPack5x5(p)){valid=false;continue}const st=plotStats(p,0);staticRate+=st.staticRate;clockGrowth+=st.clockGrowth}$("#layoutError").classList.toggle("show",!valid);$("#layoutPlotsUsed").textContent=`${usedPlots} / 15`;$("#layoutCellsUsed").textContent=`${cells} / 375`;$("#layoutLobbyMult").textContent=`×${layoutLobbyMult}`;const target=finiteNonNegative($("#layoutTarget").value)*layoutTargetUnit;$("#layoutTargetDisplay").textContent=fmt(target);if(!valid){["#layoutNowRate","#layoutHourRate","#layoutHourOil","#layoutTargetTime","#layoutTimeStart","#layoutTimeEnd","#layoutTimeOil"].forEach(id=>$(id).textContent="—");return}const now=staticRate+clockGrowth,after=staticRate+clockGrowth*3601,hour=totalOilForSeconds(staticRate,clockGrowth,3600),hours=finiteNonNegative($("#layoutHours").value),seconds=hours*3600,end=staticRate+clockGrowth*(Math.floor(seconds)+1),oil=totalOilForSeconds(staticRate,clockGrowth,seconds);$("#layoutNowRate").textContent=rateFmt(now)+"/s";$("#layoutHourRate").textContent=rateFmt(after)+"/s";$("#layoutHourOil").textContent=fmt(hour);$("#layoutTimeStart").textContent=rateFmt(now)+"/s";$("#layoutTimeEnd").textContent=rateFmt(end)+"/s";$("#layoutTimeOil").textContent=fmt(oil);$("#layoutTargetTime").textContent=timeText(timeForTarget(staticRate,clockGrowth,target))}
+function calcLayout(){syncLayoutRebirthUI();let staticRate=0,clockGrowth=0,cells=0,usedPlots=0,valid=true;for(const p of layoutPlots){const info=pieceList(p);if(info.area>0)usedPlots++;cells+=Math.min(info.area,25);if(!canPack5x5(p)){valid=false;continue}const st=plotStats(p,0);staticRate+=st.staticRate;clockGrowth+=st.clockGrowth}$("#layoutError").classList.toggle("show",!valid);$("#layoutPlotsUsed").textContent=`${usedPlots} / 15`;$("#layoutCellsUsed").textContent=`${cells} / 375`;$("#layoutLobbyMult").textContent=`×${layoutLobbyMult}`;const target=finiteNonNegative($("#layoutTarget").value)*layoutTargetUnit;$("#layoutTargetDisplay").textContent=fmt(target);if(!valid){["#layoutNowRate","#layoutHourRate","#layoutHourOil","#layoutTargetTime","#layoutTimeStart","#layoutTimeEnd","#layoutTimeOil"].forEach(id=>$(id).textContent="—");return}const now=staticRate+clockGrowth,after=staticRate+clockGrowth*3601,hour=totalOilForSeconds(staticRate,clockGrowth,3600),hours=finiteNonNegative($("#layoutHours").value),seconds=hours*3600,end=staticRate+clockGrowth*(Math.floor(seconds)+1),oil=totalOilForSeconds(staticRate,clockGrowth,seconds);$("#layoutNowRate").textContent=rateFmt(now)+"/s";$("#layoutHourRate").textContent=rateFmt(after)+"/s";$("#layoutHourOil").textContent=fmt(hour);$("#layoutTimeStart").textContent=rateFmt(now)+"/s";$("#layoutTimeEnd").textContent=rateFmt(end)+"/s";$("#layoutTimeOil").textContent=fmt(oil);$("#layoutTargetTime").textContent=timeText(timeForTarget(staticRate,clockGrowth,target))}
 $("#layoutLikes").addEventListener("input",e=>{let v=Math.max(0,Math.floor(Number(e.target.value)||0));if(String(e.target.value)!==String(v))e.target.value=v;renderLayout()});
 $("#layoutPasteEmpty").onclick=()=>{if(!layoutCopiedRows)return;let changed=0;for(const p of layoutPlots){if(p.rows.length===0){p.rows=clonePlotRows(layoutCopiedRows);changed++}}if(changed)renderLayout();const status=$("#layoutCopyStatus");if(status)status.textContent=changed?`Pasted to ${changed} empty plot${changed===1?"":"s"}`:"No empty plots to paste into."};
 $("#layoutTarget").addEventListener("input",calcLayout);$("#layoutHours").addEventListener("input",calcLayout);["layoutMole","layoutFruit"].forEach(id=>{const el=$("#"+id);el.addEventListener("input",()=>{const n=Number(el.value);if(Number.isFinite(n))el.value=Math.max(0,Math.min(100,Math.trunc(n)));renderLayout()});el.addEventListener("blur",()=>{let n=Number(el.value);if(!Number.isFinite(n))n=0;el.value=Math.max(0,Math.min(100,Math.trunc(n)));renderLayout()})});$("#layoutTargetUnits").onclick=e=>{const b=e.target.closest("[data-layouttarget]");if(!b)return;layoutTargetUnit=Number(b.dataset.layouttarget);activate($("#layoutTargetUnits"),"layouttarget",b.dataset.layouttarget);calcLayout()};$("#layoutX2").onclick=e=>{const b=e.target.closest("[data-layoutx2]");if(!b)return;layoutLobbyMult=Number(b.dataset.layoutx2)||1;activate($("#layoutX2"),"layoutx2",b.dataset.layoutx2);renderLayout()};$("#layoutModeTabs").onclick=e=>{const b=e.target.closest("[data-layoutmode]");if(!b)return;activate($("#layoutModeTabs"),"layoutmode",b.dataset.layoutmode);const time=b.dataset.layoutmode==="time";$("#layoutTimePane").classList.toggle("active",time);$("#layoutTargetPane").classList.toggle("active",!time)};
@@ -149,14 +163,16 @@ $("#layoutShare").onclick=()=>{
   const d=layoutShareData();
   const mole=$("#layoutMole").value==="0"?"None":`Lv${$("#layoutMole").value}`;
   const fruit=$("#layoutFruit").value==="0"?"None":`Lv${$("#layoutFruit").value}`;
+  const rebirth=layoutRebirthLevel(),rebirthBonus=layoutRebirthBonus();
   const heartLikes=Math.max(0,Number($("#layoutLikes").value)||0);
-  const setup=`<div class="share-section"><div class="share-section-title">Layout Setup</div><div class="share-setup-grid"><div class="share-setup-item"><span>Mole</span><strong>${mole}</strong></div><div class="share-setup-item"><span>Fruit</span><strong>${fruit}</strong></div><div class="share-setup-item"><span>Heart Likes</span><strong>${fmt(heartLikes)}</strong></div><div class="share-setup-item"><span>Weekend Lobby</span><strong>×${layoutLobbyMult}</strong></div><div class="share-setup-item"><span>Plots Used</span><strong>${d.usedPlots} / 15</strong></div><div class="share-setup-item"><span>Cells Used</span><strong>${d.cells} / 375</strong></div></div></div>`;
+  const setup=`<div class="share-section"><div class="share-section-title">Layout Setup</div><div class="share-setup-grid"><div class="share-setup-item"><span>Mole</span><strong>${mole}</strong></div><div class="share-setup-item"><span>Fruit</span><strong>${fruit}</strong></div><div class="share-setup-item"><span>Rebirth</span><strong>${rebirth} • +${rebirthBonus}%</strong></div><div class="share-setup-item"><span>Heart Likes</span><strong>${fmt(heartLikes)}</strong></div><div class="share-setup-item"><span>Weekend Lobby</span><strong>×${layoutLobbyMult}</strong></div><div class="share-setup-item"><span>Plots Used</span><strong>${d.usedPlots} / 15</strong></div><div class="share-setup-item"><span>Cells Used</span><strong>${d.cells} / 375</strong></div></div></div>`;
   const results=d.valid?`<div class="share-section"><div class="share-section-title">Production</div><div class="share-line"><span>Current Oil/s</span><strong>${rateFmt(d.now)}/s</strong></div><div class="share-line"><span>After 1 Hour</span><strong>${rateFmt(d.hourRate)}/s</strong></div><div class="share-line"><span>Oil in 1 Hour</span><strong>${fmt(d.hourOil)}</strong></div>${d.mode==="time"?`<div class="share-line"><span>Run Time</span><strong>${fmt(d.hours)}h</strong></div><div class="share-line"><span>Oil/s at End</span><strong>${rateFmt(d.end)}/s</strong></div><div class="share-line"><span>Oil Gained</span><strong>${fmt(d.timedOil)}</strong></div>`:`<div class="share-line"><span>Target Oil</span><strong>${fmt(d.target)}</strong></div><div class="share-line"><span>Time Needed</span><strong>${d.targetTime}</strong></div>`}</div>`:`<div class="share-section"><div class="share-section-title">Production</div><div class="share-line"><span>Status</span><strong>Fix plots that do not fit</strong></div></div>`;
   const plots=d.used.length?`<div class="share-section"><div class="share-section-title">Used Plots</div><div class="share-layout-plots">${d.used.map(p=>`<div class="share-layout-plot"><div class="share-layout-plot-head"><span>${p.name}</span><strong>×${p.mult} • ${p.cells}/25</strong></div><div class="share-layout-plot-meta">${p.rows.join("<br>")}${p.ok?"":"<br>Doesn't fit"}</div></div>`).join("")}</div></div>`:"";
   const lines=[
     "Oil Layout",
     `Mole: ${mole}`,
     `Fruit: ${fruit}`,
+    `Rebirth: ${rebirth} (+${rebirthBonus}% Production)`,
     `Heart Likes: ${fmt(heartLikes)}`,
     `Weekend Lobby: ×${layoutLobbyMult}`,
     `Plots Used: ${d.usedPlots}/15`,
@@ -172,6 +188,10 @@ $("#layoutShare").onclick=()=>{
   ].filter(Boolean);
   openSharePreview("Oil Layout",setup+results+plots,lines.join("\n"));
 };
+ensureLayoutRebirthControl();
+$("#layoutRebirth")?.addEventListener("input",()=>{syncLayoutRebirthUI();renderLayout()});
+$("#layoutRebirth")?.addEventListener("blur",()=>{syncLayoutRebirthUI();renderLayout()});
+syncLayoutRebirthUI();
 renderLayout();
 
 document.documentElement.dataset.stotOilPage=STOT_CONFIG.version;
