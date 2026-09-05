@@ -1,6 +1,6 @@
 # Stage 5 — Core & Components Consolidation
 
-Status: **in progress**
+Status: **implementation complete — final regression pending**
 
 ## Goal
 Reduce duplicated calculation/helper logic under Oil / Hour and Compare Presets while keeping each page's mutable DOM and state completely isolated.
@@ -40,6 +40,17 @@ The production core receives already-sanitized values as plain data. Oil still r
 - View-only HTML escaping/rendering stays page-local; sharing it would not materially simplify ownership.
 - Broader calculator/state extraction is not forced where Oil and Compare obtain inputs differently. Any later extraction must remain pure and prove exact parity first.
 
+## Component-factory audit result
+No shared mutable UI component factory is introduced in Stage 5.
+
+The Quick Fill, Visual Builder, Sticky result and Advanced Tools surfaces look similar, but their lifecycle and ownership contracts are intentionally different:
+- Oil binds directly to Oil-only controls, `layoutPlots`, Oil reserve metadata and Oil render hooks.
+- Compare binds to active Preset A/B, `compareStates.A/B`, Compare reserve metadata and Compare-only editor events.
+- A parameterized shared DOM factory would move a small amount of markup duplication into a large callback/configuration surface and increase coupling without reducing the underlying state-specific logic.
+- Keeping separate DOM instances and page-local event adapters is therefore the lower-risk architecture and directly preserves the project's isolation requirement.
+
+The audit did not find another behavior-identical page-local helper in the targeted Quick Fill path that should be retired after the geometry, row/reserve and production-loss cutovers. Remaining page-local helpers either extract page-specific state or render page-specific UI.
+
 ## Ownership after current cutover
 - Oil Quick Fill owns its own DOM, `layoutPlots` writes, reserve metadata, boost input reads and UI events.
 - Compare Quick Fill owns its own DOM, `compareStates.A/B` writes, reserve metadata, boost setup reads and UI events.
@@ -51,9 +62,9 @@ The production core receives already-sanitized values as plain data. Oil still r
 2. Lock geometry core with Stage 5 regression coverage. **Done.**
 3. Consolidate row cloning/normalization and reserve-fit search where semantics are behavior-identical. **Done.**
 4. Audit formatting/calculation helpers and extract only behavior-identical pure functions. **Done.**
-5. Introduce component factories only where each page receives an independent instance and where the factory materially reduces duplication. **Next.**
-6. Remove duplicated page-local helpers only after parity tests prove each cutover.
-7. Full Chromium + Mobile Chromium + Mobile WebKit regression before release.
+5. Introduce component factories only where each page receives an independent instance and where the factory materially reduces duplication. **Done — audit found no factory with a favorable isolation/complexity tradeoff.**
+6. Remove duplicated page-local helpers only after parity tests prove each cutover. **Done — targeted pure duplicates are retired; state/UI adapters remain page-local by design.**
+7. Full Chromium + Mobile Chromium + Mobile WebKit regression before release. **Next.**
 
 ## Slice 1 — Geometry
 Created `STOT_LAYOUT_GEOMETRY` and migrated Oil + Compare Quick Fill to it.
@@ -63,3 +74,6 @@ Created `STOT_LAYOUT_ROWS` and migrated both Quick Fill implementations to share
 
 ## Slice 3 — Production-loss calculation
 Created `STOT_LAYOUT_PRODUCTION` and migrated Oil + Compare Quick Fill reserve-loss calculation to it. State extraction remains page-local, while regression verifies regular/Heart/Hacker/Clock arithmetic, tier/pet multiplication, immutability and Oil/Compare ownership markers.
+
+## Release gate
+Stage 5 is not releasable until the final PR-head regression workflow completes successfully. After that, the PR can move out of Draft, merge to `main`, and must pass main-branch CI plus GitHub Pages deployment before Stage 5 is called complete.
