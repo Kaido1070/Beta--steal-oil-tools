@@ -95,7 +95,14 @@
     const title=boosts.querySelector('.v520-boosts-title');if(!title)return true;
     const strong=title.querySelector('strong');if(strong)strong.textContent='Preset Boosts';
     let hint=title.querySelector('.v543-optional-hint');if(!hint){hint=document.createElement('span');hint.className='v543-optional-hint';title.appendChild(hint)}
-    hint.textContent='Optional — leave these as they are if you do not use boosts';return true;
+    hint.textContent='Optional — leave these as they are if you do not use boosts';
+    const rebirth=byId('layoutRebirthField');
+    if(rebirth){
+      rebirth.classList.add('compare-boost-card','v604-oil-rebirth');
+      rebirth.style.marginTop='9px';
+      if(rebirth.parentElement!==boosts)boosts.appendChild(rebirth);
+    }
+    return true;
   }
 
   function syncQuickPresentation(parts=nodes()){
