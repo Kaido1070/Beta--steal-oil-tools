@@ -1,0 +1,36 @@
+name: Temporary Celestial cache bust
+on:
+  push:
+    branches:
+      - hotfix/celestial-cache-bust
+    paths:
+      - '.github/workflows/tmp-celestial-cache-bust.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hotfix/celestial-cache-bust
+      - name: Bump Celestial loader cache keys
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('js/site-config.js?v=5.80','js/site-config.js?v=6.05')
+          s=s.replace('js/pages/compare-preset-sticky.js?v=6.04','js/pages/compare-preset-sticky.js?v=6.05')
+          p.write_text(s,encoding='utf-8')
+          PY
+          grep -q 'js/site-config.js?v=6.05' index.html
+          grep -q 'js/pages/compare-preset-sticky.js?v=6.05' index.html
+      - name: Commit cache bust
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Force load Celestial Compare data'
+          git push origin HEAD:hotfix/celestial-cache-bust
