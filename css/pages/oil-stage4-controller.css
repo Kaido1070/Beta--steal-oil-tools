@@ -25,6 +25,49 @@
 #oilView #v536QuickFill.v593-quick-flow #v537AddTemplateRow{min-height:39px!important;margin-top:6px!important;border-radius:10px!important}
 #oilView #v536QuickFill.v593-quick-flow .v537-template-fit{margin:6px 0!important;padding:6px 0!important}
 
+/* Rebirth stays calculation-owned by Oil/Core; Stage 4 only presents the existing control. */
+#oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth{
+  grid-column:1/-1!important;
+  display:grid!important;
+  grid-template-columns:54px minmax(0,1fr) 150px!important;
+  align-items:center!important;
+  gap:12px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:82px!important;
+  margin:10px 0 0!important;
+  padding:12px 14px!important;
+  border:1px solid #38445d!important;
+  border-radius:16px!important;
+  background:#111622!important;
+  box-sizing:border-box!important;
+}
+#oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth::before{
+  content:"";
+  display:block;
+  width:50px;
+  height:50px;
+  border-radius:13px;
+  background:#0e1420 url("../../assets/images/ui/rebirth.webp") center/42px 42px no-repeat;
+  border:1px solid #3d4964;
+  box-sizing:border-box;
+}
+#oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth .field-head{margin:0!important;min-width:0!important}
+#oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth .labels{min-width:0!important}
+#oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth .labels strong{display:block!important;font-size:14px!important;line-height:1.15!important;white-space:nowrap!important}
+#oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth .labels small{display:block!important;margin-top:4px!important;font-size:10px!important;line-height:1.2!important;color:#a3adbf!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important}
+#oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth #layoutRebirth{
+  width:100%!important;
+  min-width:0!important;
+  height:50px!important;
+  min-height:50px!important;
+  margin:0!important;
+  font-size:20px!important;
+  font-weight:900!important;
+  text-align:center!important;
+  border-radius:13px!important;
+}
+
 @media(max-width:620px){
   #oilView .v593-question-title{font-size:15px!important}
   #oilView .v593-question-copy{font-size:9px!important;margin-bottom:6px!important}
@@ -36,4 +79,20 @@
   #oilView .v593-runtime-field{grid-template-columns:minmax(0,1fr) 102px!important;min-height:58px!important;padding:7px 9px!important}
   #oilView .v593-runtime-field input{height:42px!important;min-height:42px!important;font-size:17px!important}
   #oilView #v536QuickFill.v593-quick-flow{padding:10px!important}
+  #oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth{
+    grid-template-columns:46px minmax(0,1fr) 108px!important;
+    gap:9px!important;
+    min-height:72px!important;
+    padding:10px!important;
+    border-radius:14px!important;
+  }
+  #oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth::before{
+    width:44px;
+    height:44px;
+    border-radius:11px;
+    background-size:38px 38px;
+  }
+  #oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth .labels strong{font-size:13px!important}
+  #oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth .labels small{font-size:9px!important;white-space:normal!important}
+  #oilView .v520-boosts #layoutRebirthField.v604-oil-rebirth #layoutRebirth{height:46px!important;min-height:46px!important;font-size:18px!important;border-radius:11px!important}
 }
