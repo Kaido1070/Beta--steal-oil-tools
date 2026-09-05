@@ -55,4 +55,7 @@
 #layoutcompareView #layoutVisualBuilder{display:block!important;margin:0 0 8px!important}
 #layoutcompareView .ab-compare{margin:0 0 8px!important}
 #layoutcompareView .v56-compare-actions{margin:0 0 8px!important}
-@media(max-width:430px){#layoutcompareView #layoutModeTabs button{padding:6px 7px!important}#layoutcompareView #layoutModeTabs button::before{font-size:10.5px}#layoutcompareView #layoutModeTabs button::after{font-size:6.7px}}
+#layoutcompareView label:has(#compareLayoutRebirth){position:relative!important;padding-left:56px!important;min-height:70px!important;justify-content:center!important}
+#layoutcompareView label:has(#compareLayoutRebirth)::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:46px;height:46px;border:1px solid #3d4964;border-radius:12px;background:#0e1420 url("../../assets/images/ui/rebirth.webp") center/40px 40px no-repeat;box-sizing:border-box}
+#layoutcompareView label:has(#compareLayoutRebirth) small{display:block!important;margin-top:2px!important;font-size:9px!important;color:#a3adbf!important}
+@media(max-width:430px){#layoutcompareView #layoutModeTabs button{padding:6px 7px!important}#layoutcompareView #layoutModeTabs button::before{font-size:10.5px}#layoutcompareView #layoutModeTabs button::after{font-size:6.7px}#layoutcompareView label:has(#compareLayoutRebirth){padding-left:52px!important}#layoutcompareView label:has(#compareLayoutRebirth)::before{width:42px;height:42px;background-size:36px 36px}}
