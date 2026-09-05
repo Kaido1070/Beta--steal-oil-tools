@@ -3,7 +3,6 @@
 /* ===== css/beta-database-images.css ===== */
 .v556-db-logo{width:56px!important;height:56px!important;display:grid!important;place-items:center!important;overflow:hidden!important;border-radius:12px!important;background:#101621!important;border:1px solid #364158!important;padding:3px!important;box-sizing:border-box!important}.v556-db-image{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important}.drill-head:has(.v556-db-logo){grid-template-columns:56px minmax(0,1fr) auto!important;align-items:center!important}.v556-lootbox-logo{padding:1px!important}.v556-decoration-logo,.v556-refinery-logo,.v556-solar-logo{padding:2px!important}@media(max-width:620px){.v556-db-logo{width:50px!important;height:50px!important;border-radius:11px!important}.drill-head:has(.v556-db-logo){grid-template-columns:50px minmax(0,1fr) auto!important;gap:8px!important}}
 
-
 /* ===== css/beta-database-redesign.css ===== */
 #databaseView.v557-db{--db-visual:78px}
 #databaseView.v557-db #databaseTabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;padding:8px;position:sticky;top:0;z-index:8;background:rgba(11,13,20,.94);backdrop-filter:blur(10px);border:1px solid #273044;border-radius:14px;margin-bottom:12px}
@@ -37,20 +36,22 @@
 @media(max-width:900px){#databaseView.v557-db #databaseTabs{grid-template-columns:repeat(4,minmax(0,1fr))}#databaseView.v557-db .v557-db-list{grid-template-columns:1fr}}
 @media(max-width:620px){#databaseView.v557-db{--db-visual:68px}#databaseView.v557-db #databaseTabs{display:flex;overflow-x:auto;scroll-snap-type:x proximity;gap:7px;padding:7px;position:relative}#databaseView.v557-db #databaseTabs button{flex:0 0 92px;min-height:48px;scroll-snap-align:start;font-size:10px}#databaseView.v557-db .v557-db-card .drill-head{grid-template-columns:var(--db-visual) minmax(0,1fr)!important;gap:10px!important;padding:10px!important;min-height:90px}#databaseView.v557-db .v557-db-card .oil-rate{grid-column:2;grid-row:2;text-align:left;min-width:0;margin-top:-2px}#databaseView.v557-db .v557-db-card .oil-rate strong{font-size:13px}#databaseView.v557-db .v557-db-card .drill-logo{grid-row:1/3}#databaseView.v557-db .v557-db-card .drill-info strong{font-size:12px;margin-bottom:5px}#databaseView.v557-db .v557-db-card .pill{font-size:8px;padding:4px 6px}#databaseView.v557-db .v557-db-toolbar{padding:9px 10px}}
 
-
-/* Celestial Forged Drill — per-level cards */
-#databaseView .forged-level-list{display:grid;gap:10px}
-#databaseView .forged-level-card{border:1px solid #303b52;border-radius:13px;overflow:hidden;background:linear-gradient(180deg,rgba(21,27,39,.98),rgba(12,17,26,.98))}
-#databaseView .forged-level-head{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:11px;align-items:center;padding:10px}
-#databaseView .forged-level-logo{width:72px;height:72px;border:1px solid #354159;border-radius:13px;background:#101722;display:grid;place-items:center;overflow:hidden;padding:4px;box-sizing:border-box}
-#databaseView .forged-level-logo img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 5px 8px rgba(0,0,0,.28))}
-#databaseView .forged-level-placeholder{font-weight:900;font-size:18px;color:#7f8da4}
-#databaseView .forged-level-info strong{display:block;font-size:13px;margin-bottom:6px}
-#databaseView .forged-level-props{border-top:1px solid #283247;padding:9px 10px 10px;background:rgba(7,10,16,.34);display:grid;gap:8px}
-#databaseView .forged-level-cost{display:flex;justify-content:space-between;gap:10px;align-items:center}
-#databaseView .forged-level-cost span{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#8f9bb0;font-weight:800}
-#databaseView .forged-level-cost strong{font-size:11px}
-#databaseView .forged-level-production{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
-#databaseView .forged-level-production span{display:grid;gap:3px;padding:7px 6px;border:1px solid #2d374b;border-radius:9px;background:#0f1520;font-size:10px;font-weight:800;text-align:center}
-#databaseView .forged-level-production b{font-size:8px;color:#8f9bb0;text-transform:uppercase;letter-spacing:.04em}
-@media(max-width:620px){#databaseView .forged-level-head{grid-template-columns:64px minmax(0,1fr);gap:9px}#databaseView .forged-level-logo{width:64px;height:64px;grid-row:1/3}#databaseView .forged-level-head .oil-rate{grid-column:2;grid-row:2;text-align:left;margin-top:-2px}#databaseView .forged-level-production{grid-template-columns:repeat(2,minmax(0,1fr))}#databaseView .forged-level-production span:last-child{grid-column:1/-1}#databaseView .forged-level-cost{align-items:flex-start;flex-direction:column;gap:3px}}
+/* Celestial Forged Drill — compact rows matching Database cards */
+#databaseView .forged-level-list{display:grid;gap:7px}
+#databaseView .forged-level-card{border:1px solid #303b52;border-radius:11px;background:rgba(15,20,30,.72);display:grid;grid-template-columns:56px minmax(100px,.7fr) minmax(0,1.8fr);gap:9px;align-items:center;padding:8px;min-width:0}
+#databaseView .forged-level-head{display:contents}
+#databaseView .forged-level-logo{width:56px;height:56px;border:1px solid #354159;border-radius:11px;background:#101722;display:grid;place-items:center;overflow:hidden;padding:3px;box-sizing:border-box}
+#databaseView .forged-level-logo img{width:100%;height:100%;object-fit:contain;display:block}
+#databaseView .forged-level-placeholder{font-weight:900;font-size:15px;color:#7f8da4}
+#databaseView .forged-level-info{min-width:0}
+#databaseView .forged-level-info strong{display:block;font-size:12px;margin:0 0 3px}
+#databaseView .forged-level-info .meta{display:none!important}
+#databaseView .forged-level-head .oil-rate{display:none!important}
+#databaseView .forged-level-props{display:grid;grid-template-columns:minmax(90px,.7fr) minmax(0,2fr);gap:8px;align-items:center;min-width:0;border:0;padding:0;background:none}
+#databaseView .forged-level-cost{display:grid;gap:2px;min-width:0}
+#databaseView .forged-level-cost span{font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:#8f9bb0;font-weight:800}
+#databaseView .forged-level-cost strong{font-size:10px;line-height:1.2}
+#databaseView .forged-level-production{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;min-width:0}
+#databaseView .forged-level-production span{display:grid;gap:2px;padding:5px 3px;border:0;border-left:1px solid #2d374b;border-radius:0;background:none;font-size:9px;font-weight:800;text-align:center;min-width:0}
+#databaseView .forged-level-production b{font-size:7px;color:#8f9bb0;text-transform:uppercase;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:620px){#databaseView .forged-level-list{gap:6px}#databaseView .forged-level-card{grid-template-columns:48px minmax(0,1fr);gap:8px;padding:7px}#databaseView .forged-level-logo{width:48px;height:48px;grid-column:1;grid-row:1}#databaseView .forged-level-info{grid-column:2;grid-row:1}#databaseView .forged-level-props{grid-column:1/-1;grid-template-columns:88px minmax(0,1fr);gap:5px;padding-top:5px;border-top:1px solid #283247}#databaseView .forged-level-production{gap:1px}#databaseView .forged-level-production span{padding:4px 1px;font-size:8px}#databaseView .forged-level-production b{font-size:6px}#databaseView .forged-level-cost strong{font-size:9px}}
