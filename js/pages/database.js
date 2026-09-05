@@ -7,6 +7,27 @@ function itemVisual(item,type="item"){
   if(item.image)return `<img src="${item.image}" alt="${name}" loading="lazy">`;
   return initials(name);
 }
+const SCRAP_TIERS=[["Basic","basic"],["Gold","gold"],["Diamond","diamond"],["Rainbow","rainbow"],["Galaxy","galaxy"]];
+function formatScrapValue(value){
+  if(value===null)return "N/A";
+  return typeof value==="number"&&Number.isFinite(value)?value.toLocaleString("en-US"):"—";
+}
+function hasScrapValue(item){return Object.prototype.hasOwnProperty.call(item,"scrapValue")}
+function staticScrapBadge(item){return hasScrapValue(item)?`Scrap ${formatScrapValue(item.scrapValue)}`:null}
+function staticScrapDetails(item){return hasScrapValue(item)?[["Scrap Value",formatScrapValue(item.scrapValue)]]:[]}
+function drillScrapBadge(drill){
+  if(!Object.prototype.hasOwnProperty.call(drill,"scrap"))return null;
+  if(drill.scrap===null)return "Scrap N/A";
+  const values=SCRAP_TIERS.map(([,key])=>drill.scrap?.[key]).filter(value=>typeof value==="number"&&Number.isFinite(value));
+  if(!values.length)return null;
+  const min=Math.min(...values),max=Math.max(...values);
+  return min===max?`Scrap ${formatScrapValue(min)}`:`Scrap ${formatScrapValue(min)}–${formatScrapValue(max)}`;
+}
+function drillScrapDetails(drill){
+  if(!Object.prototype.hasOwnProperty.call(drill,"scrap"))return "";
+  if(drill.scrap===null)return '<div class="detail"><span>Scrap Value</span><strong>N/A</strong></div>';
+  return SCRAP_TIERS.map(([label,key])=>`<div class="detail"><span>Scrap · ${label}</span><strong>${formatScrapValue(drill.scrap?.[key])}</strong></div>`).join("");
+}
 function renderActiveDatabasePane(){
   const active=$("#databaseTabs [data-dbview].active")?.dataset.dbview||"pets";
   ({drills:renderDb,refineries:renderRefineries,solar:renderSolar,totems:renderTotems,decorations:renderDecorations,lootboxes:renderLootboxes,pets:()=>{renderPets();calcPet()}})[active]?.();
@@ -17,11 +38,13 @@ function renderDb(){
   let list=drills.filter(d=>(!q||d.name.toLowerCase().includes(q)||d.rarity.toLowerCase().includes(q))&&(cat==="all"||d.category===cat)&&(rar==="all"||d.rarity===rar));
   if(sort==="oil-desc")list.sort((a,b)=>(b.oil??-1)-(a.oil??-1));if(sort==="oil-asc")list.sort((a,b)=>(a.oil??Infinity)-(b.oil??Infinity));if(sort==="name")list.sort((a,b)=>a.name.localeCompare(b.name));
   $("#dbCount").textContent=`${list.length} drill${list.length===1?"":"s"}`;
-  $("#drillList").innerHTML=list.map(d=>`
+  $("#drillList").innerHTML=list.map(d=>{
+    const scrapBadge=drillScrapBadge(d);
+    return `
   <article class="drill-card">
     <div class="drill-head">
       <div class="drill-logo">${itemVisual(d,"drill")}</div>
-      <div class="drill-info"><strong>${I18N.itemName(d)}</strong><div class="meta"><span class="pill">${d.rarity}</span><span class="pill">${catLabel(d.category)}</span><span class="pill">${d.footprint}</span></div></div>
+      <div class="drill-info"><strong>${I18N.itemName(d)}</strong><div class="meta"><span class="pill">${d.rarity}</span><span class="pill">${catLabel(d.category)}</span><span class="pill">${d.footprint}</span>${scrapBadge?`<span class="pill">${scrapBadge}</span>`:""}</div></div>
       <div class="oil-rate"><strong>${d.oil==null?"Dynamic":fmt(d.oil)}</strong><small>OIL / SEC</small></div>
     </div>
     <div class="details">
@@ -29,9 +52,10 @@ function renderDb(){
       <div class="detail"><span>V-Bucks</span><strong>${d.vbucks||"—"}</strong></div>
       <div class="detail"><span>Footprint</span><strong>${d.footprint}</strong></div>
       <div class="detail"><span>Base Oil/s</span><strong>${d.oil==null?"Dynamic":fmt(d.oil)}</strong></div>
+      ${drillScrapDetails(d)}
       ${d.notes?`<div class="details-note">${d.notes}</div>`:""}
     </div>
-  </article>`).join("")||'<div class="panel" style="padding:25px;text-align:center;color:#7f899c;font-size:11px">No drills found.</div>';
+  </article>`}).join("")||'<div class="panel" style="padding:25px;text-align:center;color:#7f899c;font-size:11px">No drills found.</div>';
 }
 ["#dbSearch","#categoryFilter","#rarityFilter","#sortFilter"].forEach(s=>$(s).addEventListener("input",renderDb));
 $("#drillList").onclick=e=>{const c=e.target.closest(".drill-card");if(c)c.classList.toggle("open")};
@@ -41,7 +65,7 @@ function genericCard(name,rarity,badges,headline,headlineLabel,details,notes="")
   return `<article class="drill-card">
     <div class="drill-head">
       <div class="drill-logo">${initials(name)}</div>
-      <div class="drill-info"><strong>${name}</strong><div class="meta">${badges.map(x=>`<span class="pill">${x}</span>`).join("")}</div></div>
+      <div class="drill-info"><strong>${name}</strong><div class="meta">${badges.filter(Boolean).map(x=>`<span class="pill">${x}</span>`).join("")}</div></div>
       <div class="oil-rate"><strong>${headline}</strong><small>${headlineLabel}</small></div>
     </div>
     <div class="details">
@@ -56,13 +80,13 @@ function renderRefineries(){
   const q=$("#refinerySearch").value.trim().toLowerCase(),type=$("#refineryTypeFilter").value,rar=$("#refineryRarityFilter").value;
   const list=refineries.filter(x=>(!q||x.name.toLowerCase().includes(q)||x.rarity.toLowerCase().includes(q))&&(type==="all"||x.type===type)&&(rar==="all"||x.rarity===rar));
   $("#refineryCount").textContent=`${list.length} refiner${list.length===1?"y":"ies"}`;
-  $("#refineryList").innerHTML=list.map(x=>genericCard(x.name,x.rarity,[x.rarity,x.type==="regular"?"Regular Shop":"Special",x.footprint],x.capacity,"CAPACITY",[["Cash Price",x.cash||"—"],["V-Bucks",x.vbucks||"—"],["Footprint",x.footprint],["Storage",x.capacity]],x.notes||"")).join("")||'<div class="panel empty">No refineries found.</div>';
+  $("#refineryList").innerHTML=list.map(x=>genericCard(x.name,x.rarity,[x.rarity,x.type==="regular"?"Regular Shop":"Special",x.footprint,staticScrapBadge(x)],x.capacity,"CAPACITY",[["Cash Price",x.cash||"—"],["V-Bucks",x.vbucks||"—"],["Footprint",x.footprint],["Storage",x.capacity],...staticScrapDetails(x)],x.notes||"")).join("")||'<div class="panel empty">No refineries found.</div>';
 }
 function renderSolar(){
   const q=$("#solarSearch").value.trim().toLowerCase();
   const list=solarPanels.filter(x=>!q||x.name.toLowerCase().includes(q)||x.rarity.toLowerCase().includes(q));
   $("#solarCount").textContent=`${list.length} solar panel${list.length===1?"":"s"}`;
-  $("#solarList").innerHTML=list.map(x=>genericCard(x.name,x.rarity,[x.rarity],x.generation,"GENERATION",[["Max Storage",x.storage],["Gasoline Price",x.gasoline],["V-Bucks",x.vbucks],["Generation",x.generation]])).join("")||'<div class="panel empty">No solar panels found.</div>';
+  $("#solarList").innerHTML=list.map(x=>genericCard(x.name,x.rarity,[x.rarity,staticScrapBadge(x)],x.generation,"GENERATION",[["Max Storage",x.storage],["Gasoline Price",x.gasoline],["V-Bucks",x.vbucks],["Generation",x.generation],...staticScrapDetails(x)])).join("")||'<div class="panel empty">No solar panels found.</div>';
 }
 function renderTotems(){
   const q=$("#totemSearch").value.trim().toLowerCase(),type=$("#totemTypeFilter").value;
@@ -76,10 +100,10 @@ function renderDecorations(){
   $("#decorationCount").textContent=`${list.length} structure${list.length===1?"":"s"}`;
   $("#decorationList").innerHTML=list.map(x=>{
     const typeLabel=x.type==="utility"?"Utility & Info":x.type==="turbine"?"Wind Turbine":"Pet Structure";
-    const badges=[x.rarity,typeLabel,x.footprint].filter(v=>v&&v!=="—");
+    const badges=[x.rarity,typeLabel,x.footprint,staticScrapBadge(x)].filter(v=>v&&v!=="—");
     const headline=x.type==="turbine"?x.effect:x.cash;
     const headlineLabel=x.type==="turbine"?"CASH / SEC":x.type==="pet"?"COST":"CASH PRICE";
-    return genericCard(x.name,x.rarity,badges,headline,headlineLabel,[["Cost",x.cash],["Footprint",x.footprint],["Rarity",x.rarity],["Type",typeLabel]],x.effect);
+    return genericCard(x.name,x.rarity,badges,headline,headlineLabel,[["Cost",x.cash],["Footprint",x.footprint],["Rarity",x.rarity],["Type",typeLabel],...staticScrapDetails(x)],x.effect);
   }).join("")||'<div class="panel empty">No structures found.</div>';
 }
 function renderLootboxes(){
@@ -88,15 +112,17 @@ function renderLootboxes(){
   $("#lootboxCount").textContent=`${list.length} lootbox${list.length===1?"":"es"}`;
   $("#lootboxList").innerHTML=list.map(x=>{
     const drops=`<div class="drop-list">${x.drops.map(d=>`<div><span>${d[0]}</span><b>${d[1]}</b></div>`).join("")}</div>`;
+    const scrapBadge=staticScrapBadge(x);
     return `<article class="drill-card">
       <div class="drill-head">
         <div class="drill-logo">${initials(x.name)}</div>
-        <div class="drill-info"><strong>${x.name}</strong><div class="meta"><span class="pill">${x.rarity}</span><span class="pill">${x.type==="drill"?"Drill":"Refinery"}</span></div></div>
+        <div class="drill-info"><strong>${x.name}</strong><div class="meta"><span class="pill">${x.rarity}</span><span class="pill">${x.type==="drill"?"Drill":"Refinery"}</span>${scrapBadge?`<span class="pill">${scrapBadge}</span>`:""}</div></div>
         <div class="oil-rate"><strong>${x.cash}</strong><small>CASH PRICE</small></div>
       </div>
       <div class="details">
         <div class="detail"><span>Rarity</span><strong>${x.rarity}</strong></div>
         <div class="detail"><span>Type</span><strong>${x.type==="drill"?"Drill Lootbox":"Refinery Lootbox"}</strong></div>
+        ${hasScrapValue(x)?`<div class="detail"><span>Scrap Value</span><strong>${formatScrapValue(x.scrapValue)}</strong></div>`:""}
         ${drops}
       </div>
     </article>`;
