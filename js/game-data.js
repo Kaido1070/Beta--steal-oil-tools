@@ -122,7 +122,14 @@ const decorations=[
 {name:"Basic Incubator",type:"pet",rarity:"—",effect:"Hatches eggs at standard timers.",cash:"5M Cash",footprint:"—"},
 {name:"Heated Incubator",type:"pet",rarity:"—",effect:"Halves the total incubation time.",cash:"200K Energy",footprint:"—"},
 {name:"Genetic Incubator",type:"pet",rarity:"—",effect:"Increases the odds of hatching a higher Tier pet. Incubation timer is unchanged.",cash:"500 Pearls",footprint:"—"},
-{name:"Work Station",type:"pet",rarity:"—",effect:"Permanent structure. Assign pets here to passively bake Biscuits.",cash:"10B Gasoline",footprint:"—"}
+{name:"Work Station",type:"pet",rarity:"—",effect:"Permanent structure. Assign pets here to passively bake Biscuits.",cash:"10B Gasoline",footprint:"—"},
+{name:"Booster",type:"utility",rarity:"—",effect:"Boosts nearby drills when loaded with Booster Chips.",cash:"—",footprint:"1x1"},
+{name:"Common Egg",type:"egg",rarity:"Common",effect:"Pet egg.",cash:"—",footprint:"—"},
+{name:"Rare Egg",type:"egg",rarity:"Rare",effect:"Pet egg.",cash:"—",footprint:"—"},
+{name:"Legendary Egg",type:"egg",rarity:"Legendary",effect:"Pet egg.",cash:"—",footprint:"—"},
+{name:"Mythic Egg",type:"egg",rarity:"Mythical",effect:"Pet egg.",cash:"—",footprint:"—"},
+{name:"Divine Egg",type:"egg",rarity:"Divine",effect:"Pet egg.",cash:"—",footprint:"—"},
+{name:"Fruit Egg",type:"egg",rarity:"Special",effect:"Pet egg.",cash:"—",footprint:"—"}
 ];
 
 const lootboxes=[
@@ -171,7 +178,8 @@ const solarScrap={"Copper Solar Panel":28,"Iron Solar Panel":80,"Golden Solar Pa
 const decorationScrap={
   "Radio Station":13,"Lootbox Radio":145,"Shuttle Station":126,"Fusion Radio":145,
   "Wood Wind Turbine":13,"Iron Wind Turbine":23,"Gold Wind Turbine":50,"Emerald Wind Turbine":107,
-  "Basic Incubator":6,"Heated Incubator":10,"Genetic Incubator":16,"Work Station":272
+  "Basic Incubator":6,"Heated Incubator":10,"Genetic Incubator":16,"Work Station":272,
+  "Booster":13,"Common Egg":2,"Rare Egg":3,"Legendary Egg":4,"Mythic Egg":6,"Divine Egg":10,"Fruit Egg":10
 };
 const lootboxScrap={
   "Basic Drill Lootbox":3,"Basic Refinery Lootbox":4,"Gold Drill Lootbox":4,"Gold Refinery Lootbox":8,
