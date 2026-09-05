@@ -43,7 +43,7 @@ const contract=await page.evaluate(()=>({
 assert.deepEqual(contract,{
   geometryFrozen:true,geometryPure:true,geometryVersion:1,
   rowsFrozen:true,rowsPure:true,rowsVersion:1,
-  productionFrozen:true,productionPure:true,productionVersion:1,
+  productionFrozen:true,productionPure:true,productionVersion:2,
   oilGeometry:true,compareGeometry:true,oilRows:true,compareRows:true,compareReserve:true,
   oilProduction:true,compareProduction:true,
   oilGeometryOwner:'core',oilRowsOwner:'core',oilReserveOwner:'core',oilProductionOwner:'core'
