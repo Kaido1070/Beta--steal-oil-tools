@@ -35,12 +35,23 @@ function drillScrapDetails(drill){
   if(drill.scrap===null)return '<div class="detail"><span>Scrap Value</span><strong>N/A</strong></div>';
   return SCRAP_TIERS.map(([label,key])=>`<div class="detail"><span>Scrap · ${label}</span><strong>${formatScrapValue(drill.scrap?.[key])}</strong></div>`).join("");
 }
-function forgedDetails(drill){
+function forgedLevelCards(drill){
   if(!isDbForged(drill))return "";
-  return (drill.levels||[]).map(level=>{
-    const production=dbForgedTiers.map((tier,i)=>`${tier} ${fmt(level.production?.[i]||0)}/s`).join(" · ");
-    return `<div class="detail"><span>Level ${level.level} Cost</span><strong>${level.cost}${level.costLabel?` · ${level.costLabel}`:""}</strong></div><div class="detail"><span>Level ${level.level} Production</span><strong>${production}</strong></div>`;
-  }).join("");
+  return `<div class="forged-level-list">${(drill.levels||[]).map(level=>{
+    const values=(level.production||[]).map((value,i)=>`<span><b>${dbForgedTiers[i]}</b>${fmt(value||0)}/s</span>`).join("");
+    const visual=level.image?`<img src="${level.image}" alt="${I18N.itemName(drill)} Level ${level.level}" loading="lazy">`:`<span class="forged-level-placeholder">L${level.level}</span>`;
+    return `<section class="forged-level-card">
+      <div class="forged-level-head">
+        <div class="forged-level-logo">${visual}</div>
+        <div class="forged-level-info"><strong>Level ${level.level}</strong><div class="meta"><span class="pill">Forged</span><span class="pill">${drill.footprint}</span><span class="pill">Scrap N/A</span></div></div>
+        <div class="oil-rate"><strong>${fmt(Math.min(...(level.production||[0])))}–${fmt(Math.max(...(level.production||[0])))}</strong><small>OIL / SEC</small></div>
+      </div>
+      <div class="forged-level-props">
+        <div class="forged-level-cost"><span>Cost</span><strong>${level.cost}${level.costLabel?` · ${level.costLabel}`:""}</strong></div>
+        <div class="forged-level-production">${values}</div>
+      </div>
+    </section>`;
+  }).join("")}</div>`;
 }
 function renderActiveDatabasePane(){
   const active=$("#databaseTabs [data-dbview].active")?.dataset.dbview||"pets";
@@ -62,10 +73,7 @@ function renderDb(){
       <div class="oil-rate"><strong>${headline}</strong><small>${forged?"OIL / SEC · LV1–5":"OIL / SEC"}</small></div>
     </div>
     <div class="details">
-      ${forged?`<div class="detail"><span>Type</span><strong>Forged Drill</strong></div><div class="detail"><span>Levels</span><strong>1–${d.maxLevel||5}</strong></div><div class="detail"><span>Tiers</span><strong>${dbForgedTiers.join(" · ")}</strong></div>`:`<div class="detail"><span>Cash / Event Price</span><strong>${d.cash||d.eventPrice||"—"}</strong></div><div class="detail"><span>V-Bucks</span><strong>${d.vbucks||"—"}</strong></div>`}
-      <div class="detail"><span>Footprint</span><strong>${d.footprint}</strong></div>
-      ${forged?forgedDetails(d):`<div class="detail"><span>Base Oil/s</span><strong>${d.oil==null?"Dynamic":fmt(d.oil)}</strong></div>`}
-      ${drillScrapDetails(d)}
+      ${forged?forgedLevelCards(d):`<div class="detail"><span>Cash / Event Price</span><strong>${d.cash||d.eventPrice||"—"}</strong></div><div class="detail"><span>V-Bucks</span><strong>${d.vbucks||"—"}</strong></div><div class="detail"><span>Footprint</span><strong>${d.footprint}</strong></div><div class="detail"><span>Base Oil/s</span><strong>${d.oil==null?"Dynamic":fmt(d.oil)}</strong></div>${drillScrapDetails(d)}`}
       ${d.notes?`<div class="details-note">${d.notes}</div>`:""}
     </div>
   </article>`}).join("")||'<div class="panel" style="padding:25px;text-align:center;color:#7f899c;font-size:11px">No drills found.</div>';
