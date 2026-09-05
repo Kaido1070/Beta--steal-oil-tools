@@ -2,9 +2,16 @@
 /* STOT Database page core — extracted from js/app.js */
 /* database */
 
+const dbForgedData=window.STOT_FORGED_DRILLS||null;
+const dbCelestial=dbForgedData?.celestial||null;
+const dbForgedTiers=dbForgedData?.tiers||["Default","Gold","Diamond","Rainbow","Galaxy"];
+function isDbForged(item){return Boolean(item&&item.category==="forged")}
+function dbDrillOilValues(item){return isDbForged(item)?(item.levels||[]).flatMap(level=>level.production||[]).filter(Number.isFinite):[]}
+function dbDrillSortOil(item,fallback){if(!isDbForged(item))return item.oil??fallback;const values=dbDrillOilValues(item);return values.length?Math.max(...values):fallback}
 function itemVisual(item,type="item"){
   const name=I18N.itemName(item);
-  if(item.image)return `<img src="${item.image}" alt="${name}" loading="lazy">`;
+  const image=item.image||(isDbForged(item)?item.levels?.find(level=>level.image)?.image:null);
+  if(image)return `<img src="${image}" alt="${name}" loading="lazy">`;
   return initials(name);
 }
 const SCRAP_TIERS=[["Basic","basic"],["Gold","gold"],["Diamond","diamond"],["Rainbow","rainbow"],["Galaxy","galaxy"]];
@@ -28,6 +35,13 @@ function drillScrapDetails(drill){
   if(drill.scrap===null)return '<div class="detail"><span>Scrap Value</span><strong>N/A</strong></div>';
   return SCRAP_TIERS.map(([label,key])=>`<div class="detail"><span>Scrap · ${label}</span><strong>${formatScrapValue(drill.scrap?.[key])}</strong></div>`).join("");
 }
+function forgedDetails(drill){
+  if(!isDbForged(drill))return "";
+  return (drill.levels||[]).map(level=>{
+    const production=dbForgedTiers.map((tier,i)=>`${tier} ${fmt(level.production?.[i]||0)}/s`).join(" · ");
+    return `<div class="detail"><span>Level ${level.level} Cost</span><strong>${level.cost}${level.costLabel?` · ${level.costLabel}`:""}</strong></div><div class="detail"><span>Level ${level.level} Production</span><strong>${production}</strong></div>`;
+  }).join("");
+}
 function renderActiveDatabasePane(){
   const active=$("#databaseTabs [data-dbview].active")?.dataset.dbview||"pets";
   ({drills:renderDb,refineries:renderRefineries,solar:renderSolar,totems:renderTotems,decorations:renderDecorations,lootboxes:renderLootboxes,pets:()=>{renderPets();calcPet()}})[active]?.();
@@ -35,23 +49,22 @@ function renderActiveDatabasePane(){
 
 function renderDb(){
   const q=$("#dbSearch").value.trim().toLowerCase(),cat=$("#categoryFilter").value,rar=$("#rarityFilter").value,sort=$("#sortFilter").value;
-  let list=drills.filter(d=>(!q||d.name.toLowerCase().includes(q)||d.rarity.toLowerCase().includes(q))&&(cat==="all"||d.category===cat)&&(rar==="all"||d.rarity===rar));
-  if(sort==="oil-desc")list.sort((a,b)=>(b.oil??-1)-(a.oil??-1));if(sort==="oil-asc")list.sort((a,b)=>(a.oil??Infinity)-(b.oil??Infinity));if(sort==="name")list.sort((a,b)=>a.name.localeCompare(b.name));
+  let list=[...drills,...(dbCelestial?[dbCelestial]:[])].filter(d=>(!q||d.name.toLowerCase().includes(q)||d.rarity.toLowerCase().includes(q))&&(cat==="all"||d.category===cat)&&(rar==="all"||d.rarity===rar));
+  if(sort==="oil-desc")list.sort((a,b)=>dbDrillSortOil(b,-1)-dbDrillSortOil(a,-1));if(sort==="oil-asc")list.sort((a,b)=>dbDrillSortOil(a,Infinity)-dbDrillSortOil(b,Infinity));if(sort==="name")list.sort((a,b)=>a.name.localeCompare(b.name));
   $("#dbCount").textContent=`${list.length} drill${list.length===1?"":"s"}`;
   $("#drillList").innerHTML=list.map(d=>{
-    const scrapBadge=drillScrapBadge(d);
+    const scrapBadge=drillScrapBadge(d),forged=isDbForged(d),values=dbDrillOilValues(d),headline=forged?(values.length?`${fmt(Math.min(...values))}–${fmt(Math.max(...values))}`:"Level-based"):(d.oil==null?"Dynamic":fmt(d.oil));
     return `
   <article class="drill-card">
     <div class="drill-head">
       <div class="drill-logo">${itemVisual(d,"drill")}</div>
-      <div class="drill-info"><strong>${I18N.itemName(d)}</strong><div class="meta"><span class="pill">${d.rarity}</span><span class="pill">${catLabel(d.category)}</span><span class="pill">${d.footprint}</span>${scrapBadge?`<span class="pill">${scrapBadge}</span>`:""}</div></div>
-      <div class="oil-rate"><strong>${d.oil==null?"Dynamic":fmt(d.oil)}</strong><small>OIL / SEC</small></div>
+      <div class="drill-info"><strong>${I18N.itemName(d)}</strong><div class="meta"><span class="pill">${d.rarity}</span><span class="pill">${forged?"Forged":catLabel(d.category)}</span><span class="pill">${d.footprint}</span>${scrapBadge?`<span class="pill">${scrapBadge}</span>`:""}</div></div>
+      <div class="oil-rate"><strong>${headline}</strong><small>${forged?"OIL / SEC · LV1–5":"OIL / SEC"}</small></div>
     </div>
     <div class="details">
-      <div class="detail"><span>Cash / Event Price</span><strong>${d.cash||d.eventPrice||"—"}</strong></div>
-      <div class="detail"><span>V-Bucks</span><strong>${d.vbucks||"—"}</strong></div>
+      ${forged?`<div class="detail"><span>Type</span><strong>Forged Drill</strong></div><div class="detail"><span>Levels</span><strong>1–${d.maxLevel||5}</strong></div><div class="detail"><span>Tiers</span><strong>${dbForgedTiers.join(" · ")}</strong></div>`:`<div class="detail"><span>Cash / Event Price</span><strong>${d.cash||d.eventPrice||"—"}</strong></div><div class="detail"><span>V-Bucks</span><strong>${d.vbucks||"—"}</strong></div>`}
       <div class="detail"><span>Footprint</span><strong>${d.footprint}</strong></div>
-      <div class="detail"><span>Base Oil/s</span><strong>${d.oil==null?"Dynamic":fmt(d.oil)}</strong></div>
+      ${forged?forgedDetails(d):`<div class="detail"><span>Base Oil/s</span><strong>${d.oil==null?"Dynamic":fmt(d.oil)}</strong></div>`}
       ${drillScrapDetails(d)}
       ${d.notes?`<div class="details-note">${d.notes}</div>`:""}
     </div>
