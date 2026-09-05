@@ -1,7 +1,13 @@
 /* STOT Compare Presets — Oil feature parity, isolated A/B implementation */
 (()=>{
   if(window.__STOT_COMPARE_FEATURE_PARITY__)return;
+  const geometry=window.STOT_LAYOUT_GEOMETRY,rowCore=window.STOT_LAYOUT_ROWS,production=window.STOT_LAYOUT_PRODUCTION;
+  if(!geometry||!rowCore||!production){console.error('STOT Stage 5 layout cores are missing before Compare feature parity');return;}
   window.__STOT_COMPARE_FEATURE_PARITY__=true;
+  window.__STOT_COMPARE_USES_CORE_GEOMETRY__=true;
+  window.__STOT_COMPARE_USES_CORE_ROWS__=true;
+  window.__STOT_COMPARE_USES_CORE_RESERVE__=true;
+  window.__STOT_COMPARE_USES_CORE_PRODUCTION__=true;
 
   const byId=id=>document.getElementById(id);
   const clone=value=>JSON.parse(JSON.stringify(value));
@@ -10,6 +16,7 @@
   const drillIndex=()=>typeof drills!=='undefined'&&Array.isArray(drills)?drills:[];
   const refineryIndex=()=>typeof refineries!=='undefined'&&Array.isArray(refineries)?refineries:[];
   const tiers=()=>typeof TIER_OPTIONS!=='undefined'&&Array.isArray(TIER_OPTIONS)?TIER_OPTIONS:[];
+  const canPackPieces5x5=geometry.canPackPieces5x5;
 
   let template=[{drill:'demonic',tier:0,count:1,hacker:550}];
   let plotClipboard=null;
@@ -26,50 +33,13 @@
     return true;
   }
   function activeState(saved=snapshot()){return saved?.compareStates?.[activeSide()]||null}
-  function cleanRows(rows){
-    return (Array.isArray(rows)?rows:[]).map(r=>({
-      drill:drillIndex().some(d=>d.id===r?.drill)?r.drill:'demonic',
-      tier:clamp(r?.tier,0,4,0),
-      count:clamp(r?.count,1,25,1),
-      hacker:Math.max(0,Number(r?.hacker)||550)
-    }));
-  }
-  function fp(value){const m=String(value||'1x1').match(/^(\d+)x(\d+)$/);return m?[Number(m[1]),Number(m[2])]:[1,1]}
-  function piecesFromRows(rows){
-    const out=[];
-    for(const row of cleanRows(rows)){
-      const d=drillIndex().find(x=>x.id===row.drill);if(!d)continue;
-      const [w,h]=fp(d.footprint);
-      for(let i=0;i<row.count;i++)out.push([w,h]);
-    }
-    return out;
-  }
-  function canPackPieces5x5(input){
-    const pieces=input.map(([w,h])=>[Number(w),Number(h)]);
-    const area=pieces.reduce((sum,[w,h])=>sum+w*h,0);
-    if(area>25)return false;
-    pieces.sort((a,b)=>(b[0]*b[1])-(a[0]*a[1])||Math.max(b[0],b[1])-Math.max(a[0],a[1]));
-    const grid=Array(25).fill(false),memo=new Set();
-    const fits=(w,h,x,y)=>{if(x+w>5||y+h>5)return false;for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(grid[yy*5+xx])return false;return true};
-    const set=(w,h,x,y,value)=>{for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)grid[yy*5+xx]=value};
-    function dfs(i){
-      if(i===pieces.length)return true;
-      const key=i+':'+grid.map(v=>v?1:0).join('');
-      if(memo.has(key))return false;
-      const [a,b]=pieces[i],orients=a===b?[[a,b]]:[[a,b],[b,a]];
-      for(const [w,h] of orients)for(let y=0;y<=5-h;y++)for(let x=0;x<=5-w;x++){
-        if(!fits(w,h,x,y))continue;
-        set(w,h,x,y,true);if(dfs(i+1))return true;set(w,h,x,y,false);
-      }
-      memo.add(key);return false;
-    }
-    return dfs(0);
-  }
+  const rowNormalizeOptions=()=>({validDrillIds:drillIndex().map(d=>d.id),fallbackDrill:'demonic',tierMin:0,tierMax:4});
+  const cleanRows=rows=>rowCore.normalizeRows(rows,rowNormalizeOptions());
+  const piecesFromRows=rows=>rowCore.piecesFromRows(cleanRows(rows),drillIndex());
   function templateInfo(){
     const pieces=piecesFromRows(template);
-    return {cells:pieces.reduce((sum,[w,h])=>sum+w*h,0),ok:canPackPieces5x5(pieces)};
+    return {cells:geometry.piecesArea(pieces),ok:canPackPieces5x5(pieces)};
   }
-  function refineryPieces(ref,qty){const [w,h]=fp(ref?.footprint);return Array.from({length:qty},()=>[w,h])}
 
   function petMultiplier(d,setup){
     let mult=1;
@@ -86,39 +56,24 @@
   }
   function rowLoss(row,setup){
     const d=drillIndex().find(x=>x.id===row.drill);if(!d)return 0;
-    const tier=Number(tiers()[clamp(row.tier,0,4,0)]?.mult)||1;
-    let base=Number(d.oil)||0;
-    if(d.special==='heart')base=Math.max(0,Number(setup?.likes)||0);
-    if(d.special==='hacker')base=Math.max(0,Number(row.hacker)||550);
-    if(d.special==='clock')base=1;
-    return base*tier*petMultiplier(d,setup);
+    return production.rowLoss({
+      special:d.special,
+      oil:Number(d.oil)||0,
+      heartLikes:Math.max(0,Number(setup?.likes)||0),
+      hackerOil:Math.max(0,Number(row.hacker)||550),
+      tierMultiplier:Number(tiers()[clamp(row.tier,0,4,0)]?.mult)||1,
+      petMultiplier:petMultiplier(d,setup)
+    });
   }
   function reservedVariant(rows,ref,qty,setup){
-    const reserve=refineryPieces(ref,qty),reservedCells=reserve.reduce((sum,[w,h])=>sum+w*h,0);
-    if(!canPackPieces5x5(reserve))return{ok:false,reason:'That refinery quantity cannot fit inside one 5×5 plot by itself.'};
-    const original=cleanRows(rows),fitsRows=value=>canPackPieces5x5([...piecesFromRows(value),...reserve]);
-    if(fitsRows(original))return{ok:true,rows:original,removed:0,reservedCells};
-    const counts=original.map(r=>r.count),losses=original.map(r=>Math.max(0,rowLoss(r,setup))),start=counts.map(()=>0),key=v=>v.join(',');
-    let frontier=[{v:start,loss:0}],seen=new Set([key(start)]);
-    const maxRemoved=counts.reduce((a,b)=>a+b,0);
-    for(let depth=1;depth<=maxRemoved;depth++){
-      const next=[];
-      for(const state of frontier){
-        for(let i=0;i<counts.length;i++){
-          if(state.v[i]>=counts[i])continue;
-          const v=state.v.slice();v[i]++;const k=key(v);if(seen.has(k))continue;seen.add(k);
-          next.push({v,loss:state.loss+losses[i]});
-        }
-      }
-      next.sort((a,b)=>a.loss-b.loss);
-      for(const state of next){
-        const candidate=[];
-        for(let i=0;i<original.length;i++){const remain=counts[i]-state.v[i];if(remain>0)candidate.push({...original[i],count:remain})}
-        if(fitsRows(candidate))return{ok:true,rows:candidate,removed:depth,reservedCells};
-      }
-      frontier=next;if(!frontier.length)break;
-    }
-    return{ok:false,reason:'Could not create a valid reserved space in Plot 1 for that refinery setup.'};
+    const original=cleanRows(rows);
+    return rowCore.bestFitWithReserve({
+      rows:original,
+      reservePieces:rowCore.footprintPieces(ref?.footprint,qty),
+      drillList:drillIndex(),
+      losses:original.map(row=>Math.max(0,rowLoss(row,setup))),
+      normalizeOptions:rowNormalizeOptions()
+    });
   }
 
   function drillOptions(selected){return drillIndex().map(d=>`<option value="${esc(d.id)}" ${d.id===selected?'selected':''}>${esc(d.name)} • ${esc(d.footprint)}</option>`).join('')}
@@ -261,9 +216,10 @@
   function bindViewEvents(){
     const view=byId('layoutcompareView');if(!view||view.dataset.featureParityEvents==='1')return false;view.dataset.featureParityEvents='1';
     view.addEventListener('click',event=>{
-      const plot=event.target.closest('[data-compare-plot]');if(plot){selectedPlotId=plot.dataset.comparePlot;setTimeout(enhanceEditor,0)}
-      if(event.target.closest('[data-ab-layout]'))setTimeout(()=>{decorateReservedPlot();enhanceBoosts();syncAdvancedButtons()},0);
-      if(event.target.closest('#v603ComparePlotEditor [data-add],#v603ComparePlotEditor [data-vremove],#v603ComparePlotEditor [data-clear]'))setTimeout(enhanceEditor,0);
+      const target=event.target instanceof Element?event.target:null;
+      const plot=target?.closest('[data-compare-plot]');if(plot){selectedPlotId=plot.dataset.comparePlot;setTimeout(enhanceEditor,0)}
+      if(target?.closest('[data-ab-layout]'))setTimeout(()=>{decorateReservedPlot();enhanceBoosts();syncAdvancedButtons()},0);
+      if(target?.closest('#v603ComparePlotEditor [data-add],#v603ComparePlotEditor [data-vremove],#v603ComparePlotEditor [data-clear]'))setTimeout(enhanceEditor,0);
     },true);
     return true;
   }

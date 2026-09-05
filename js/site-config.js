@@ -36,6 +36,27 @@ window.__STOT_ADVANCED_INLINE_V594__=true;
 window.__STOT_V537_QUICK_FILL__=true;
 window.__STOT_V536_BUILD_UX__=true;
 
+/* Stage 5 pure layout geometry core. Consumers below use async=false so this
+   shared data-only module executes first without sharing page DOM/state. */
+(()=>{
+  if(window.STOT_LAYOUT_GEOMETRY||document.querySelector('script[data-stot-layout-geometry]'))return;
+  const script=document.createElement('script');script.src='js/core/layout-geometry.js';script.async=false;script.dataset.stotLayoutGeometry='stage5';document.head.appendChild(script);
+})();
+
+/* Stage 5 pure row/template core. It depends only on layout geometry and owns
+   normalization, row-to-piece conversion and reserve-fit search as data helpers. */
+(()=>{
+  if(window.STOT_LAYOUT_ROWS||document.querySelector('script[data-stot-layout-rows]'))return;
+  const script=document.createElement('script');script.src='js/core/layout-rows.js';script.async=false;script.dataset.stotLayoutRows='stage5';document.head.appendChild(script);
+})();
+
+/* Stage 5 pure production-loss core. Oil and Compare still obtain their own
+   state/DOM values; only behavior-identical row-rate arithmetic is shared. */
+(()=>{
+  if(window.STOT_LAYOUT_PRODUCTION||document.querySelector('script[data-stot-layout-production]'))return;
+  const script=document.createElement('script');script.src='js/core/layout-production.js';script.async=false;script.dataset.stotLayoutProduction='stage5';document.head.appendChild(script);
+})();
+
 /* Compare Presets UI skin: visual parity with Oil / Hour without sharing DOM/state. */
 (()=>{
   const href='css/pages/compare-oil-match.css';
@@ -51,7 +72,7 @@ window.__STOT_V536_BUILD_UX__=true;
   }
   const src='js/pages/compare-feature-parity.js';
   if(document.querySelector('script[data-stot-compare-feature-parity]'))return;
-  const script=document.createElement('script');script.src=src;script.dataset.stotCompareFeatureParity='1';document.head.appendChild(script);
+  const script=document.createElement('script');script.src=src;script.async=false;script.dataset.stotCompareFeatureParity='1';document.head.appendChild(script);
 })();
 
 /* Known-good Compare responsive guard. */
@@ -93,9 +114,9 @@ window.__STOT_V536_BUILD_UX__=true;
   const script=document.createElement('script');script.src=src;script.dataset.stotOilPageController='stage4';document.head.appendChild(script);
 })();
 
-/* Stage 4 Oil / Hour authoritative Quick Fill owner. */
+/* Stage 4 Oil / Hour authoritative Quick Fill owner, now consuming Stage 5 pure cores. */
 (()=>{
   const src='js/pages/oil-quick-fill-stage4.js';
   if(document.querySelector('script[data-stot-oil-quick-fill-stage4]'))return;
-  const script=document.createElement('script');script.src=src;script.dataset.stotOilQuickFillStage4='1';document.head.appendChild(script);
+  const script=document.createElement('script');script.src=src;script.async=false;script.dataset.stotOilQuickFillStage4='1';document.head.appendChild(script);
 })();
