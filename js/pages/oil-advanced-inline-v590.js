@@ -22,10 +22,49 @@
     return !!(empty&&all&&clear);
   }
 
+  function mountRebirthBoost(){
+    const boosts=document.querySelector('#oilView .v520-boosts');
+    const input=document.getElementById('layoutRebirth');
+    if(!boosts||!input)return false;
+
+    let item=document.getElementById('v520Rebirth');
+    if(!item){
+      item=document.createElement('div');
+      item.id='v520Rebirth';
+      item.className='v520-boost-item';
+      item.innerHTML='<span class="v520-label">Rebirth Level <small id="v520RebirthBonus">+0% Production</small></span>';
+      boosts.appendChild(item);
+    }
+    if(input.parentElement!==item)item.appendChild(input);
+
+    const source=document.getElementById('layoutRebirthField');
+    if(source&&source!==item)source.remove();
+
+    const sync=()=>{
+      const level=window.STOT_LAYOUT_PRODUCTION?.rebirthLevel
+        ? window.STOT_LAYOUT_PRODUCTION.rebirthLevel(input.value)
+        : Math.max(0,Math.min(50,Math.trunc(Number(input.value)||0)));
+      const bonus=window.STOT_LAYOUT_PRODUCTION?.rebirthBonusPercent
+        ? window.STOT_LAYOUT_PRODUCTION.rebirthBonusPercent(level)
+        : level*10;
+      const label=document.getElementById('v520RebirthBonus');
+      if(label)label.textContent=`+${bonus}% Production`;
+    };
+    sync();
+    if(input.dataset.v594RebirthUi!=='1'){
+      input.dataset.v594RebirthUi='1';
+      input.addEventListener('input',sync);
+      input.addEventListener('change',sync);
+    }
+    return true;
+  }
+
   function start(){
     let tries=0;
     const retry=()=>{
-      if(apply() || tries>=12)return;
+      const ready=apply();
+      mountRebirthBoost();
+      if((ready&&document.getElementById('v520Rebirth')) || tries>=12)return;
       tries++;
       setTimeout(retry,120);
     };
@@ -36,7 +75,7 @@
   else start();
 
   document.querySelectorAll('.tabs button[data-view="oil"],.tabs button[data-view="layoutcompare"]').forEach(btn=>{
-    btn.addEventListener('click',()=>setTimeout(apply,0));
+    btn.addEventListener('click',()=>setTimeout(()=>{apply();mountRebirthBoost();},0));
   });
 
   /* Oil Preset share preview: one-screen mobile layout, no observers. */
@@ -104,6 +143,8 @@
   function markOilFlow(){
     const oil=document.getElementById('oilView');
     if(!oil || !oil.classList.contains('active'))return false;
+
+    mountRebirthBoost();
 
     const modeTabs=document.getElementById('layoutModeTabs');
     if(modeTabs){
