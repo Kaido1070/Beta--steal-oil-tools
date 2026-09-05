@@ -1,12 +1,13 @@
 /* STOT Compare Presets — Oil feature parity, isolated A/B implementation */
 (()=>{
   if(window.__STOT_COMPARE_FEATURE_PARITY__)return;
-  const geometry=window.STOT_LAYOUT_GEOMETRY,rowCore=window.STOT_LAYOUT_ROWS;
-  if(!geometry||!rowCore){console.error('STOT Stage 5 layout cores are missing before Compare feature parity');return;}
+  const geometry=window.STOT_LAYOUT_GEOMETRY,rowCore=window.STOT_LAYOUT_ROWS,production=window.STOT_LAYOUT_PRODUCTION;
+  if(!geometry||!rowCore||!production){console.error('STOT Stage 5 layout cores are missing before Compare feature parity');return;}
   window.__STOT_COMPARE_FEATURE_PARITY__=true;
   window.__STOT_COMPARE_USES_CORE_GEOMETRY__=true;
   window.__STOT_COMPARE_USES_CORE_ROWS__=true;
   window.__STOT_COMPARE_USES_CORE_RESERVE__=true;
+  window.__STOT_COMPARE_USES_CORE_PRODUCTION__=true;
 
   const byId=id=>document.getElementById(id);
   const clone=value=>JSON.parse(JSON.stringify(value));
@@ -55,12 +56,14 @@
   }
   function rowLoss(row,setup){
     const d=drillIndex().find(x=>x.id===row.drill);if(!d)return 0;
-    const tier=Number(tiers()[clamp(row.tier,0,4,0)]?.mult)||1;
-    let base=Number(d.oil)||0;
-    if(d.special==='heart')base=Math.max(0,Number(setup?.likes)||0);
-    if(d.special==='hacker')base=Math.max(0,Number(row.hacker)||550);
-    if(d.special==='clock')base=1;
-    return base*tier*petMultiplier(d,setup);
+    return production.rowLoss({
+      special:d.special,
+      oil:Number(d.oil)||0,
+      heartLikes:Math.max(0,Number(setup?.likes)||0),
+      hackerOil:Math.max(0,Number(row.hacker)||550),
+      tierMultiplier:Number(tiers()[clamp(row.tier,0,4,0)]?.mult)||1,
+      petMultiplier:petMultiplier(d,setup)
+    });
   }
   function reservedVariant(rows,ref,qty,setup){
     const original=cleanRows(rows);

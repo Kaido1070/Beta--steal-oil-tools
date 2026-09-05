@@ -50,6 +50,13 @@ window.__STOT_V536_BUILD_UX__=true;
   const script=document.createElement('script');script.src='js/core/layout-rows.js';script.async=false;script.dataset.stotLayoutRows='stage5';document.head.appendChild(script);
 })();
 
+/* Stage 5 pure production-loss core. Oil and Compare still obtain their own
+   state/DOM values; only behavior-identical row-rate arithmetic is shared. */
+(()=>{
+  if(window.STOT_LAYOUT_PRODUCTION||document.querySelector('script[data-stot-layout-production]'))return;
+  const script=document.createElement('script');script.src='js/core/layout-production.js';script.async=false;script.dataset.stotLayoutProduction='stage5';document.head.appendChild(script);
+})();
+
 /* Compare Presets UI skin: visual parity with Oil / Hour without sharing DOM/state. */
 (()=>{
   const href='css/pages/compare-oil-match.css';

@@ -27,20 +27,31 @@ Frozen, DOM-free, state-free helpers for:
 - footprint quantity expansion
 - lowest-loss reserve-fit search for refinery space
 
-The reserve-fit core receives row loss values as data. Oil and Compare still calculate their own production/boost losses from their own isolated state; only the pure fit/search algorithm is shared.
+### `STOT_LAYOUT_PRODUCTION`
+Frozen, DOM-free, state-free helpers for:
+- behavior-identical special-drill base rate selection for Normal, Heart, Hacker and Clock rows
+- tier × pet production-loss arithmetic used by refinery reserve fitting
+
+The production core receives already-sanitized values as plain data. Oil still reads Oil controls/state and Compare still reads its active A/B setup; no mutable state or DOM crosses the page boundary.
+
+## Formatting/calculation audit result
+- The duplicated Quick Fill reserve `rowLoss` arithmetic was behavior-identical after state values were extracted, so it moved to `STOT_LAYOUT_PRODUCTION`.
+- Existing site-level numeric formatters (`fmt` / `rateFmt`) are already centralized rather than duplicated between Oil and Compare, so Stage 5 does not create another formatter layer.
+- View-only HTML escaping/rendering stays page-local; sharing it would not materially simplify ownership.
+- Broader calculator/state extraction is not forced where Oil and Compare obtain inputs differently. Any later extraction must remain pure and prove exact parity first.
 
 ## Ownership after current cutover
-- Oil Quick Fill owns its own DOM, `layoutPlots` writes, reserve metadata and UI events.
-- Compare Quick Fill owns its own DOM, `compareStates.A/B` writes, reserve metadata and UI events.
-- Both consume the same pure geometry + row/template APIs.
+- Oil Quick Fill owns its own DOM, `layoutPlots` writes, reserve metadata, boost input reads and UI events.
+- Compare Quick Fill owns its own DOM, `compareStates.A/B` writes, reserve metadata, boost setup reads and UI events.
+- Both consume the same pure geometry + row/template + production-loss APIs.
 - No mutable DOM or state crosses the page boundary.
 
 ## Planned sequence
 1. Extract shared pure layout geometry and migrate Oil + Compare Quick Fill. **Done.**
 2. Lock geometry core with Stage 5 regression coverage. **Done.**
 3. Consolidate row cloning/normalization and reserve-fit search where semantics are behavior-identical. **Done.**
-4. Audit formatting/calculation helpers and extract only behavior-identical pure functions. **Next.**
-5. Introduce component factories only where each page receives an independent instance and where the factory materially reduces duplication.
+4. Audit formatting/calculation helpers and extract only behavior-identical pure functions. **Done.**
+5. Introduce component factories only where each page receives an independent instance and where the factory materially reduces duplication. **Next.**
 6. Remove duplicated page-local helpers only after parity tests prove each cutover.
 7. Full Chromium + Mobile Chromium + Mobile WebKit regression before release.
 
@@ -48,4 +59,7 @@ The reserve-fit core receives row loss values as data. Oil and Compare still cal
 Created `STOT_LAYOUT_GEOMETRY` and migrated Oil + Compare Quick Fill to it.
 
 ## Slice 2 — Rows and reserve fitting
-Created `STOT_LAYOUT_ROWS` and migrated both Quick Fill implementations to shared normalization/piece expansion/reserve-fit helpers. Stage 5 regression now verifies frozen/pure contracts, input immutability, compatibility normalization, lowest-loss reserve fitting, and persisted-state isolation.
+Created `STOT_LAYOUT_ROWS` and migrated both Quick Fill implementations to shared normalization/piece expansion/reserve-fit helpers. Stage 5 regression verifies frozen/pure contracts, input immutability, compatibility normalization, lowest-loss reserve fitting, and persisted-state isolation.
+
+## Slice 3 — Production-loss calculation
+Created `STOT_LAYOUT_PRODUCTION` and migrated Oil + Compare Quick Fill reserve-loss calculation to it. State extraction remains page-local, while regression verifies regular/Heart/Hacker/Clock arithmetic, tier/pet multiplication, immutability and Oil/Compare ownership markers.

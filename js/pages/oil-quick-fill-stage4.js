@@ -1,11 +1,12 @@
 /* Stage 4 — authoritative Oil / Hour Quick Fill component. */
 (()=>{
   if(window.__STOT_OIL_QUICK_FILL_STAGE4__)return;
-  const geometry=window.STOT_LAYOUT_GEOMETRY,rowCore=window.STOT_LAYOUT_ROWS;
-  if(!geometry||!rowCore){console.error('STOT Stage 5 layout cores are missing before Oil Quick Fill');return;}
+  const geometry=window.STOT_LAYOUT_GEOMETRY,rowCore=window.STOT_LAYOUT_ROWS,production=window.STOT_LAYOUT_PRODUCTION;
+  if(!geometry||!rowCore||!production){console.error('STOT Stage 5 layout cores are missing before Oil Quick Fill');return;}
   window.__STOT_OIL_QUICK_FILL_STAGE4__=true;
   window.__STOT_OIL_USES_CORE_GEOMETRY__=true;
   window.__STOT_OIL_USES_CORE_ROWS__=true;
+  window.__STOT_OIL_USES_CORE_PRODUCTION__=true;
 
   const byId=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -25,12 +26,16 @@
   }
   function rowLoss(row){
     const d=drillIndex().find(x=>x.id===row.drill);if(!d)return 0;
-    const tier=Number(tierIndex()[Number(row.tier)||0]?.mult)||1;let base=Number(d.oil)||0;
-    if(d.special==='heart')base=Math.max(0,Number(byId('layoutLikes')?.value)||0);
-    if(d.special==='hacker')base=Math.max(0,Number(row.hacker)||550);
-    if(d.special==='clock')base=1;
+    const tier=Number(tierIndex()[Number(row.tier)||0]?.mult)||1;
     let pet=1;try{if(typeof layoutPetMult==='function')pet=layoutPetMult(d)||1}catch(_){}
-    return base*tier*pet;
+    return production.rowLoss({
+      special:d.special,
+      oil:Number(d.oil)||0,
+      heartLikes:Math.max(0,Number(byId('layoutLikes')?.value)||0),
+      hackerOil:Math.max(0,Number(row.hacker)||550),
+      tierMultiplier:tier,
+      petMultiplier:pet
+    });
   }
   function reservedVariant(template,ref,qty){
     const original=cloneRows(template);
@@ -125,7 +130,7 @@
   function mount(){const box=buildUI();if(!box)return false;installRenderHook();decorateReservedPlot();window.STOT_OIL_PAGE_CONTROLLER?.sync?.();return true}
   function boot(){let tries=0;const run=()=>{tries++;if(mount()||tries>=100)return;setTimeout(run,80)};run()}
 
-  window.STOT_OIL_QUICK_FILL=Object.freeze({mount,refresh:()=>renderTemplate(buildUI()),geometryOwner:'core',rowsOwner:'core',reserveFitOwner:'core',get template(){return cloneRows(rows)},get reserve(){return reserveMeta?{...reserveMeta}:null}});
+  window.STOT_OIL_QUICK_FILL=Object.freeze({mount,refresh:()=>renderTemplate(buildUI()),geometryOwner:'core',rowsOwner:'core',reserveFitOwner:'core',productionOwner:'core',get template(){return cloneRows(rows)},get reserve(){return reserveMeta?{...reserveMeta}:null}});
   document.querySelector('.tabs button[data-view="oil"]')?.addEventListener('click',()=>setTimeout(mount,0));
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
