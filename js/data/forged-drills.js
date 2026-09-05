@@ -11,11 +11,11 @@ window.STOT_FORGED_DRILLS=Object.freeze({
     maxLevel:5,
     scrap:null,
     levels:Object.freeze([
-      Object.freeze({level:1,cost:"10 Qa",costLabel:"Initial Buy",production:Object.freeze([100000,200000,400000,600000,800000]),image:"assets/images/drills/celestial-level-1.webp"}),
-      Object.freeze({level:2,cost:"20 Qa",production:Object.freeze([1000000,1200000,1400000,1600000,1800000]),image:"assets/images/drills/celestial-level-2.webp"}),
+      Object.freeze({level:1,cost:"10 Qa",costLabel:"Initial Buy",production:Object.freeze([100000,200000,400000,600000,800000]),image:null}),
+      Object.freeze({level:2,cost:"20 Qa",production:Object.freeze([1000000,1200000,1400000,1600000,1800000]),image:null}),
       Object.freeze({level:3,cost:"30 Qa",production:Object.freeze([2000000,2200000,2400000,2600000,2800000]),image:null}),
-      Object.freeze({level:4,cost:"40 Qa",production:Object.freeze([3000000,3200000,3400000,3600000,3800000]),image:"assets/images/drills/celestial-level-4.webp"}),
-      Object.freeze({level:5,cost:"50 Qa",production:Object.freeze([4000000,4300000,4600000,4800000,5000000]),image:"assets/images/drills/celestial-level-5.webp"})
+      Object.freeze({level:4,cost:"40 Qa",production:Object.freeze([3000000,3200000,3400000,3600000,3800000]),image:null}),
+      Object.freeze({level:5,cost:"50 Qa",production:Object.freeze([4000000,4300000,4600000,4800000,5000000]),image:null})
     ])
   })
 });
