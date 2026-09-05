@@ -10,6 +10,7 @@ window.STOT_FORGED_DRILLS=Object.freeze({
     maxOwned:1,
     maxLevel:5,
     scrap:null,
+    notes:"Scrap ≠ Value",
     levels:Object.freeze([
       Object.freeze({level:1,cost:"10 Qa",costLabel:"Initial Buy",production:Object.freeze([100000,200000,400000,600000,800000]),image:null}),
       Object.freeze({level:2,cost:"20 Qa",production:Object.freeze([1000000,1200000,1400000,1600000,1800000]),image:null}),
