@@ -9,6 +9,9 @@ const LAYOUT_AREAS=[
   {id:"mountain-summit",name:"Mountain Summit",mult:10,plots:1}
 ];
 const TIER_OPTIONS=[{name:"Basic",mult:1},{name:"Gold",mult:2},{name:"Diamond",mult:3},{name:"Rainbow",mult:5},{name:"Galaxy",mult:10}];
+const layoutForgedData=window.STOT_FORGED_DRILLS||null;
+const layoutCelestial=layoutForgedData?.celestial||null;
+const layoutForgedTiers=layoutForgedData?.tiers||["Default","Gold","Diamond","Rainbow","Galaxy"];
 let layoutTargetUnit=1e9;
 let layoutLobbyMult=1;
 let layoutCopiedRows=null;
@@ -30,13 +33,18 @@ function ensureLayoutRebirthControl(){
 function syncLayoutRebirthUI(){const el=$("#layoutRebirth"),bonus=$("#layoutRebirthBonus");if(!el)return 0;const level=layoutRebirthLevel();if(String(el.value)!==String(level))el.value=level;if(bonus)bonus.textContent=`Production Bonus: +${layoutRebirthBonus()}%`;return level}
 
 function fpSize(fp){const m=String(fp||"1x1").match(/^(\d+)x(\d+)$/);return m?[+m[1],+m[2]]:[1,1]}
-function rowOilBase(d,row){if(d.special==="heart")return Math.max(0,Number($("#layoutLikes")?.value)||0);if(d.special==="hacker")return Math.max(0,Number(row.hacker)||550);return Number(d.oil)||0}
-function clonePlotRows(rows){return rows.map(r=>({drill:r.drill,tier:Number(r.tier)||0,count:Math.max(1,Math.min(25,Math.floor(Number(r.count)||1))),hacker:Math.max(0,Number(r.hacker)||550)}))}
+function layoutDrill(id){if(layoutCelestial&&id===layoutCelestial.id)return layoutCelestial;return drills.find(x=>x.id===id)}
+function isLayoutForged(d){return Boolean(d&&d.category==="forged")}
+function layoutRowLimit(row){return isLayoutForged(layoutDrill(row?.drill))?1:25}
+function layoutLevel(row){return Math.max(1,Math.min(5,Math.trunc(Number(row?.level)||1)))}
+function layoutForgedLevelData(row){return layoutCelestial?.levels?.find(x=>x.level===layoutLevel(row))||layoutCelestial?.levels?.[0]||null}
+function rowOilBase(d,row){if(isLayoutForged(d)){const level=layoutForgedLevelData(row);return Number(level?.production?.[Number(row.tier)||0])||0}if(d.special==="heart")return Math.max(0,Number($("#layoutLikes")?.value)||0);if(d.special==="hacker")return Math.max(0,Number(row.hacker)||550);return Number(d.oil)||0}
+function clonePlotRows(rows){return rows.map(r=>{const copy={drill:r.drill,tier:Number(r.tier)||0,level:layoutLevel(r),count:Math.max(1,Math.min(layoutRowLimit(r),Math.floor(Number(r.count)||1))),hacker:Math.max(0,Number(r.hacker)||550)};if(isLayoutForged(layoutDrill(copy.drill)))copy.count=1;return copy})}
 function updateCopyUI(){const has=Array.isArray(layoutCopiedRows);const allEmpty=$("#layoutPasteEmpty");if(allEmpty)allEmpty.disabled=!has;const status=$("#layoutCopyStatus");if(status)status.textContent=has?`Plot copied • ${layoutCopiedRows.length} drill row${layoutCopiedRows.length===1?"":"s"}`:"Copy a plot to reuse its drill setup.";$$('[data-paste]').forEach(b=>b.disabled=!has)}
 function rowTierMult(row){return TIER_OPTIONS[Number(row.tier)||0]?.mult||1}
 function pieceList(plot){
   const pieces=[];let ones=0,area=0;
-  for(const row of plot.rows){const d=drills.find(x=>x.id===row.drill);if(!d)continue;const count=Math.max(0,Math.floor(Number(row.count)||0));const [w,h]=fpSize(d.footprint);area+=w*h*count;if(w===1&&h===1){ones+=count;continue}for(let i=0;i<count;i++)pieces.push([w,h])}
+  for(const row of plot.rows){const d=layoutDrill(row.drill);if(!d)continue;const count=isLayoutForged(d)?1:Math.max(0,Math.floor(Number(row.count)||0));const [w,h]=fpSize(d.footprint);area+=w*h*count;if(w===1&&h===1){ones+=count;continue}for(let i=0;i<count;i++)pieces.push([w,h])}
   pieces.sort((a,b)=>(b[0]*b[1])-(a[0]*a[1])||Math.max(b[0],b[1])-Math.max(a[0],a[1]));
   return {pieces,ones,area};
 }
@@ -56,7 +64,7 @@ function canPack5x5(plot){
   return dfs(0);
 }
 function layoutPetMult(d){const ml=Math.max(0,Math.min(100,Number($("#layoutMole")?.value)||0)),fl=Math.max(0,Math.min(100,Number($("#layoutFruit")?.value)||0));const mole=ml?petValue(pets.find(p=>p.id==="mole"),ml)/100:0,fruit=(d.id==="banana"&&fl)?petValue(pets.find(p=>p.id==="fruit"),fl)/100:0;return(1+mole)*(1+fruit)}
-function plotStats(plot,t=0){let staticRate=0,clockGrowth=0;for(const row of plot.rows){const d=drills.find(x=>x.id===row.drill);if(!d)continue;const count=Math.max(0,Math.floor(Number(row.count)||0));const mult=rowTierMult(row)*plot.mult*count*layoutPetMult(d)*layoutLobbyMult*layoutRebirthMultiplier();if(d.special==="clock")clockGrowth+=mult;else staticRate+=rowOilBase(d,row)*mult}return{rate:staticRate+clockGrowth*(Math.floor(t)+1),staticRate,clockGrowth}}
+function plotStats(plot,t=0){let staticRate=0,clockGrowth=0;for(const row of plot.rows){const d=layoutDrill(row.drill);if(!d)continue;const count=isLayoutForged(d)?1:Math.max(0,Math.floor(Number(row.count)||0));const tierMult=isLayoutForged(d)?1:rowTierMult(row);const mult=tierMult*plot.mult*count*layoutPetMult(d)*layoutLobbyMult*layoutRebirthMultiplier();if(d.special==="clock")clockGrowth+=mult;else staticRate+=rowOilBase(d,row)*mult}return{rate:staticRate+clockGrowth*(Math.floor(t)+1),staticRate,clockGrowth}}
 function totalOilForSeconds(staticRate,clockGrowth,seconds){const s=Math.max(0,Math.floor(seconds));return staticRate*s+clockGrowth*s*(s+1)/2}
 function timeForTarget(staticRate,clockGrowth,target){
   if(target<=0)return 0;if(staticRate<=0&&clockGrowth<=0)return Infinity;
@@ -65,8 +73,9 @@ function timeForTarget(staticRate,clockGrowth,target){
   const b=clockGrowth+2*staticRate;const root=Math.sqrt(b*b+8*clockGrowth*target);return Math.max(0,(4*target)/(root+b));
 }
 function timeText(sec){if(!Number.isFinite(sec))return "—";let s=Math.ceil(sec);const d=Math.floor(s/86400);s%=86400;const h=Math.floor(s/3600);s%=3600;const m=Math.floor(s/60);s%=60;return [d?`${d}d`:"",h?`${h}h`:"",m?`${m}m`:"",`${s}s`].filter(Boolean).join(" ")}
-function drillOptions(selected){return drills.map(d=>`<option value="${d.id}" ${d.id===selected?"selected":""}>${d.name} • ${d.footprint}</option>`).join("")}
-function tierOptions(selected){return TIER_OPTIONS.map((t,i)=>`<option value="${i}" ${i===selected?"selected":""}>${t.name} ×${t.mult}</option>`).join("")}
+function drillOptions(selected){const regular=drills.map(d=>`<option value="${d.id}" ${d.id===selected?"selected":""}>${d.name} • ${d.footprint}</option>`);if(layoutCelestial)regular.push(`<option value="${layoutCelestial.id}" ${layoutCelestial.id===selected?"selected":""}>${layoutCelestial.name} • ${layoutCelestial.footprint}</option>`);return regular.join("")}
+function tierOptions(selected,d){if(isLayoutForged(d))return layoutForgedTiers.map((name,i)=>`<option value="${i}" ${i===selected?"selected":""}>${name}</option>`).join("");return TIER_OPTIONS.map((t,i)=>`<option value="${i}" ${i===selected?"selected":""}>${t.name} ×${t.mult}</option>`).join("")}
+function forgedLevelOptions(row){return (layoutCelestial?.levels||[]).map(level=>`<option value="${level.level}" ${level.level===layoutLevel(row)?"selected":""}>Level ${level.level}</option>`).join("")}
 function renderLayout(){
   const host=$("#layoutAreas");
   const existing=$$(".area-group",host),hadExisting=existing.length>0;
@@ -82,35 +91,29 @@ function plotHtml(plot){
   const used=pieceList(plot).area,ok=canPack5x5(plot),st=plotStats(plot,0);
   return `<div class="plot-card" data-plot="${plot.id}"><div class="plot-head"><div class="plot-title"><span>Plot ${plot.index}</span><span class="area-mult">×${plot.mult}</span></div><span class="plot-status ${ok?"ok":"bad"}">${ok?`${used} / 25 cells`:`Doesn't fit`}</span></div><div class="plot-rows">${plot.rows.map((r,i)=>rowHtml(plot,r,i)).join("")}</div><button class="plot-add" data-add="${plot.id}">+ Add Drill</button><div class="plot-actions"><button class="plot-action" data-copy="${plot.id}" type="button">Copy Plot</button><button class="plot-action" data-paste="${plot.id}" type="button" ${layoutCopiedRows?"":"disabled"}>Paste</button></div><div class="plot-foot"><span>Current production</span><strong>${ok?fmt(st.rate)+"/s":"—"}</strong></div></div>`
 }
-function rowHtml(plot,row,i){const d=drills.find(x=>x.id===row.drill)||drills[0];const extra=d.special==="hacker";return `<div class="plot-row" data-row="${i}"><select data-rowdrill>${drillOptions(row.drill)}</select><select data-rowtier>${tierOptions(row.tier)}</select><input data-rowcount type="number" min="1" max="25" value="${row.count}"><button class="plot-remove" data-remove title="Remove">×</button><div class="plot-extra ${extra?"show":""}">${d.special==="hacker"?`<input data-hacker inputmode="numeric" value="${row.hacker||550}" placeholder="550"><span class="labels"><small>Hacker Oil/s (default avg 550)</small></span>`:""}</div></div>`}
+function rowHtml(plot,row,i){const d=layoutDrill(row.drill)||drills[0];const forged=isLayoutForged(d),extra=d.special==="hacker"||forged,limit=forged?1:25;if(forged)row.count=1;const level=forged?layoutForgedLevelData(row):null;const extraHtml=d.special==="hacker"?`<input data-hacker inputmode="numeric" value="${row.hacker||550}" placeholder="550"><span class="labels"><small>Hacker Oil/s (default avg 550)</small></span>`:forged?`<select data-forgedlevel aria-label="Celestial level">${forgedLevelOptions(row)}</select><span class="labels"><small>${level?`Level ${level.level} • ${level.cost}${level.costLabel?` • ${level.costLabel}`:""}`:""}</small></span>`:"";return `<div class="plot-row" data-row="${i}"><select data-rowdrill>${drillOptions(row.drill)}</select><select data-rowtier>${tierOptions(Number(row.tier)||0,d)}</select><input data-rowcount type="number" min="1" max="${limit}" value="${forged?1:row.count}" ${forged?"disabled":""}><button class="plot-remove" data-remove title="Remove">×</button><div class="plot-extra ${extra?"show":""}">${extraHtml}</div></div>`}
 function refreshPlotRows(card,p){
   card.querySelector(".plot-rows").innerHTML=p.rows.map((r,i)=>rowHtml(p,r,i)).join("");
   bindPlotRows(card,p);
 }
 function refreshRowExtra(rowEl,row,card,p){
-  const d=drills.find(x=>x.id===row.drill)||drills[0],extra=rowEl.querySelector(".plot-extra");
-  if(d.special==="hacker"){
-    extra.classList.add("show");
-    extra.innerHTML=`<input data-hacker inputmode="numeric" value="${row.hacker||550}" placeholder="550"><span class="labels"><small>Hacker Oil/s (default avg 550)</small></span>`;
-    extra.querySelector("[data-hacker]").oninput=e=>{row.hacker=Math.max(0,+e.target.value||550);updatePlotCard(card,p)};
-  }else{
-    extra.classList.remove("show");extra.innerHTML="";
-  }
+  refreshPlotRows(card,p);
 }
 function bindPlotRows(card,p){
   card.querySelectorAll(".plot-row").forEach(rowEl=>{
     const i=+rowEl.dataset.row,row=p.rows[i];if(!row)return;
-    rowEl.querySelector("[data-rowdrill]").onchange=e=>{row.drill=e.target.value;refreshRowExtra(rowEl,row,card,p);updatePlotCard(card,p)};
+    rowEl.querySelector("[data-rowdrill]").onchange=e=>{row.drill=e.target.value;row.tier=0;row.level=1;if(isLayoutForged(layoutDrill(row.drill)))row.count=1;refreshPlotRows(card,p);updatePlotCard(card,p)};
     rowEl.querySelector("[data-rowtier]").onchange=e=>{row.tier=+e.target.value;updatePlotCard(card,p)};
-    rowEl.querySelector("[data-rowcount]").oninput=e=>{row.count=Math.max(1,Math.min(25,Math.floor(+e.target.value||1)));updatePlotCard(card,p)};
+    const count=rowEl.querySelector("[data-rowcount]");if(count&&!count.disabled)count.oninput=e=>{row.count=Math.max(1,Math.min(layoutRowLimit(row),Math.floor(+e.target.value||1)));updatePlotCard(card,p)};
     rowEl.querySelector("[data-remove]").onclick=()=>{p.rows.splice(i,1);refreshPlotRows(card,p);updatePlotCard(card,p)};
     const hacker=rowEl.querySelector("[data-hacker]");if(hacker)hacker.oninput=e=>{row.hacker=Math.max(0,+e.target.value||550);updatePlotCard(card,p)};
+    const level=rowEl.querySelector("[data-forgedlevel]");if(level)level.onchange=e=>{row.level=layoutLevel({level:e.target.value});refreshPlotRows(card,p);updatePlotCard(card,p)};
   });
 }
 function bindLayoutUI(){
   $$("[data-add]").forEach(b=>b.onclick=()=>{
     const p=layoutPlots.find(x=>x.id===b.dataset.add),card=b.closest(".plot-card");
-    p.rows.push({drill:"demonic",tier:0,count:1,hacker:550});
+    p.rows.push({drill:"demonic",tier:0,level:1,count:1,hacker:550});
     refreshPlotRows(card,p);updatePlotCard(card,p);
   });
   $$("[data-copy]").forEach(b=>b.onclick=()=>{
@@ -141,9 +144,10 @@ function layoutShareData(){
     const ok=canPack5x5(p);if(!ok)valid=false;
     if(ok){const st=plotStats(p,0);staticRate+=st.staticRate;clockGrowth+=st.clockGrowth}
     const rows=p.rows.map(r=>{
-      const d=drills.find(x=>x.id===r.drill);
+      const d=layoutDrill(r.drill);
       if(!d)return "";
-      const tier=TIER_OPTIONS[Number(r.tier)||0]?.name||"Basic";
+      const forged=isLayoutForged(d),tier=forged?(layoutForgedTiers[Number(r.tier)||0]||"Default"):(TIER_OPTIONS[Number(r.tier)||0]?.name||"Basic");
+      if(forged){const level=layoutForgedLevelData(r);return `${d.name} • Level ${layoutLevel(r)} • ${tier}${level?` • ${level.cost}`:""}`}
       return `${d.name} ×${r.count} • ${tier}`;
     }).filter(Boolean);
     used.push({name:`${p.areaName} — Plot ${p.index}`,mult:p.mult,cells:info.area,ok,rows});

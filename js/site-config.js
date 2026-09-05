@@ -19,6 +19,12 @@ window.STOT_CONFIG=Object.freeze({
   storageKey(scope,suffix="v1"){return `${this.storageNamespace}-v${this.version}-${scope}-${suffix}`;}
 });
 
+/* Canonical Forged Drill data. Data-only module; no page DOM/state ownership. */
+(()=>{
+  if(window.STOT_FORGED_DRILLS||document.querySelector('script[data-stot-forged-drills]'))return;
+  const script=document.createElement('script');script.src='js/data/forged-drills.js';script.async=false;script.dataset.stotForgedDrills='1';document.head.appendChild(script);
+})();
+
 /* Stage 4 strangler cutover: the authoritative Oil controller/Quick Fill now
    replace every targeted Oil-only runtime patch, including the old v536 shell bootstrap. */
 window.__STOT_STAGE4_RETIRED_OIL_PATCHES__=Object.freeze([

@@ -9,12 +9,26 @@
     const n = Number(value);
     return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.trunc(n))) : fallback;
   };
-  const cloneRows = rows => (Array.isArray(rows) ? rows : []).map(r => ({
-    drill: drills.some(d => d.id === r?.drill) ? r.drill : 'demonic',
-    tier: clampInt(r?.tier, 0, 4, 0),
-    count: clampInt(r?.count, 1, 25, 1),
-    hacker: Math.max(0, Number(r?.hacker) || 550)
-  }));
+  const forgedData=window.STOT_FORGED_DRILLS||null;
+  const celestial=forgedData?.celestial||null;
+  const forgedTiers=forgedData?.tiers||['Default','Gold','Diamond','Rainbow','Galaxy'];
+  const compareDrill=id=>celestial&&id===celestial.id?celestial:drills.find(d=>d.id===id);
+  const isForged=d=>Boolean(d&&d.category==='forged');
+  const compareDrills=()=>celestial?[...drills,celestial]:drills.slice();
+  const rowLevel=row=>clampInt(row?.level,1,5,1);
+  const forgedLevelData=row=>celestial?.levels?.find(x=>x.level===rowLevel(row))||celestial?.levels?.[0]||null;
+  const rowLimit=row=>isForged(compareDrill(row?.drill))?1:25;
+  const cloneRows = rows => (Array.isArray(rows) ? rows : []).map(r => {
+    const id=compareDrill(r?.drill)?r.drill:'demonic';
+    const forged=isForged(compareDrill(id));
+    return {
+      drill:id,
+      tier:clampInt(r?.tier,0,4,0),
+      level:rowLevel(r),
+      count:forged?1:clampInt(r?.count,1,25,1),
+      hacker:Math.max(0,Number(r?.hacker)||550)
+    };
+  });
 
   const PLOTS = [
     ['forest-1','Forest',1],['forest-2','Forest',1],['forest-3','Forest',1],['forest-4','Forest',1],['forest-5','Forest',1],['forest-6','Forest',1],
@@ -133,7 +147,7 @@
     #layoutcompareView .v603-boost-grid label small{font-size:9px;color:var(--muted,#98a2b8)}
     #layoutcompareView .v603-boost-grid input,#layoutcompareView .v603-condition-pane input{width:100%;min-height:42px}
     #layoutcompareView .v603-x2{display:flex;gap:6px;margin-top:8px}.v603-x2 button{flex:1;min-height:38px}
-    #layoutcompareView .v603-qf-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:7px}.v603-qf-grid label{display:grid;gap:4px;font-size:11px;color:var(--muted,#98a2b8)}
+    #layoutcompareView .v603-qf-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:7px}.v603-qf-grid label{display:grid;gap:4px;font-size:11px;color:var(--muted,#98a2b8)}
     #layoutcompareView .v603-qf-actions{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px}
     #layoutcompareView .v603-advanced-body{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding-top:9px}
     #layoutcompareView .v603-note{color:var(--muted,#98a2b8);font-size:12px;padding:0 4px}
@@ -155,7 +169,7 @@
     <div class="panel v524-settings" id="v524CompareSettings"><div class="v524-settings-head"><div class="v524-settings-copy"><strong>Different Base Settings</strong><small>Keep Off to use the same boosts for both presets.</small></div><div class="v603-toggle" id="v603SeparateToggle"><button type="button" data-v524="shared">Off</button><button type="button" data-v524="separate">On</button></div></div><div class="v524-status" id="v524Status"></div></div>
     <div class="panel" id="v526EditorSwitch"><strong id="v526EditorHint">Editing Preset A · isolated visual editor</strong></div>
     <div class="panel v520-boosts" id="v520BoostsCompare"><div class="v520-boosts-title"><strong>Preset Boosts</strong><span></span><span class="v524-shared-badge"></span></div><div class="v603-boost-grid"><label>Mole Level<input id="compareLayoutMole" type="number" min="0" max="100" value="0"></label><label>Fruit Level<input id="compareLayoutFruit" type="number" min="0" max="100" value="0"></label><label>Heart Drill Likes<input id="compareLayoutLikes" type="number" min="0" value="0"></label><label>Rebirth Level <small id="compareLayoutRebirthBonus">+0% Production</small><input id="compareLayoutRebirth" type="number" min="0" max="50" step="1" value="0" inputmode="numeric" placeholder="0 - 50"></label><label>Admin Event Lobby<div class="v603-x2" id="compareLayoutX2"><button type="button" data-layoutx2="1">Off</button><button type="button" data-layoutx2="2">x2</button></div></label></div></div>
-    <div class="panel v536-quick-fill" id="v536QuickFillCompare"><div class="v536-qf-head"><strong>Quick Fill</strong><span>Compare-only preset builder</span></div><div class="v603-qf-grid"><label>Drill<select id="compareQuickDrill"></select></label><label>Tier<select id="compareQuickTier"></select></label><label>Count<input id="compareQuickCount" type="number" min="1" max="25" value="1"></label></div><div class="v603-qf-actions"><select id="compareQuickTarget"><option value="all">All Areas</option><option value="forest">Forest</option><option value="desert">Desert</option><option value="volcano-side">Volcano Sides</option><option value="volcano-core">Volcano Core</option><option value="mountain-side">Mountain Sides</option><option value="mountain-summit">Mountain Summit</option></select><button id="compareQuickApply" type="button">Fill Empty Plots</button></div><div id="compareQuickStatus">Only the active preset is changed.</div></div>
+    <div class="panel v536-quick-fill" id="v536QuickFillCompare"><div class="v536-qf-head"><strong>Quick Fill</strong><span>Compare-only preset builder</span></div><div class="v603-qf-grid"><label>Drill<select id="compareQuickDrill"></select></label><label>Tier<select id="compareQuickTier"></select></label><label id="compareQuickLevelField" hidden>Level<select id="compareQuickLevel"></select></label><label>Count<input id="compareQuickCount" type="number" min="1" max="25" value="1"></label></div><div class="v603-qf-actions"><select id="compareQuickTarget"><option value="all">All Areas</option><option value="forest">Forest</option><option value="desert">Desert</option><option value="volcano-side">Volcano Sides</option><option value="volcano-core">Volcano Core</option><option value="mountain-side">Mountain Sides</option><option value="mountain-summit">Mountain Summit</option></select><button id="compareQuickApply" type="button">Fill Empty Plots</button></div><div id="compareQuickStatus">Only the active preset is changed.</div></div>
     <details class="v536-advanced" id="v536AdvancedToolsCompare"><summary>Advanced Tools <span>Compare-only copy • paste • clear</span></summary><div class="v603-advanced-body"><button id="compareCopyPreset" type="button">Copy Preset</button><button id="comparePastePreset" type="button">Paste Preset</button><button id="compareClearPreset" type="button">Clear Preset</button></div></details>
     <section class="panel v572-visual-builder" id="layoutVisualBuilderCompare" data-builder-scope="compare"></section>
     <div class="v603-note">Compare Presets has its own A/B data, boosts, calculator and editor. Oil / Hour remains untouched.</div>
@@ -165,8 +179,14 @@
   const conditionHost=byId('v533ConditionHost');
   conditionHost.innerHTML=`<div class="v603-condition-grid"><div class="v603-mode-tabs" id="compareLayoutModeTabs"><button type="button" data-layoutmode="time">Time → Oil</button><button type="button" data-layoutmode="target">Oil → Time</button></div><div class="v603-condition-pane" id="compareLayoutTimePane"><label>Run Time (hours)<input id="compareLayoutHours" inputmode="decimal" value="1"></label></div><div class="v603-condition-pane" id="compareLayoutTargetPane"><label>Target Oil<input id="compareLayoutTarget" inputmode="decimal" value="1"></label><div class="presets units" id="compareLayoutTargetUnits"><button class="chip" data-layouttarget="1000">K</button><button class="chip" data-layouttarget="1000000">M</button><button class="chip" data-layouttarget="1000000000">B</button><button class="chip" data-layouttarget="1000000000000">T</button></div></div></div>`;
 
-  byId('compareQuickDrill').innerHTML=drills.map(d=>`<option value="${d.id}" ${d.id==='demonic'?'selected':''}>${escapeHTML(d.name)} • ${d.footprint}</option>`).join('');
-  byId('compareQuickTier').innerHTML=TIER_OPTIONS.map((t,i)=>`<option value="${i}">${t.name} ×${t.mult}</option>`).join('');
+  function compareDrillOptions(selected){return compareDrills().map(d=>`<option value="${d.id}" ${d.id===selected?'selected':''}>${escapeHTML(d.name)} • ${d.footprint}</option>`).join('')}
+  function compareTierOptions(selected,d){if(isForged(d))return forgedTiers.map((name,i)=>`<option value="${i}" ${i===Number(selected)?'selected':''}>${name}</option>`).join('');return TIER_OPTIONS.map((t,i)=>`<option value="${i}" ${i===Number(selected)?'selected':''}>${t.name} ×${t.mult}</option>`).join('')}
+  function compareLevelOptions(selected){return (celestial?.levels||[]).map(x=>`<option value="${x.level}" ${x.level===Number(selected)?'selected':''}>Level ${x.level} • ${x.cost}</option>`).join('')}
+  byId('compareQuickDrill').innerHTML=compareDrillOptions('demonic');
+  byId('compareQuickLevel').innerHTML=compareLevelOptions(1);
+  function syncQuickForged(){const d=compareDrill(byId('compareQuickDrill').value),forged=isForged(d);byId('compareQuickTier').innerHTML=compareTierOptions(clampInt(byId('compareQuickTier').value,0,4,0),d);byId('compareQuickLevelField').hidden=!forged;const count=byId('compareQuickCount');if(forged){count.value='1';count.max='1';count.disabled=true}else{count.max='25';count.disabled=false}}
+  byId('compareQuickDrill').onchange=()=>{byId('compareQuickTier').value='0';syncQuickForged()};
+  syncQuickForged();
 
   function activeState(){return compareStates[activeSide]}
   function rowsFor(state,id){return state.rows.find(x=>x.id===id)?.rows||[]}
@@ -186,10 +206,12 @@
     for(const meta of PLOTS){
       const p=plotModel(state,meta),info=pieceList(p);cells+=Math.min(info.area,25);if(!canPack5x5(p)){valid=false;continue;}
       for(const row of p.rows){
-        const d=drills.find(x=>x.id===row.drill);if(!d)continue;
-        const count=clampInt(row.count,1,25,1);let base=Number(d.oil)||0;
-        if(d.special==='heart')base=Math.max(0,Number(setup.likes)||0);else if(d.special==='hacker')base=Math.max(0,Number(row.hacker)||550);
-        const mult=(TIER_OPTIONS[Number(row.tier)||0]?.mult||1)*meta.mult*count*petMult(d,setup)*(Number(setup.lobby)===2?2:1)*rebirth;
+        const d=compareDrill(row.drill);if(!d)continue;
+        const forged=isForged(d),count=forged?1:clampInt(row.count,1,25,1);let base=Number(d.oil)||0;
+        if(forged)base=Number(forgedLevelData(row)?.production?.[clampInt(row.tier,0,4,0)])||0;
+        else if(d.special==='heart')base=Math.max(0,Number(setup.likes)||0);else if(d.special==='hacker')base=Math.max(0,Number(row.hacker)||550);
+        const tierMult=forged?1:(TIER_OPTIONS[Number(row.tier)||0]?.mult||1);
+        const mult=tierMult*meta.mult*count*petMult(d,setup)*(Number(setup.lobby)===2?2:1)*rebirth;
         if(d.special==='clock')clockGrowth+=mult;else staticRate+=base*mult;
       }
     }
@@ -197,7 +219,7 @@
   }
 
   function packPlot(plot){
-    const pieces=[];for(const row of plot.rows){const d=drills.find(x=>x.id===row.drill);if(!d)continue;const [w,h]=fpSize(d.footprint);for(let i=0;i<clampInt(row.count,1,25,1);i++)pieces.push({row,d,w,h});}
+    const pieces=[];for(const row of plot.rows){const d=compareDrill(row.drill);if(!d)continue;const [w,h]=fpSize(d.footprint),count=isForged(d)?1:clampInt(row.count,1,25,1);for(let i=0;i<count;i++)pieces.push({row,d,w,h});}
     pieces.sort((a,b)=>(b.w*b.h)-(a.w*a.h));const grid=Array(25).fill(false),placed=[];
     const fits=(w,h,x,y)=>{if(x+w>5||y+h>5)return false;for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)if(grid[yy*5+xx])return false;return true};
     const set=(w,h,x,y,v)=>{for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)grid[yy*5+xx]=v};
@@ -213,10 +235,10 @@
   }
 
   function ensureEditor(){let modal=byId('v603ComparePlotEditor');if(modal)return modal;modal=document.createElement('div');modal.id='v603ComparePlotEditor';modal.innerHTML='<div class="v572-editor-sheet"><div id="v603CompareEditorBody"></div></div>';document.body.appendChild(modal);modal.addEventListener('click',e=>{if(e.target===modal)closeEditor()});return modal;}
-  function editorRow(row,index){const d=drills.find(x=>x.id===row.drill)||drills[0];return`<div class="v572-editor-row" data-vrow="${index}"><label><span>Drill</span><select data-vdrill>${drillOptions(row.drill)}</select></label><div class="v572-row-two"><label><span>Tier</span><select data-vtier>${tierOptions(row.tier)}</select></label><label><span>Count</span><input data-vcount type="number" min="1" max="25" value="${row.count}"></label></div>${d.special==='hacker'?`<label><span>Hacker Oil/s</span><input data-vhacker type="number" min="0" value="${row.hacker||550}"></label>`:''}<button class="v572-remove-row" data-vremove type="button">Remove</button></div>`}
+  function editorRow(row,index){const d=compareDrill(row.drill)||drills[0],forged=isForged(d),level=forged?forgedLevelData(row):null;return`<div class="v572-editor-row" data-vrow="${index}"><label><span>Drill</span><select data-vdrill>${compareDrillOptions(row.drill)}</select></label><div class="v572-row-two"><label><span>Tier</span><select data-vtier>${compareTierOptions(row.tier,d)}</select></label><label><span>Count</span><input data-vcount type="number" min="1" max="${forged?1:25}" value="${forged?1:row.count}" ${forged?'disabled':''}></label></div>${forged?`<label><span>Level</span><select data-vlevel>${compareLevelOptions(rowLevel(row))}</select><small>${level?`${level.cost}${level.costLabel?` • ${level.costLabel}`:''}`:''}</small></label>`:d.special==='hacker'?`<label><span>Hacker Oil/s</span><input data-vhacker type="number" min="0" value="${row.hacker||550}"></label>`:''}<button class="v572-remove-row" data-vremove type="button">Remove</button></div>`}
   function renderEditor(){if(!selectedPlotId)return;const state=activeState(),meta=PLOTS.find(p=>p.id===selectedPlotId);if(!meta)return;const rows=cloneRows(rowsFor(state,meta.id)),model={...meta,rows},used=pieceList(model).area,ok=canPack5x5(model),body=ensureEditor().querySelector('#v603CompareEditorBody');body.innerHTML=`<div class="v572-editor-head"><div><small>Preset ${activeSide}</small><h3>${meta.index} ${escapeHTML(meta.areaName)} <span>×${meta.mult}</span></h3></div><button data-close type="button">×</button></div><div class="v572-editor-status ${ok?'ok':'bad'}"><strong>${ok?`${used} / 25 cells`:'Doesn\'t fit in 5×5'}</strong></div><div class="v572-editor-rows">${rows.length?rows.map(editorRow).join(''):'<div class="v572-empty-editor">No drills yet.</div>'}</div><div class="v572-editor-actions"><button data-add class="primary" type="button">+ Add Drill</button><button data-clear type="button">Clear Plot</button></div>`;
-    body.querySelector('[data-close]').onclick=closeEditor;body.querySelector('[data-add]').onclick=()=>{rows.push({drill:'demonic',tier:0,count:1,hacker:550});saveActiveRows(meta.id,rows);renderEditor()};body.querySelector('[data-clear]').onclick=()=>{saveActiveRows(meta.id,[]);renderEditor()};
-    body.querySelectorAll('[data-vrow]').forEach(el=>{const i=Number(el.dataset.vrow),row=rows[i];el.querySelector('[data-vdrill]').onchange=e=>{row.drill=e.target.value;saveActiveRows(meta.id,rows);renderEditor()};el.querySelector('[data-vtier]').onchange=e=>{row.tier=Number(e.target.value)||0;saveActiveRows(meta.id,rows);renderEditor()};el.querySelector('[data-vcount]').onchange=e=>{row.count=clampInt(e.target.value,1,25,1);saveActiveRows(meta.id,rows);renderEditor()};el.querySelector('[data-vremove]').onclick=()=>{rows.splice(i,1);saveActiveRows(meta.id,rows);renderEditor()};const h=el.querySelector('[data-vhacker]');if(h)h.onchange=e=>{row.hacker=Math.max(0,Number(e.target.value)||550);saveActiveRows(meta.id,rows)}});
+    body.querySelector('[data-close]').onclick=closeEditor;body.querySelector('[data-add]').onclick=()=>{rows.push({drill:'demonic',tier:0,level:1,count:1,hacker:550});saveActiveRows(meta.id,rows);renderEditor()};body.querySelector('[data-clear]').onclick=()=>{saveActiveRows(meta.id,[]);renderEditor()};
+    body.querySelectorAll('[data-vrow]').forEach(el=>{const i=Number(el.dataset.vrow),row=rows[i];el.querySelector('[data-vdrill]').onchange=e=>{row.drill=e.target.value;row.tier=0;row.level=1;if(isForged(compareDrill(row.drill)))row.count=1;saveActiveRows(meta.id,rows);renderEditor()};el.querySelector('[data-vtier]').onchange=e=>{row.tier=Number(e.target.value)||0;saveActiveRows(meta.id,rows);renderEditor()};const count=el.querySelector('[data-vcount]');if(count&&!count.disabled)count.onchange=e=>{row.count=clampInt(e.target.value,1,rowLimit(row),1);saveActiveRows(meta.id,rows);renderEditor()};el.querySelector('[data-vremove]').onclick=()=>{rows.splice(i,1);saveActiveRows(meta.id,rows);renderEditor()};const h=el.querySelector('[data-vhacker]');if(h)h.onchange=e=>{row.hacker=Math.max(0,Number(e.target.value)||550);saveActiveRows(meta.id,rows)};const level=el.querySelector('[data-vlevel]');if(level)level.onchange=e=>{row.level=rowLevel({level:e.target.value});saveActiveRows(meta.id,rows);renderEditor()}});
   }
   function openEditor(id){selectedPlotId=id;ensureEditor().classList.add('open');renderEditor()}
   function closeEditor(){selectedPlotId=null;byId('v603ComparePlotEditor')?.classList.remove('open')}
@@ -263,7 +285,7 @@
   byId('compareLayoutTarget').oninput=e=>{const value=String(Math.max(0,Number(e.target.value)||0));compareStates.A.setup.target=value;compareStates.B.setup.target=value;renderComparison();syncSticky()};
   view.querySelectorAll('#compareLayoutTargetUnits [data-layouttarget]').forEach(btn=>btn.onclick=()=>{const value=Number(btn.dataset.layouttarget);compareStates.A.setup.targetUnit=value;compareStates.B.setup.targetUnit=value;syncAll()});
   view.querySelectorAll('#v603SeparateToggle [data-v524]').forEach(btn=>btn.onclick=()=>{const next=btn.dataset.v524==='separate';if(next===separate)return;const source=clone(compareStates[activeSide].setup),sourceRebirth=rebirthLevel(compareRebirth[activeSide]);compareStates.A.setup={...compareStates.A.setup,mole:source.mole,fruit:source.fruit,likes:source.likes,lobby:source.lobby};compareStates.B.setup={...compareStates.B.setup,mole:source.mole,fruit:source.fruit,likes:source.likes,lobby:source.lobby};compareRebirth.A=sourceRebirth;compareRebirth.B=sourceRebirth;separate=next;try{localStorage.setItem(SEPARATE_KEY,separate?'1':'0')}catch(_){}syncAll()});
-  byId('compareQuickApply').onclick=()=>{const state=activeState(),drill=byId('compareQuickDrill').value,tier=clampInt(byId('compareQuickTier').value,0,4,0),count=clampInt(byId('compareQuickCount').value,1,25,1),target=byId('compareQuickTarget').value,row={drill,tier,count,hacker:550},probe={rows:[row]},status=byId('compareQuickStatus');if(!canPack5x5(probe)){status.textContent='This setup does not fit inside one 5×5 plot.';return;}let changed=0;for(const meta of PLOTS){const entry=state.rows.find(x=>x.id===meta.id);const area=meta.id.replace(/-\d+$/,'');if(entry&&!entry.rows.length&&(target==='all'||area===target)){entry.rows=cloneRows([row]);changed++;}}status.textContent=changed?`Filled ${changed} empty plot${changed===1?'':'s'} in Preset ${activeSide}.`:'No empty plots found.';syncAll();view.dispatchEvent(new Event('change',{bubbles:true}))};
+  byId('compareQuickApply').onclick=()=>{const state=activeState(),drill=byId('compareQuickDrill').value,d=compareDrill(drill),forged=isForged(d),tier=clampInt(byId('compareQuickTier').value,0,4,0),level=forged?rowLevel({level:byId('compareQuickLevel').value}):1,count=forged?1:clampInt(byId('compareQuickCount').value,1,25,1),target=byId('compareQuickTarget').value,row={drill,tier,level,count,hacker:550},probe={rows:[row]},status=byId('compareQuickStatus');if(!canPack5x5(probe)){status.textContent='This setup does not fit inside one 5×5 plot.';return;}let changed=0;for(const meta of PLOTS){const entry=state.rows.find(x=>x.id===meta.id);const area=meta.id.replace(/-\d+$/,'');if(entry&&!entry.rows.length&&(target==='all'||area===target)){entry.rows=cloneRows([row]);changed++;}}status.textContent=changed?`Filled ${changed} empty plot${changed===1?'':'s'} in Preset ${activeSide}.`:'No empty plots found.';syncAll();view.dispatchEvent(new Event('change',{bubbles:true}))};
   byId('compareCopyPreset').onclick=()=>{compareClipboard=clone(activeState());byId('compareCopyPreset').textContent='Copied';setTimeout(()=>{if(byId('compareCopyPreset'))byId('compareCopyPreset').textContent='Copy Preset'},700)};
   byId('comparePastePreset').onclick=()=>{if(!compareClipboard)return;compareStates[activeSide]=cleanState(compareClipboard);syncAll();view.dispatchEvent(new Event('change',{bubbles:true}))};
   byId('compareClearPreset').onclick=()=>{compareStates[activeSide].rows=emptyRowsState();closeEditor();syncAll();view.dispatchEvent(new Event('change',{bubbles:true}))};
