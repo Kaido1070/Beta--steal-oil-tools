@@ -1,0 +1,58 @@
+name: Temporary Celestial level cards
+on:
+  push:
+    branches:
+      - feature/celestial-database-level-cards
+    paths:
+      - '.github/workflows/tmp-celestial-level-cards.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/celestial-database-level-cards
+      - name: Redesign Celestial Database levels
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('js/pages/database.js')
+          s=p.read_text(encoding='utf-8')
+          old='''function forgedDetails(drill){\n  if(!isDbForged(drill))return "";\n  return (drill.levels||[]).map(level=>{\n    const production=dbForgedTiers.map((tier,i)=>`${tier} ${fmt(level.production?.[i]||0)}/s`).join(" · ");\n    return `<div class="detail"><span>Level ${level.level} Cost</span><strong>${level.cost}${level.costLabel?` · ${level.costLabel}`:""}</strong></div><div class="detail"><span>Level ${level.level} Production</span><strong>${production}</strong></div>`;\n  }).join("");\n}\n'''
+          new='''function forgedLevelCards(drill){\n  if(!isDbForged(drill))return "";\n  return `<div class="forged-level-list">${(drill.levels||[]).map(level=>{\n    const values=(level.production||[]).map((value,i)=>`<span><b>${dbForgedTiers[i]}</b>${fmt(value||0)}/s</span>`).join("");\n    const visual=level.image?`<img src="${level.image}" alt="${I18N.itemName(drill)} Level ${level.level}" loading="lazy">`:`<span class="forged-level-placeholder">L${level.level}</span>`;\n    return `<section class="forged-level-card">\n      <div class="forged-level-head">\n        <div class="forged-level-logo">${visual}</div>\n        <div class="forged-level-info"><strong>Level ${level.level}</strong><div class="meta"><span class="pill">Forged</span><span class="pill">${drill.footprint}</span><span class="pill">Scrap N/A</span></div></div>\n        <div class="oil-rate"><strong>${fmt(Math.min(...(level.production||[0])))}–${fmt(Math.max(...(level.production||[0])))}</strong><small>OIL / SEC</small></div>\n      </div>\n      <div class="forged-level-props">\n        <div class="forged-level-cost"><span>Cost</span><strong>${level.cost}${level.costLabel?` · ${level.costLabel}`:""}</strong></div>\n        <div class="forged-level-production">${values}</div>\n      </div>\n    </section>`;\n  }).join("")}</div>`;\n}\n'''
+          if old not in s:
+              raise SystemExit('forgedDetails block not found')
+          s=s.replace(old,new)
+          old2='''      ${forged?`<div class="detail"><span>Type</span><strong>Forged Drill</strong></div><div class="detail"><span>Levels</span><strong>1–${d.maxLevel||5}</strong></div><div class="detail"><span>Tiers</span><strong>${dbForgedTiers.join(" · ")}</strong></div>`:`<div class="detail"><span>Cash / Event Price</span><strong>${d.cash||d.eventPrice||"—"}</strong></div><div class="detail"><span>V-Bucks</span><strong>${d.vbucks||"—"}</strong></div>`}\n      <div class="detail"><span>Footprint</span><strong>${d.footprint}</strong></div>\n      ${forged?forgedDetails(d):`<div class="detail"><span>Base Oil/s</span><strong>${d.oil==null?"Dynamic":fmt(d.oil)}</strong></div>`}\n      ${drillScrapDetails(d)}\n'''
+          new2='''      ${forged?forgedLevelCards(d):`<div class="detail"><span>Cash / Event Price</span><strong>${d.cash||d.eventPrice||"—"}</strong></div><div class="detail"><span>V-Bucks</span><strong>${d.vbucks||"—"}</strong></div><div class="detail"><span>Footprint</span><strong>${d.footprint}</strong></div><div class="detail"><span>Base Oil/s</span><strong>${d.oil==null?"Dynamic":fmt(d.oil)}</strong></div>${drillScrapDetails(d)}`}\n'''
+          if old2 not in s:
+              raise SystemExit('forged render block not found')
+          s=s.replace(old2,new2)
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('css/pages/database.css')
+          s=p.read_text(encoding='utf-8')
+          css='''\n/* Celestial Forged Drill — per-level cards */\n#databaseView .forged-level-list{display:grid;gap:10px}\n#databaseView .forged-level-card{border:1px solid #303b52;border-radius:13px;overflow:hidden;background:linear-gradient(180deg,rgba(21,27,39,.98),rgba(12,17,26,.98))}\n#databaseView .forged-level-head{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:11px;align-items:center;padding:10px}\n#databaseView .forged-level-logo{width:72px;height:72px;border:1px solid #354159;border-radius:13px;background:#101722;display:grid;place-items:center;overflow:hidden;padding:4px;box-sizing:border-box}\n#databaseView .forged-level-logo img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 5px 8px rgba(0,0,0,.28))}\n#databaseView .forged-level-placeholder{font-weight:900;font-size:18px;color:#7f8da4}\n#databaseView .forged-level-info strong{display:block;font-size:13px;margin-bottom:6px}\n#databaseView .forged-level-props{border-top:1px solid #283247;padding:9px 10px 10px;background:rgba(7,10,16,.34);display:grid;gap:8px}\n#databaseView .forged-level-cost{display:flex;justify-content:space-between;gap:10px;align-items:center}\n#databaseView .forged-level-cost span{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#8f9bb0;font-weight:800}\n#databaseView .forged-level-cost strong{font-size:11px}\n#databaseView .forged-level-production{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}\n#databaseView .forged-level-production span{display:grid;gap:3px;padding:7px 6px;border:1px solid #2d374b;border-radius:9px;background:#0f1520;font-size:10px;font-weight:800;text-align:center}\n#databaseView .forged-level-production b{font-size:8px;color:#8f9bb0;text-transform:uppercase;letter-spacing:.04em}\n@media(max-width:620px){#databaseView .forged-level-head{grid-template-columns:64px minmax(0,1fr);gap:9px}#databaseView .forged-level-logo{width:64px;height:64px;grid-row:1/3}#databaseView .forged-level-head .oil-rate{grid-column:2;grid-row:2;text-align:left;margin-top:-2px}#databaseView .forged-level-production{grid-template-columns:repeat(2,minmax(0,1fr))}#databaseView .forged-level-production span:last-child{grid-column:1/-1}#databaseView .forged-level-cost{align-items:flex-start;flex-direction:column;gap:3px}}\n'''
+          if '/* Celestial Forged Drill — per-level cards */' not in s:
+              s += css
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('css/pages/database.css?v=5.80','css/pages/database.css?v=6.06')
+          s=s.replace('js/pages/database.js?v=5.80','js/pages/database.js?v=6.06')
+          p.write_text(s,encoding='utf-8')
+          PY
+          grep -q 'forged-level-card' js/pages/database.js
+          grep -q 'Celestial Forged Drill — per-level cards' css/pages/database.css
+          grep -q 'css/pages/database.css?v=6.06' index.html
+          grep -q 'js/pages/database.js?v=6.06' index.html
+      - name: Commit redesign
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/pages/database.js css/pages/database.css index.html
+          git commit -m 'Redesign Celestial Database level cards'
+          git push origin HEAD:feature/celestial-database-level-cards
